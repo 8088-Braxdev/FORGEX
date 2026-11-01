@@ -491,6 +491,10 @@ var isAI =
 
   var isHealth = input === '/api/preview/health';
   var isGateway = input === '/api/preview/gateway';
+  var callerSource = '';
+  try {
+    callerSource = new Error().stack || '';
+  } catch (e) {}
 
   if (
     (!isAI && !isHealth && !isGateway) ||
@@ -577,7 +581,8 @@ var value = payload && (
       channel: channel,
       id: id,
       
-path: isAI ? '/api/preview/ai' : input
+path: isAI ? '/api/preview/ai' : input,
+    source: callerSource.slice(0, 200)
 
     };
 

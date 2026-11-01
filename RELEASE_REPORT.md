@@ -1,7 +1,7 @@
 # FORGEX DevStudio — Release Report (interim)
 
 **Branch:** feature/forgex-public-ux-seo  
-**Commit:** a3e07c753f7b7811204eab53aa2aa73b29008d24  
+**Commit:** 172fc9b55171a97566163d24380804871bdec477  
 **Date:** 2026-11-02  
 **Deployment URL:** NOT DEPLOYED (local build only; Vercel deploy requires owner approval)
 

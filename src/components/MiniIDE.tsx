@@ -109,6 +109,7 @@ type NetworkRecord = {
   path: string;
   status: number;
   durationMs: number;
+  source?: string;
 };
 
 type IdeDiagnostic = {
@@ -871,6 +872,11 @@ export default function MiniIDE({
           ? data.path.slice(0, 120)
           : "(unknown endpoint)";
 
+      const requestSource =
+        "source" in data && typeof data.source === "string"
+          ? data.source.slice(0, 200)
+          : undefined;
+
       function reply(status: number, body: unknown) {
         if (previewChannel.current !== channel) return;
         if (event.source !== iframeRef.current?.contentWindow) return;
@@ -883,6 +889,7 @@ export default function MiniIDE({
               path: requestPath,
               status,
               durationMs: Math.round(performance.now() - requestStartedAt),
+              source: requestSource,
             },
           ].slice(-50),
         );
@@ -3362,6 +3369,11 @@ export default function MiniIDE({
                         <p>Endpoint: {record.path}</p>
                         <p>Status: {record.status}</p>
                         <p>Elapsed: {record.durationMs} ms</p>
+                        {record.source && (
+                          <p className="fxide-muted">
+                            Source hint: {record.source.split("\n")[0]}
+                          </p>
+                        )}
                         <p>
                           Duration includes time spent awaiting user permission.
                         </p>

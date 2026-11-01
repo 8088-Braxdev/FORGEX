@@ -69,6 +69,14 @@ async function currentWeather(
     "https://api.open-meteo.com/v1/forecast"
   );
 
+  // Defense in depth: never allow a host change.
+  if (url.hostname !== "api.open-meteo.com") {
+    return NextResponse.json(
+      { error: "Provider destination not allowed." },
+      { status: 502 }
+    );
+  }
+
   url.searchParams.set("latitude", String(latitude));
   url.searchParams.set("longitude", String(longitude));
   url.searchParams.set(
