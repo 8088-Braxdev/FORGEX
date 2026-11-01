@@ -1,8 +1,8 @@
-
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
+// In-memory rate limit (per server instance).
 const requestTimestamps = new Map<string, number[]>();
 
 function clientKey(request: Request) {
@@ -32,8 +32,16 @@ function rateLimited(key: string, limit: number, windowMs: number) {
 type Payload = Record<string, unknown>;
 
 type Handler = (
-  payload: Payload
+  payload: Payload,
 ) => Promise<NextResponse>;
+
+type ProviderEntry = {
+  key: string;
+  name: string;
+  action: string;
+  description: string;
+  handler: Handler;
+};
 
 type WeatherResponse = {
   current?: {
@@ -45,7 +53,7 @@ type WeatherResponse = {
 };
 
 async function currentWeather(
-  payload: Payload
+  payload: Payload,
 ): Promise<NextResponse> {
   const { latitude, longitude } = payload;
 
@@ -61,19 +69,19 @@ async function currentWeather(
   ) {
     return NextResponse.json(
       { error: "Invalid geographical coordinates." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   const url = new URL(
-    "https://api.open-meteo.com/v1/forecast"
+    "https://api.open-meteo.com/v1/forecast",
   );
 
   // Defense in depth: never allow a host change.
   if (url.hostname !== "api.open-meteo.com") {
     return NextResponse.json(
       { error: "Provider destination not allowed." },
-      { status: 502 }
+      { status: 502 },
     );
   }
 
@@ -81,7 +89,7 @@ async function currentWeather(
   url.searchParams.set("longitude", String(longitude));
   url.searchParams.set(
     "current",
-    "temperature_2m,relative_humidity_2m,wind_speed_10m"
+    "temperature_2m,relative_humidity_2m,wind_speed_10m",
   );
 
   const response = await fetch(url, {
@@ -93,7 +101,7 @@ async function currentWeather(
   if (!response.ok) {
     return NextResponse.json(
       { error: "Weather provider unavailable." },
-      { status: 502 }
+      { status: 502 },
     );
   }
 
@@ -106,7 +114,7 @@ async function currentWeather(
   ) {
     return NextResponse.json(
       { error: "Invalid weather response." },
-      { status: 502 }
+      { status: 502 },
     );
   }
 
@@ -126,10 +134,38 @@ async function currentWeather(
   });
 }
 
-// Only explicitly registered providers can run.
-const providers = new Map<string, Handler>([
-  ["weather.current", currentWeather],
-]);
+async function healthCheck(): Promise<NextResponse> {
+  return NextResponse.json({
+    ok: true,
+    provider: "FORGEX",
+    action: "health",
+    status: "ok",
+    timestamp: new Date().toISOString(),
+  });
+}
+
+// Approved provider registry. Only entries listed here may run.
+// Arbitrary URLs or providers are never accepted.
+const providers: ProviderEntry[] = [
+  {
+    key: "weather.current",
+    name: "Open-Meteo",
+    action: "current",
+    description: "Current weather for given coordinates.",
+    handler: currentWeather,
+  },
+  {
+    key: "forgex.health",
+    name: "FORGEX",
+    action: "health",
+    description: "Local health check (no external call).",
+    handler: async () => healthCheck(),
+  },
+];
+
+const providerMap = new Map<string, ProviderEntry>(
+  providers.map((entry) => [entry.key, entry]),
+);
 
 export async function POST(request: Request) {
   const previewGatewayEnabled =
@@ -139,7 +175,7 @@ export async function POST(request: Request) {
   if (!previewGatewayEnabled) {
     return NextResponse.json(
       { error: "Preview gateway is unavailable." },
-      { status: 404 }
+      { status: 404 },
     );
   }
 
@@ -148,14 +184,14 @@ export async function POST(request: Request) {
   if (origin && origin !== new URL(request.url).origin) {
     return NextResponse.json(
       { error: "Origin not allowed." },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
   if (rateLimited(clientKey(request), 30, 60_000)) {
     return NextResponse.json(
       { error: "Too many preview requests. Try again later." },
-      { status: 429 }
+      { status: 429 },
     );
   }
 
@@ -167,7 +203,7 @@ export async function POST(request: Request) {
   ) {
     return NextResponse.json(
       { error: "JSON is required." },
-      { status: 415 }
+      { status: 415 },
     );
   }
 
@@ -177,7 +213,7 @@ export async function POST(request: Request) {
     if (raw.length > 1024) {
       return NextResponse.json(
         { error: "Request too large." },
-        { status: 413 }
+        { status: 413 },
       );
     }
 
@@ -190,7 +226,7 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { error: "Invalid request." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -202,28 +238,34 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { error: "Provider and action are required." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const handler = providers.get(
-      `${payload.provider}.${payload.action}`
-    );
+    const key = `${payload.provider}.${payload.action}`;
+    const entry = providerMap.get(key);
 
-    if (!handler) {
+    if (!entry) {
       return NextResponse.json(
-        { error: "Provider action not approved." },
-        { status: 403 }
+        {
+          error: "Provider action not approved.",
+          approved: providers.map((item) => item.key),
+        },
+        { status: 403 },
       );
     }
 
-    const result = await handler(payload);
+    const result = await entry.handler(payload);
     result.headers.set("Cache-Control", "no-store");
     return result;
   } catch {
     return NextResponse.json(
       { error: "Invalid request or provider unavailable." },
-      { status: 502 }
+      { status: 502 },
     );
   }
 }
+
+// Approved provider keys (for documentation):
+// - weather.current (Open-Meteo weather)
+// - forgex.health (local health check)

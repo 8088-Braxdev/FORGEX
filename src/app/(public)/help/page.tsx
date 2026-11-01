@@ -58,8 +58,9 @@ export default function HelpPage() {
             explicit user consent. They are disabled by default in production.
             An owner may enable them by setting FORGEX_ENABLE_PREVIEW_AI=1
             alongside GEMINI_API_KEY, with the built-in rate limits and
-            audit logging active. The guard is intentional and is not a
-            defect.
+            audit logging active. Only the approved providers (weather.current
+            and forgex.health) may run; arbitrary URLs are never accepted.
+            The guard is intentional and is not a defect.
             Imported projects can use the injected{" "}
             <code>window.forgexPreview.ai(prompt)</code> and{" "}
             <code>window.forgexPreview.weather(lat, lon)</code> helpers instead
