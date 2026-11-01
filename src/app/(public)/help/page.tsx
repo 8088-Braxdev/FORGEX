@@ -45,13 +45,22 @@ export default function HelpPage() {
 
         <section className={styles.legalSection}>
           <h2>
-            <MonitorPlay size={18} /> Static preview
+            <MonitorPlay size={18} /> Static preview and approved APIs
           </h2>
           <p>
             Preview supports static HTML, CSS, and JavaScript. It does not run
             npm, Node servers, or framework build steps. Local images and pages
             resolve relative to the project. Browser security limits apply to
             network requests.
+          </p>
+          <p>
+            Approved preview APIs (Gemini AI and Open-Meteo weather) require
+            explicit user consent and are available only in development builds.
+            Imported projects can use the injected{" "}
+            <code>window.forgexPreview.ai(prompt)</code> and{" "}
+            <code>window.forgexPreview.weather(lat, lon)</code> helpers instead
+            of inline onclick handlers. Other network requests are blocked by
+            the sandbox.
           </p>
         </section>
 

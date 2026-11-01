@@ -594,6 +594,37 @@ path: isAI ? '/api/preview/ai' : input
   });
 };
 
+window.forgexPreview = {
+  ai: function(prompt) {
+    return fetch(previewAiRoute || '/api/preview/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: prompt })
+    }).then(function(response) {
+      return response.json().then(function(data) {
+        if (!response.ok) throw new Error(data && data.error ? data.error : 'AI request failed.');
+        return data;
+      });
+    });
+  },
+  weather: function(latitude, longitude) {
+    return fetch('/api/preview/gateway', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider: 'weather',
+        action: 'current',
+        latitude: latitude,
+        longitude: longitude
+      })
+    }).then(function(response) {
+      return response.json().then(function(data) {
+        if (!response.ok) throw new Error(data && data.error ? data.error : 'Weather request failed.');
+        return data;
+      });
+    });
+  }
+};
 
     window.addEventListener('error',function(e){
       if(e.target&&e.target!==window){
