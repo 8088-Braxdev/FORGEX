@@ -5,6 +5,34 @@ export const runtime = "nodejs";
 
 const MODEL = "gemini-3.5-flash-lite";
 
+// In-memory rate limit (per server instance). Not a substitute for
+// production-grade quota controls; the route remains development-only.
+const requestTimestamps = new Map<string, number[]>();
+
+function clientKey(request: Request) {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "unknown"
+  );
+}
+
+function rateLimited(key: string, limit: number, windowMs: number) {
+  const now = Date.now();
+  const recent = (requestTimestamps.get(key) ?? []).filter(
+    (value) => now - value < windowMs,
+  );
+
+  if (recent.length >= limit) {
+    requestTimestamps.set(key, recent);
+    return true;
+  }
+
+  recent.push(now);
+  requestTimestamps.set(key, recent);
+  return false;
+}
+
 // Development-only guard. Not a production rate limiter.
 let lastRequestAt = 0;
 
@@ -33,6 +61,13 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Origin not allowed." },
       { status: 403 }
+    );
+  }
+
+  if (rateLimited(clientKey(request), 10, 60_000)) {
+    return NextResponse.json(
+      { error: "Too many preview requests. Try again later." },
+      { status: 429 }
     );
   }
 
@@ -129,6 +164,9 @@ export async function POST(request: Request) {
     );
 
     if (!response.ok) {
+      console.info("forgex preview ai provider rejected", {
+        status: response.status,
+      });
       return NextResponse.json(
         {
           error:
@@ -156,6 +194,7 @@ export async function POST(request: Request) {
       );
     }
 
+    console.info("forgex preview ai completed", { model: MODEL });
     return NextResponse.json(
       {
         ok: true,

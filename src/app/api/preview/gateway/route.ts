@@ -3,6 +3,32 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
+const requestTimestamps = new Map<string, number[]>();
+
+function clientKey(request: Request) {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "unknown"
+  );
+}
+
+function rateLimited(key: string, limit: number, windowMs: number) {
+  const now = Date.now();
+  const recent = (requestTimestamps.get(key) ?? []).filter(
+    (value) => now - value < windowMs,
+  );
+
+  if (recent.length >= limit) {
+    requestTimestamps.set(key, recent);
+    return true;
+  }
+
+  recent.push(now);
+  requestTimestamps.set(key, recent);
+  return false;
+}
+
 type Payload = Record<string, unknown>;
 
 type Handler = (
@@ -111,6 +137,13 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Origin not allowed." },
       { status: 403 }
+    );
+  }
+
+  if (rateLimited(clientKey(request), 30, 60_000)) {
+    return NextResponse.json(
+      { error: "Too many preview requests. Try again later." },
+      { status: 429 }
     );
   }
 
