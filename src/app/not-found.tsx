@@ -25,19 +25,22 @@ export default function NotFound() {
         </p>
 
         <div className={styles.actions}>
-          <Link href="/" className={styles.primary}>
+          <Link href="/studio" className={styles.primary}>
             <Home size={17} />
             Open IDE
           </Link>
 
-          <Link href="/welcome" className={styles.secondary}>
+          <Link href="/" className={styles.secondary}>
             <ArrowLeft size={17} />
             Back to Home
           </Link>
         </div>
 
         <footer>
-          BraxCode Digitals Foundation · FORGEX
+          <a href="https://braxcode.com" target="_blank" rel="noopener noreferrer">
+            BraxCode Digitals Foundation
+          </a>{" "}
+          · FORGEX
         </footer>
       </div>
     </main>

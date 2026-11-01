@@ -42,19 +42,19 @@ import ImpactPanel from "@/components/ImpactPanel";
 import TraceInspector from "@/components/TraceInspector";
 import ChangeSimulation from "@/components/ChangeSimulation";
 import MiniIDE from "@/components/MiniIDE";
-import GitHubPublish from "../components/GitHubPublish";
-import ChangeIntelligencePanel from "../components/ChangeIntelligencePanel";
+import GitHubPublish from "../../components/GitHubPublish";
+import ChangeIntelligencePanel from "../../components/ChangeIntelligencePanel";
 import {
   readWorkspaceDraft,
   saveWorkspaceDraft,
   clearWorkspaceDraft,
   type RepoIdentity,
-} from "../lib/workspaceDraft";
+} from "../../lib/workspaceDraft";
 import { useAppConfirm } from "@/components/AppConfirmProvider";
-import GitHubRepositoryPicker from "../components/GitHubRepositoryPicker";
-import { buildIntelligenceV2 } from "../lib/intelligence";
-import IntelligencePanel from "../components/IntelligencePanel";
-import { validateWorkspace } from "../lib/ideCore";
+import GitHubRepositoryPicker from "../../components/GitHubRepositoryPicker";
+import { buildIntelligenceV2 } from "../../lib/intelligence";
+import IntelligencePanel from "../../components/IntelligencePanel";
+import { validateWorkspace } from "../../lib/ideCore";
 import AppNotice from "@/components/AppNotice";
 type Section =
   | "workbench"
@@ -1190,11 +1190,9 @@ export default function Home() {
             </span>
           </div>
           <div className="topbar-right">
-            <span className="top-status">
-              <i /> LOCAL RULE ENGINE
+            <span className="top-status" aria-label="Analysis runs in your browser">
+              Browser analysis
             </span>
-            <span className="topbar-divider" />
-            <span className="version-tag">FORGEX 0.2</span>
           </div>
         </header>
         <div className="page-body">

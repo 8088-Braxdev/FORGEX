@@ -9,6 +9,8 @@ import { useAppConfirm } from "./AppConfirmProvider";
 type Status = {
   connected: boolean;
   login?: string;
+  name?: string | null;
+  avatarUrl?: string | null;
   configured: boolean;
 };
 
@@ -135,12 +137,13 @@ async function connect() {
     display: "inline-flex",
     alignItems: "center",
     gap: 7,
-    padding: "9px 12px",
-    border: "1px solid #527454",
+    padding: "9px 14px",
+    border: "1px solid #7ab86a",
     borderRadius: 7,
-    background: "#25402d",
-    color: "#cfffaa",
+    background: "#3a6b3a",
+    color: "#f1ffe4",
     fontSize: 12,
+    fontWeight: 600,
     cursor: "pointer",
   } as const;
 
@@ -163,9 +166,51 @@ async function connect() {
 
       {status?.connected ? (
         <>
-          <p style={{ fontSize: 12, color: "#b9fa77" }}>
-            Connected as @{status.login}
-          </p>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              marginTop: 8,
+            }}
+          >
+            {status.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={status.avatarUrl}
+                alt={status.login ? `${status.login} avatar` : "GitHub avatar"}
+                width={32}
+                height={32}
+                style={{
+                  borderRadius: "50%",
+                  border: "1px solid #30464f",
+                }}
+              />
+            ) : (
+              <span
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: "#25402d",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Github size={16} />
+              </span>
+            )}
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <strong style={{ fontSize: 13, color: "#e7f3f0" }}>
+                {status.name || status.login}
+              </strong>
+              <span style={{ fontSize: 11, color: "#b9fa77" }}>
+                Connected as @{status.login}
+              </span>
+            </div>
+          </div>
 
           <button
             type="button"
