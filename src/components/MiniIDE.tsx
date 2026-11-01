@@ -51,6 +51,7 @@ import { analyzeProject, type Finding, type SourceFile } from "@/lib/analyzer";
 import type { RepoIdentity } from "../lib/workspaceDraft";
 import AppNotice from "./AppNotice";
 import ApiRequestTester from "./ApiRequestTester";
+import ImageViewer from "./ImageViewer";
 import {
   buildPreview,
   exportBackup,
@@ -346,7 +347,9 @@ export default function MiniIDE({
   const [previewBinaryAssets, setPreviewBinaryAssets] = useState<
     PreviewBinaryAsset[]
   >([]);
-
+  const [imageViewerAsset, setImageViewerAsset] = useState<PreviewBinaryAsset | null>(
+    null,
+  );
   const [previewAiRoute, setPreviewAiRoute] = useState("/api/chat");
 
   const [previewAiEnabled, setPreviewAiEnabled] = useState(false);
@@ -2141,6 +2144,12 @@ export default function MiniIDE({
       }
       aria-label="FORGEX IDE workspace"
     >
+      {imageViewerAsset && (
+        <ImageViewer
+          asset={imageViewerAsset}
+          onClose={() => setImageViewerAsset(null)}
+        />
+      )}
       <header className="fxide-toolbar">
         <div className="fxide-identity">
           <span className="fxide-identity-mark">
@@ -3053,6 +3062,18 @@ export default function MiniIDE({
               <RefreshCw size={15} />
               <span>Refresh</span>
             </button>
+
+            {previewBinaryAssets.length > 0 && (
+              <button
+                type="button"
+                onClick={() =>
+                  setImageViewerAsset(previewBinaryAssets[0])
+                }
+                title="View imported images"
+              >
+                <span>Images ({previewBinaryAssets.length})</span>
+              </button>
+            )}
 
             <button
               type="button"
