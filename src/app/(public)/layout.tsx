@@ -28,7 +28,8 @@ export default function PublicLayout({
         </Link>
 
         <nav className={styles.nav} aria-label="Main navigation">
-          <Link href="/welcome#features">Features</Link>
+          <Link href="/#features">Features</Link>
+          <Link href="/help">Help</Link>
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
           <Link href="/studio" className={styles.navPrimary}>
@@ -55,6 +56,7 @@ export default function PublicLayout({
 
         <nav aria-label="Footer navigation">
           <Link href="/">Home</Link>
+          <Link href="/help">Help</Link>
           <Link href="/privacy">Privacy Policy</Link>
           <Link href="/terms">Terms of Service</Link>
           <a

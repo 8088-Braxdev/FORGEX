@@ -66,9 +66,29 @@ const sampleCode = [
   "});",
 ];
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "FORGEX DevStudio",
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: "Web",
+  description:
+    "Inspect real source code, investigate risks, and build with confidence.",
+  url: "https://forgex-gamma.vercel.app",
+  publisher: {
+    "@type": "Organization",
+    name: "BraxCode Digitals Foundation",
+    url: "https://braxcode.com",
+  },
+};
+
 export default function WelcomePage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <section className={styles.hero}>
         <div>
           <p className={styles.eyebrow}>
