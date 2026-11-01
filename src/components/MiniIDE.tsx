@@ -3395,6 +3395,23 @@ export default function MiniIDE({
                             Source hint: {record.source.split("\n")[0]}
                           </p>
                         )}
+                        {(() => {
+                          const related = files.find((file) =>
+                            record.source
+                              ? record.source.includes(file.path)
+                              : false,
+                          );
+                          if (!related) return null;
+                          return (
+                            <button
+                              type="button"
+                              className="fxide-link-button"
+                              onClick={() => selectFile(related.path)}
+                            >
+                              Open related source: {related.path}
+                            </button>
+                          );
+                        })()}
                         <p>
                           Duration includes time spent awaiting user permission.
                         </p>
