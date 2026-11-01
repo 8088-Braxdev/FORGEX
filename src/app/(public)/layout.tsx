@@ -13,7 +13,7 @@ export default function PublicLayout({
     <div className={styles.shell}>
       <header className={styles.topbar}>
         <Link
-          href="/welcome"
+          href="/"
           className={styles.brand}
           aria-label="FORGEX DevStudio home"
         >
@@ -31,7 +31,7 @@ export default function PublicLayout({
           <Link href="/welcome#features">Features</Link>
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
-          <Link href="/" className={styles.navPrimary}>
+          <Link href="/studio" className={styles.navPrimary}>
             Open IDE <ArrowUpRight size={15} />
           </Link>
         </nav>
@@ -41,14 +41,31 @@ export default function PublicLayout({
 
       <footer className={styles.footer}>
         <span>
-          © 2026 BraxCode Digitals Foundation.
-          <span className={styles.footerSub}> FORGEX DevStudio</span>
+          © 2026{" "}
+          <a
+            href="https://braxcode.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="BraxCode Digitals Foundation website"
+          >
+            BraxCode Digitals Foundation
+          </a>
+          .<span className={styles.footerSub}> FORGEX DevStudio</span>
         </span>
 
         <nav aria-label="Footer navigation">
-          <Link href="/welcome">Home</Link>
+          <Link href="/">Home</Link>
           <Link href="/privacy">Privacy Policy</Link>
           <Link href="/terms">Terms of Service</Link>
+          <a
+            href="https://wa.me/255618811359"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Contact FORGEX support on WhatsApp"
+          >
+            WhatsApp 0618811359
+          </a>
+          <a href="mailto:braxtonbruzzzy@gmail.com">Email support</a>
         </nav>
       </footer>
     </div>

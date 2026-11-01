@@ -9,7 +9,8 @@ export const metadata: Metadata = {
 };
 
 const contactEmail =
-  process.env.NEXT_PUBLIC_FORGEX_SUPPORT_EMAIL?.trim();
+  process.env.NEXT_PUBLIC_FORGEX_SUPPORT_EMAIL?.trim() ||
+  "braxtonbruzzzy@gmail.com";
 
 export default function PrivacyPage() {
   return (

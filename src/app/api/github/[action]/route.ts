@@ -171,7 +171,7 @@ async function callback(request: NextRequest) {
 
   const finish = (result: "connected" | "failed") => {
     const response = NextResponse.redirect(
-      new URL(`/?github=${result}`, cfg.origin),
+      new URL(`/studio?github=${result}`, cfg.origin),
       302,
     );
 
@@ -1476,12 +1476,16 @@ async function status(request: NextRequest) {
 
     const user = (await response.json()) as {
       login?: string;
+      name?: string | null;
+      avatar_url?: string;
     };
 
     return NextResponse.json(
       {
         connected: true,
         login: user.login ?? session.login,
+        name: user.name ?? null,
+        avatarUrl: user.avatar_url ?? null,
         configured,
       },
       { headers: { "Cache-Control": "no-store" } },
