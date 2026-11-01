@@ -1,0 +1,21 @@
+
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "rootDir": "..",
+    "outDir": "out",
+    "lib": ["ES2022"],
+    "types": ["node", "vscode"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "noEmitOnError": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "../src/lib/analyzer.ts"
+  ]
+}

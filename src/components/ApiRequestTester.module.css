@@ -1,0 +1,179 @@
+
+.root {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  padding: 16px;
+  overflow: auto;
+  background: #0e171c;
+  color: #e7f0ed;
+  font-size: 12px;
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.heading strong {
+  font-size: 14px;
+}
+
+.heading span,
+.description {
+  color: #9fb7b5;
+}
+
+.description {
+  margin: 0 0 17px;
+  line-height: 1.65;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.requestRow {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.requestRow input {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.root input,
+.root select,
+.root textarea {
+  color: #e4f0eb;
+  background: #14232b;
+  border: 1px solid #3b545b;
+  border-radius: 7px;
+  padding: 10px;
+  font: 12px var(--font-forgex-mono), monospace;
+}
+
+.root textarea {
+  width: 100%;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.requestRow button {
+  border: none;
+  border-radius: 7px;
+  padding: 10px 17px;
+  background: #b9fa77;
+  color: #112216;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.requestRow button:disabled {
+  opacity: 0.6;
+}
+
+.requestRow .cancel {
+  color: #e6eeeb;
+  background: #35434a;
+}
+
+.details {
+  border: 1px solid #334951;
+  border-radius: 7px;
+  padding: 10px;
+}
+
+.details summary {
+  color: #b9fa77;
+  cursor: pointer;
+  margin-bottom: 7px;
+}
+
+.bodySection {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.bodySection label {
+  color: #aac1ba;
+}
+
+.response {
+  margin-top: 18px;
+  border: 1px solid #38514c;
+  border-radius: 9px;
+  overflow: hidden;
+}
+
+.responseHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 15px;
+  padding: 11px 13px;
+  background: #192a2c;
+  color: #a7c0b6;
+}
+
+.statusOk {
+  color: #b9fa77;
+}
+
+.statusError,
+.error {
+  color: #ffb2a8;
+}
+
+.error {
+  margin: 13px 0;
+  line-height: 1.6;
+}
+
+.response pre {
+  margin: 0;
+  padding: 15px;
+  color: #d8e9e6;
+  background: #10191f;
+  overflow: auto;
+  max-height: 320px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 11px/1.7 var(--font-forgex-mono), monospace;
+}
+
+.warning {
+  padding: 9px 13px;
+  margin: 0;
+  color: #ecd79b;
+}
+
+@media (max-width: 580px) {
+  .root {
+    padding: 10px;
+  }
+
+  .heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .requestRow select {
+    min-width: 85px;
+  }
+
+  .requestRow input {
+    flex-basis: 100%;
+    order: -1;
+  }
+}

@@ -1,0 +1,31 @@
+
+{
+  "name": "forgex-live-companion",
+  "displayName": "FORGEX Live Companion",
+  "description": "Live on-device diagnostics and workspace intelligence by FORGEX",
+  "publisher": "braxcode",
+  "version": "0.4.0",
+  "private": true,
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": ["Linters", "Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension/src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "forgex.scanWorkspace",
+        "title": "FORGEX: Scan Entire Workspace"
+      },
+      {
+        "command": "forgex.showFindings",
+        "title": "FORGEX: Show Findings"
+      },
+      {
+        "command": "forgex.toggle",
+        "title": "FORGEX: Toggle Live Scanning"
+      }
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+// Run with `npm run test:engine` after npm install. Test only the local rule engine;
+// no source code is executed and no network access is needed.
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const ts=require('typescript');
+const original=fs.readFileSync(path.join(__dirname,'../src/lib/analyzer.ts'),'utf8');
+const code=ts.transpileModule(original,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText;
+const mod={exports:{}};
+new Function('module','exports',code)(mod,mod.exports);
+const {analyze,analyzeProject,RULE_CATALOG}=mod.exports;
+assert.ok(RULE_CATALOG.length>=30,'expected at least 30 documented rules');
+const sample=analyzeProject([{path:'app.js',content:'eval(userInput);\nvar total = 5;\nconsole.log(total);'},{path:'service.py',content:'requests.get(url, verify=False)\nexcept:'}]);
+assert.equal(sample.scannedFiles,2);
+assert.ok(sample.findings.some(v=>v.ruleId==='JS001'));
+assert.ok(sample.findings.some(v=>v.ruleId==='PY005'));
+assert.ok(sample.score<100);
+assert.deepEqual(analyzeProject([{path:'clean.ts',content:'const status: string = "ok";'}]).findings,[]);
+assert.equal(analyzeProject([{path:'clean.ts',content:'const status: string = "ok";'}]).score,100);
+assert.ok(!analyze('eval(value)','javascript','a.js',['JS001']).some(f=>f.ruleId==='JS001'));
+const replace=analyze('var value = 2;','javascript','main.js').find(f=>f.ruleId==='JS011');
+assert.equal(replace.replacement,'let value = 2;');
+console.log(`✓ FORGEX engine passed: ${RULE_CATALOG.length} rules, multi-file, security, clean scan, toggles, patch`);

@@ -1,0 +1,1435 @@
+
+/* FORGEX IDE v0.9 — replaces the previous mini-ide.css entirely. */
+#forgex-mini-ide {scroll-margin-top:24px}
+.fxide-v09 {
+  --fxide-base: #0d141a;
+  --fxide-raised: #131e25;
+  --fxide-border: #31444e;
+  --fxide-text: #edf2f4;
+  --fxide-muted: #9db0b9;
+  --fxide-accent: #b9fa77;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  height: 640px;
+  min-width: 0;
+  margin: 20px 0;
+  overflow: hidden;
+  background: var(--fxide-base);
+  border: 1px solid var(--fxide-border);
+  border-radius: 11px;
+  color: var(--fxide-text);
+  font-family: var(--sans, system-ui, sans-serif);
+}
+.fxide-v09 *, .fxide-v09 *::before, .fxide-v09 *::after {box-sizing:border-box}
+.fxide-v09 button {font-family:inherit;cursor:pointer}
+.fxide-v09 button:disabled {opacity:.45;cursor:not-allowed}
+.fxide-v09 button:focus-visible,.fxide-v09 input:focus-visible,.fxide-v09 textarea:focus-visible,.fxide-v09 a:focus-visible {outline:2px solid var(--fxide-accent);outline-offset:2px}
+.fxide-v09 .fxide-toolbar {position:relative;z-index:8;min-height:62px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:9px 13px;border-bottom:1px solid var(--fxide-border);background:#111b22}
+.fxide-v09 .fxide-identity {display:flex;align-items:center;gap:10px;min-width:0;flex-shrink:0}
+.fxide-v09 .fxide-identity-mark {display:flex;align-items:center;justify-content:center;background:var(--fxide-accent);color:#111b14;width:34px;height:34px;border-radius:8px}
+.fxide-v09 .fxide-identity strong {display:block;font-size:13px;letter-spacing:-.02em}
+.fxide-v09 .fxide-identity small {display:block;font-size:10px;color:var(--fxide-muted);margin-top:3px}
+.fxide-v09 .fxide-primary-actions {display:flex;align-items:center;gap:6px;min-width:0}
+.fxide-v09 .fxide-primary-actions>button,.fxide-v09 .fxide-menu-container>button {white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid #354a55;border-radius:7px;background:#1a2831;color:#e1eef0;min-height:36px;padding:7px 10px;font-size:11px}
+.fxide-v09 .fxide-primary-actions>button:hover:not(:disabled),.fxide-v09 .fxide-menu-container>button:hover {border-color:#a6df74}
+.fxide-v09 .fxide-primary-actions>button:nth-child(3) {background:#b9fa77;border-color:#b9fa77;color:#122013;font-weight:700}
+.fxide-v09 .fxide-menu-container {position:relative}
+.fxide-v09 .fxide-mobile-side-modes {display:none}
+.fxide-v09 .fxide-save-menu {position:absolute;top:calc(100% + 7px);right:0;width:min(270px,80vw);padding:7px;background:#1b2932;border:1px solid #3e5560;border-radius:9px;box-shadow:0 16px 35px #000a;display:grid;z-index:50}
+.fxide-v09 .fxide-save-menu button {display:flex;align-items:center;text-align:left;gap:10px;background:none;color:#e5eff1;border:0;border-radius:5px;min-height:40px;padding:8px 11px;font-size:12px}
+.fxide-v09 .fxide-save-menu button:hover {background:#294035;color:#cfffaa}
+.fxide-v09 .fxide-body {flex:1;min-height:0;min-width:0;display:grid;grid-template-columns:44px minmax(155px,var(--fxide-explorer-width,218px)) minmax(0,1fr) minmax(240px,34%);grid-template-rows:minmax(0,1fr) 178px}
+.fxide-v09 .fxide-activity {grid-column:1;grid-row:1/3;min-width:0;min-height:0;background:#101a21;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0;border-right:1px solid var(--fxide-border)}
+.fxide-v09 .fxide-activity button {width:38px;height:41px;border:0;border-left:2px solid transparent;background:none;color:#91aab5;display:flex;align-items:center;justify-content:center}
+.fxide-v09 .fxide-activity button.active {border-left-color:var(--fxide-accent);color:var(--fxide-accent);background:#223328}
+.fxide-v09 .fxide-activity button:hover {color:#e3f4dc}
+.fxide-v09 .fxide-activity-spacer {flex:1}
+.fxide-v09 .fxide-sidebar {grid-column:2;grid-row:1/3;min-width:0;min-height:0;display:flex;flex-direction:column;position:relative;background:#111a20;border-right:1px solid var(--fxide-border)}
+.fxide-v09 .fxide-sidebar-header {display:flex;justify-content:space-between;align-items:center;padding:13px 12px 8px;gap:5px;min-height:44px}
+.fxide-v09 .fxide-sidebar-header strong {font:600 10px var(--mono,monospace);letter-spacing:.7px;color:#b4c4ca}
+.fxide-v09 .fxide-sidebar-header button {border:0;background:none;color:#b4c4ca;display:grid;place-items:center;width:32px;height:32px}
+.fxide-v09 .fxide-sidebar-search {margin:5px 9px 10px;padding:8px 10px;background:#0d151b;border:1px solid #344954;border-radius:6px;display:flex;align-items:center;gap:6px;color:#a7bbc2}
+.fxide-v09 .fxide-sidebar-search input {width:100%;min-width:0;outline:0;border:0;background:none;color:#e6f1f4;font-size:12px}
+.fxide-v09 .fxide-scroll {flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:3px 6px 12px;scrollbar-width:thin}
+.fxide-v09 .fxide-folder,.fxide-v09 .fxide-file,.fxide-v09 .fxide-search-file {display:flex;align-items:center;gap:6px;min-height:33px;width:100%;background:none;border:0;border-radius:5px;color:#b7c7ce;padding:7px 9px;text-align:left;font:11px/1.45 var(--mono,monospace)}
+.fxide-v09 .fxide-folder {font-weight:600;color:#d1dde0}
+.fxide-v09 .fxide-file span {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fxide-v09 .fxide-file.current,.fxide-v09 .fxide-file:hover,.fxide-v09 .fxide-search-file:hover {background:#213a2b;color:#d2ffaa}
+.fxide-v09 .fxide-file i,.fxide-v09 .fxide-tab i {width:6px;height:6px;background:#b9fa77;border-radius:50%;flex-shrink:0}
+.fxide-v09 .fxide-search-file {overflow-wrap:anywhere}
+.fxide-v09 .fxide-muted {color:#8fa5b2;font-size:11px;line-height:1.65;padding:11px}
+.fxide-v09 .fxide-resize-handle {position:absolute;right:-3px;top:0;bottom:0;width:6px;cursor:col-resize;z-index:5}
+.fxide-v09 .fxide-search-results button {display:flex;flex-direction:column;align-items:flex-start;gap:5px;width:100%;border:0;background:transparent;color:#cfdee5;text-align:left;border-bottom:1px solid #2b404a;padding:9px 7px}
+.fxide-v09 .fxide-search-results button:hover {background:#23362a}
+.fxide-v09 .fxide-search-results b {color:#b9fa77;font-size:10px;overflow-wrap:anywhere}
+.fxide-v09 .fxide-search-results span {color:#a2b4bf;font:10px/1.5 var(--mono,monospace);overflow-wrap:anywhere}
+.fxide-v09 .fxide-language-list {padding:10px}
+.fxide-v09 .fxide-language-item {margin:15px 2px}
+.fxide-v09 .fxide-language-item>div:first-child {display:flex;justify-content:space-between;gap:6px;font-size:11px}
+.fxide-v09 .fxide-language-item span {color:#9eafb8;font-size:10px}
+.fxide-v09 .fxide-language-track {height:5px;border-radius:5px;overflow:hidden;background:#2c4149;margin-top:8px}
+.fxide-v09 .fxide-language-track i {display:block;height:100%;background:#b9fa77;border-radius:5px}
+.fxide-v09 .fxide-insights {padding:13px 9px}
+.fxide-v09 .fxide-insight-score {border:1px solid #3c5650;background:#17281e;border-radius:8px;padding:13px;margin-bottom:10px;display:flex;justify-content:space-between;gap:7px;font-size:11px}
+.fxide-v09 .fxide-insight-score strong {color:#caff9e}
+.fxide-v09 .fxide-insights button {width:100%;display:flex;gap:7px;align-items:center;min-height:41px;padding:10px;color:#d5e4eb;background:transparent;border:0;border-bottom:1px solid #2e424b;text-align:left;font-size:11px}
+.fxide-v09 .fxide-insights button>svg:last-child {margin-left:auto}
+.fxide-v09 .fxide-insights button:hover:not(:disabled) {background:#213629;color:#b9fa77}
+.fxide-v09 .fxide-editor {grid-column:3;grid-row:1;min-width:0;min-height:0;display:flex;flex-direction:column;border-right:1px solid var(--fxide-border)}
+.fxide-v09 .fxide-tabs {flex-shrink:0;min-height:41px;display:flex;align-items:stretch;min-width:0;overflow-x:auto;background:#101b22;border-bottom:1px solid var(--fxide-border);scrollbar-width:thin}
+.fxide-v09 .fxide-tab {max-width:190px;min-width:120px;flex-shrink:0;display:flex;align-items:center;border-right:1px solid #2e4049;color:#a8bbc3}
+.fxide-v09 .fxide-tab.current {color:#eef5f2;background:#18272e;border-top:2px solid #b9fa77}
+.fxide-v09 .fxide-tab>button:first-child {flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:none;border:0;color:inherit;display:flex;align-items:center;gap:7px;text-align:left;padding:8px 7px;font:11px var(--mono,monospace)}
+.fxide-v09 .fxide-tab-close {width:26px;height:29px;display:grid;place-items:center;flex-shrink:0;color:#9fb4bd;border:0;background:none}
+.fxide-v09 .fxide-tab-close:hover {color:#fff;background:#43515a}
+.fxide-v09 .fxide-tab-empty {color:#8ba2ae;font-size:11px;padding:12px}
+.fxide-v09 .fxide-edit-area {flex:1;min-height:0;min-width:0;position:relative;background:#0e1419}
+.fxide-v09 .fxide-mobile-code {width:100%;height:100%;min-height:0;display:block;border:0;background:#0d151a;color:#e9f4ec;outline:0;padding:14px;resize:none;font:14px/1.65 ui-monospace,Consolas,monospace;tab-size:2;white-space:pre;overflow:auto;overscroll-behavior:contain}
+.fxide-v09 .fxide-preview {grid-column:4;grid-row:1;min-width:0;min-height:0;display:flex;flex-direction:column;background:#111a20}
+.fxide-v09 .fxide-preview iframe {flex:1;border:0;width:100%;min-width:0;min-height:0;background:#fff}
+.fxide-v09 .fxide-console {grid-column:3/5;grid-row:2;min-width:0;min-height:0;display:flex;flex-direction:column;border-top:1px solid var(--fxide-border);background:#0c1318}
+.fxide-v09 .fxide-pane-header {height:38px;min-height:38px;display:flex;align-items:center;gap:10px;padding:0 10px;border-bottom:1px solid #2c4049;background:#141f27}
+.fxide-v09 .fxide-pane-header strong {display:inline-flex;align-items:center;gap:7px;flex-shrink:0;color:#d7e2e7;font:600 10px var(--mono,monospace)}
+.fxide-v09 .fxide-pane-header>span {flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#93aab6;font-size:10px}
+.fxide-v09 .fxide-pane-header button {border:1px solid #3b4c55;background:#1b2932;color:#d9e8ea;border-radius:5px;display:inline-flex;align-items:center;gap:5px;padding:6px 8px;font-size:10px;min-height:29px}
+.fxide-v09 .fxide-console-list {flex:1;min-height:0;overflow:auto;padding:7px 12px;scrollbar-width:thin}
+.fxide-v09 .fxide-log {display:flex;gap:9px;align-items:flex-start;padding:7px 3px;border-bottom:1px solid #1c2c34;min-width:0}
+.fxide-v09 .fxide-log span {text-transform:uppercase;flex-shrink:0;width:35px;color:#9fb5be;font:600 9px var(--mono,monospace)}
+.fxide-v09 .fxide-log code {white-space:pre-wrap;overflow-wrap:anywhere;color:#d7e4e9;font:11px/1.6 var(--mono,monospace)}
+.fxide-v09 .fxide-log-warn span,.fxide-v09 .fxide-log-warn code {color:#f0d084}
+.fxide-v09 .fxide-log-error span,.fxide-v09 .fxide-log-error code {color:#ffaaa4}
+.fxide-v09 .fxide-blank {height:100%;display:flex;justify-content:center;align-items:center;gap:9px;flex-direction:column;text-align:center;padding:22px;color:#a5b9c3}
+.fxide-v09 .fxide-blank strong {color:#edf3f4;font-size:14px}
+.fxide-v09 .fxide-blank p {max-width:280px;font-size:12px;line-height:1.65}
+.fxide-v09 .fxide-blank button {border:1px solid #456443;background:#263a2b;color:#d5fcb6;border-radius:7px;padding:10px 14px;font-size:12px}
+.fxide-v09 .fxide-hide-preview .fxide-preview {display:none}
+.fxide-v09.fxide-hide-preview .fxide-preview {display:none}
+.fxide-v09.fxide-hide-preview .fxide-editor {grid-column:3/5}
+.fxide-v09.fxide-hide-console .fxide-console {display:none}
+.fxide-v09.fxide-hide-console .fxide-editor,.fxide-v09.fxide-hide-console .fxide-preview {grid-row:1/3}
+.fxide-v09 .fxide-mobile-nav {display:none}
+.fxide-v09 .fxide-statusbar {min-height:29px;display:flex;align-items:center;gap:16px;padding:5px 11px;background:#233b30;border-top:1px solid #42684b;color:#d0e9d0;flex-wrap:nowrap;overflow:hidden;white-space:nowrap;font:10px var(--mono,monospace)}
+.fxide-v09 .fxide-statusbar>span,.fxide-v09 .fxide-statusbar>button {display:flex;align-items:center;gap:5px;flex-shrink:0}
+.fxide-v09 .fxide-status-note {color:#e5d79c}
+.fxide-v09 .fxide-status-spacer {flex:1;min-width:0}
+.fxide-v09 .fxide-statusbar button {border:0;background:none;color:inherit;font-size:10px;padding:0}
+.fxide-v09 .fxide-toast {position:absolute;right:12px;bottom:39px;z-index:40;display:flex;align-items:flex-start;gap:12px;padding:13px 15px;background:#243a2c;border:1px solid #527a59;border-radius:8px;box-shadow:0 16px 32px #0009;color:#e3fbd5;max-width:min(420px,calc(100% - 24px));font-size:12px;line-height:1.6}
+.fxide-v09 .fxide-toast button {border:0;background:none;color:inherit;display:grid;place-items:center;padding:3px}
+.fxide-v09 .fxide-dialog-backdrop {position:absolute;inset:0;z-index:70;display:flex;justify-content:center;align-items:center;background:#050b10bb;padding:14px}
+.fxide-v09 .fxide-dialog {width:min(430px,100%);background:#1a2931;border:1px solid #455e68;border-radius:11px;padding:20px;box-shadow:0 18px 40px #0009}
+.fxide-v09 .fxide-dialog h3 {font-size:17px;margin:0 0 8px}
+.fxide-v09 .fxide-dialog p {font-size:12px;color:#a3b7c2}
+.fxide-v09 .fxide-dialog input {margin:15px 0;display:block;width:100%;min-height:44px;border:1px solid #536a76;border-radius:7px;background:#0f1921;color:#f2f7f5;padding:11px;font-size:14px}
+.fxide-v09 .fxide-dialog>div {display:flex;justify-content:flex-end;gap:8px}
+.fxide-v09 .fxide-dialog button {min-height:41px;padding:10px 14px;background:#2b3d44;border:1px solid #49606a;color:#e2eced;border-radius:7px}
+.fxide-v09 .fxide-dialog button[type=submit] {background:#b9fa77;color:#142014;font-weight:700}
+.fxide-v09.fxide-expanded {position:fixed;inset:0;z-index:8000;margin:0;width:100%;height:100dvh;max-height:100dvh;border-radius:0}
+.fxide-v09.fxide-expanded .fxide-body {flex:1}
+/* Parent Workbench still handles findings, while Mini IDE is the only code editor. */
+.workbench-grid > .editor-panel {display:none}
+.workbench-grid {grid-template-columns:minmax(0,1fr)}
+@media (max-width:1150px) and (min-width:821px) {
+  .fxide-v09 .fxide-body {grid-template-columns:44px minmax(160px,var(--fxide-explorer-width,218px)) minmax(0,1fr);grid-template-rows:minmax(0,1fr) 180px 155px}
+  .fxide-v09 .fxide-editor {grid-column:3;grid-row:1}
+  .fxide-v09 .fxide-preview {grid-column:3;grid-row:2;border-top:1px solid #31444e}
+  .fxide-v09 .fxide-console {grid-column:3;grid-row:3}
+  .fxide-v09 .fxide-hide-preview .fxide-editor {grid-column:3}
+  .fxide-v09.fxide-hide-preview .fxide-editor {grid-column:3;grid-row:1/3}
+  .fxide-v09.fxide-hide-console .fxide-preview {grid-row:2/4}
+  .fxide-v09 .fxide-sidebar,.fxide-v09 .fxide-activity {grid-row:1/4}
+}
+@media (max-width:820px) {
+  .fxide-v09 {height:min(720px,86dvh);min-height:450px;border-radius:8px;margin:14px 0}
+  .fxide-v09 .fxide-toolbar {display:flex;align-items:stretch;flex-direction:column;gap:8px;min-height:0;padding:10px}
+  .fxide-v09 .fxide-identity {height:34px}
+  .fxide-v09 .fxide-primary-actions {overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;gap:7px}
+  .fxide-v09 .fxide-primary-actions>button,.fxide-v09 .fxide-menu-container>button {flex-shrink:0;min-height:43px;padding:9px 12px;font-size:12px}
+  .fxide-v09 .fxide-body {display:flex;flex:1;min-width:0;min-height:0;overflow:hidden}
+  .fxide-v09 .fxide-activity {display:none}
+  .fxide-v09 .fxide-sidebar,.fxide-v09 .fxide-editor,.fxide-v09 .fxide-preview,.fxide-v09 .fxide-console {display:none;flex:1;min-width:0;min-height:0;width:100%;border:0;grid-column:auto;grid-row:auto}
+  .fxide-v09 .fxide-sidebar.fxide-mobile-active,.fxide-v09 .fxide-editor.fxide-mobile-active,.fxide-v09 .fxide-preview.fxide-mobile-active,.fxide-v09 .fxide-console.fxide-mobile-active {display:flex}
+  .fxide-v09.fxide-hide-preview .fxide-preview.fxide-mobile-active,.fxide-v09.fxide-hide-console .fxide-console.fxide-mobile-active {display:flex}
+  .fxide-v09 .fxide-resize-handle {display:none}
+  .fxide-v09 .fxide-mobile-nav {min-height:59px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:#121e26;border-top:1px solid var(--fxide-border)}
+  .fxide-v09 .fxide-mobile-nav button {min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;border-top:2px solid transparent;color:#91a9b6;background:none;text-transform:capitalize;font-size:10px;min-height:58px}
+  .fxide-v09 .fxide-mobile-nav button.active {border-top-color:#b9fa77;color:#b9fa77;background:#203127}
+  .fxide-v09 .fxide-tabs {min-height:42px}
+  .fxide-v09 .fxide-mobile-side-modes {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:6px 10px 10px}
+  .fxide-v09 .fxide-mobile-side-modes button {min-height:42px;color:#aebfc9;background:#15242a;border:1px solid #364f5a;border-radius:6px;font-size:12px}
+  .fxide-v09 .fxide-mobile-side-modes button.active {background:#25402e;border-color:#88b969;color:#d7ffbb}
+  .fxide-v09 .fxide-sidebar .fxide-scroll {padding-bottom:16px}
+  .fxide-v09 .fxide-file,.fxide-v09 .fxide-folder,.fxide-v09 .fxide-search-file {min-height:43px;font-size:13px}
+  .fxide-v09 .fxide-mobile-code {font-size:16px;line-height:1.6;padding:13px}
+  .fxide-v09 .fxide-pane-header {min-height:45px}
+  .fxide-v09 .fxide-statusbar {min-height:28px;padding:5px 9px;gap:8px;font-size:9px}
+  .fxide-v09 .fxide-statusbar span:nth-child(3),.fxide-v09 .fxide-status-note,.fxide-v09 .fxide-statusbar button {display:none}
+  .fxide-v09 .fxide-toast {left:8px;right:8px;bottom:95px;max-width:none;padding:12px}
+  .fxide-v09 .fxide-save-menu {position:fixed;z-index:100;top:120px;right:12px;max-height:55dvh;overflow:auto}
+  .fxide-v09.fxide-expanded {height:100dvh;min-height:0;inset:0;margin:0;border-radius:0}
+}
+@media (max-width:380px) {
+  .fxide-v09 .fxide-identity small {font-size:9px}
+  .fxide-v09 .fxide-primary-actions>button span,.fxide-v09 .fxide-menu-container>button span {display:none}
+  .fxide-v09 .fxide-primary-actions>button,.fxide-v09 .fxide-menu-container>button {min-width:45px}
+  .fxide-v09 .fxide-primary-actions {justify-content:space-between}
+  .fxide-v09 .fxide-mobile-nav button {font-size:9px}
+}
+@media (prefers-reduced-motion:reduce) { .fxide-v09 * {scroll-behavior:auto!important;transition-duration:0s!important} }
+
+
+/* Stable resizers, terminal, tabs and diagnostics */
+.fxide-v10 .fxide-preview {position:relative}
+.fxide-v10 .fxide-preview-resizer {position:absolute;z-index:6;left:-5px;top:0;bottom:0;width:10px;cursor:col-resize;touch-action:none}
+.fxide-v10 .fxide-console {position:relative}
+.fxide-v10 .fxide-console-resizer {position:absolute;z-index:6;top:-5px;left:0;right:0;height:10px;cursor:row-resize;touch-action:none}
+.fxide-v10 .fxide-preview-resizer:hover,.fxide-v10 .fxide-console-resizer:hover {background:rgba(185,250,119,.18)}
+.fxide-v10 .fxide-log-detail {display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.fxide-v10 .fxide-log-detail code {word-break:break-word}
+.fxide-v10 .fxide-log-detail small {font:10px var(--mono,monospace);color:#9fb9c2;overflow-wrap:anywhere}
+.fxide-v10 .fxide-log-detail p {font-size:11px;line-height:1.6;margin:2px 0 0;color:#c3d8b3}
+.fxide-v10 .fxide-menu-container>button {min-height:36px}
+.fxide-v10 .fxide-primary-actions {flex-wrap:nowrap}
+
+.fxide-v10:not(.fxide-expanded) {height:var(--fxide-height,640px)}
+.fxide-v10 .fxide-height-resizer {position:absolute;z-index:15;bottom:1px;left:calc(50% - 48px);width:96px;height:9px;cursor:row-resize;touch-action:none;border-top:2px solid #65846e;border-radius:3px}
+.fxide-v10 .fxide-height-resizer:hover {border-top-color:#b9fa77}
+@media (max-width:820px) {
+  .fxide-v10:not(.fxide-expanded) {height:min(720px,86dvh)}
+  .fxide-v10 .fxide-height-resizer {display:none}
+}
+
+
+.fxide-v11 .fxide-tabbar {display:flex;align-items:center;min-height:39px;max-height:39px;min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;background:#101b21;border-bottom:1px solid #344a51;}
+.fxide-v11 .fxide-editor-tab {min-width:0;max-width:220px;flex:0 0 auto;display:flex;align-items:center;height:39px;border-right:1px solid #33464e;color:#b5c7cf;}
+.fxide-v11 .fxide-editor-tab.current {background:#20352a;color:#eaffde;box-shadow:inset 0 2px #b9fa77;}
+.fxide-v11 .fxide-editor-tab>button:first-child {min-width:0;display:flex;align-items:center;gap:7px;padding:0 10px;height:100%;border:0;background:transparent;color:inherit;font:11px var(--mono,monospace);}
+.fxide-v11 .fxide-editor-tab>button:first-child span {overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:130px;}
+.fxide-v11 .fxide-tab-x,.fxide-v11 .fxide-delete-file {width:28px;height:28px;display:grid;place-items:center;flex-shrink:0;background:transparent;border:0;color:#a1b5c0;border-radius:6px;}
+.fxide-v11 .fxide-tab-x:hover,.fxide-v11 .fxide-delete-file:hover {background:#3d3435;color:#ffe0d9;}
+.fxide-v11 .fxide-editor-tab i {width:6px;height:6px;border-radius:50%;background:#b9fa77;}
+.fxide-v11 .fxide-tab-spacer {flex:1;min-width:4px;}
+.fxide-v11 .fxide-tab-empty {font-size:11px;color:#a3b9c2;padding:12px;}
+.fxide-v11 .fxide-tab-language {color:#9bb5c0;font-size:10px;padding:0 12px;white-space:nowrap;}
+.fxide-v11 .fxide-delete-file {margin-right:5px;}
+.fxide-v11 .fxide-edit-area {min-width:0;min-height:0;position:relative;}
+.fxide-v11 .fxide-primary-actions {gap:5px;}
+.fxide-v11 .fxide-primary-actions>button,.fxide-v11 .fxide-primary-actions .fxide-menu-container>button {font-size:11px;}
+.fxide-v11 .fxide-console-modes {display:flex;align-items:center;gap:5px;min-width:0;flex:1;}
+.fxide-v11 .fxide-console-modes button {background:transparent;border:0;color:#9baeb9;padding:6px 8px;border-radius:5px;font-size:10px;white-space:nowrap;}
+.fxide-v11 .fxide-console-modes button.active {color:#c9fbaa;background:#2a4232;}
+.fxide-v11 .fxide-console-header {gap:7px;}
+.fxide-v11 .fxide-problem {display:flex;align-items:start;gap:8px;width:100%;border:0;border-bottom:1px solid #263a44;padding:8px 9px;background:transparent;text-align:left;color:#d7e2e8;}
+.fxide-v11 .fxide-problem:hover {background:#1c3135;}
+.fxide-v11 .fxide-problem>span {font:10px var(--mono,monospace);color:#e7a46c;}
+.fxide-v11 .fxide-problem.fxide-log-error>span {color:#f2a1a1;}
+.fxide-v11 .fxide-problem>div {display:flex;flex-direction:column;gap:5px;min-width:0;}
+.fxide-v11 .fxide-problem code {white-space:pre-wrap;overflow-wrap:anywhere;font:11px var(--mono,monospace);}
+.fxide-v11 .fxide-problem small {font:10px var(--mono,monospace);color:#91b3c3;}
+.fxide-v11 .fxide-source-link {background:#243e30;border:1px solid #486848;border-radius:5px;color:#c7ffa5;padding:6px 9px;align-self:flex-start;font-size:10px;}
+.fxide-v11 .fxide-terminal {display:flex;flex-direction:column;flex:1;min-height:0;background:#0e181e;color:#b5eaa1;font:11px/1.6 var(--mono,monospace);}
+.fxide-v11 .fxide-terminal-history {flex:1;min-height:0;overflow:auto;padding:9px 12px;}
+.fxide-v11 .fxide-terminal-history pre {white-space:pre-wrap;overflow-wrap:anywhere;margin:0;font:inherit;}
+.fxide-v11 .fxide-terminal-prompt {display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid #344951;}
+.fxide-v11 .fxide-terminal-prompt label {color:#b9fa77;white-space:nowrap;}
+.fxide-v11 .fxide-terminal-prompt input {background:transparent;border:0;outline:0;flex:1;min-width:0;color:#e8f5eb;font:inherit;}
+.fxide-v11 .fxide-command-backdrop {position:absolute;inset:0;z-index:100;background:#0710158c;display:flex;align-items:flex-start;justify-content:center;padding:70px 12px 10px;}
+.fxide-v11 .fxide-command-box {width:min(520px,100%);max-height:70%;overflow:auto;background:#17252d;border:1px solid #5a747b;border-radius:10px;box-shadow:0 22px 45px #000b;padding:7px;}
+.fxide-v11 .fxide-command-search {display:flex;align-items:center;gap:8px;border-bottom:1px solid #344951;padding:8px 10px;margin-bottom:6px;color:#b9fa77;}
+.fxide-v11 .fxide-command-search input {flex:1;min-width:0;background:transparent;border:0;outline:0;color:#eaffdf;font-size:13px;}
+.fxide-v11 .fxide-command-box>button {width:100%;padding:9px 10px;display:flex;align-items:center;justify-content:space-between;border:0;border-radius:6px;background:transparent;color:#dcece8;font-size:12px;}
+.fxide-v11 .fxide-command-box>button:hover {background:#284331;}
+.fxide-v11 .fxide-preview .fxide-pane-header button[aria-pressed] {border:1px solid #45694b;border-radius:5px;padding:6px;color:#b9fa77;background:#1e3027;}
+.fxide-v11 .fxide-preview .fxide-pane-header button[aria-pressed="false"] {color:#aabec9;background:transparent;border-color:#384f55;}
+@media (max-width:820px) {
+  .fxide-v11 .fxide-body,.fxide-v11.fxide-no-explorer .fxide-body {display:flex;}
+  .fxide-v11 .fxide-tabbar {max-width:100%;}
+  .fxide-v11 .fxide-primary-actions>button span,.fxide-v11 .fxide-menu-container>button span {display:none;}
+  .fxide-v11 .fxide-preview .fxide-pane-header {gap:4px;}
+  .fxide-v11 .fxide-preview .fxide-pane-header>span {display:none;}
+  .fxide-v11 .fxide-console-modes {overflow:auto;}
+}
+.fxide-v11 .fxide-problem.fxide-signal {border-left:2px solid #779c58;}
+.fxide-v11 .fxide-problem.fxide-signal>span {color:#b9fa77;}
+.fxide-v11 .fxide-problem.fxide-signal>div>small:last-child {color:#b7d4ad;line-height:1.45;}
+.fxide-v11 .fxide-mobile-editor {height:100%;min-height:0;display:flex;min-width:0;overflow:hidden;}
+.fxide-v11 .fxide-mobile-gutter {width:44px;flex-shrink:0;overflow:hidden;padding:13px 5px 13px 0;text-align:right;background:#111b22;border-right:1px solid #273842;color:#718892;font:14px/1.65 ui-monospace,Consolas,monospace;user-select:none;}
+.fxide-v11 .fxide-mobile-gutter span {display:block;height:1.65em;}
+.fxide-v11 .fxide-mobile-editor .fxide-mobile-code {flex:1;width:0;min-width:0;}
+@media (max-width:820px) {
+  .fxide-v11 .fxide-mobile-gutter {font-size:16px;line-height:1.6;padding-top:13px;}
+  .fxide-v11 .fxide-mobile-gutter span {height:1.6em;}
+}
+
+/* --------------------------------------------------------------------------
+   FORGEX IDE v1.2 — consolidated, stable layout
+
+   The older classes above are the shared component design system. This section
+   owns only the v1.2 editor layout, panels, and responsive behavior.
+
+   Monaco owns suggest-widget placement and dimensions. Do not override
+   .suggest-widget, .monaco-list-row, or cursor/widget transforms here.
+   -------------------------------------------------------------------------- */
+
+/* Editor and its tab row share one flex column; no overlap with line one. */
+.fxide-v12 .fxide-editor {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: #0e1419;
+  overflow: visible;
+}
+
+.fxide-v12 .fxide-tabbar {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 40px;
+  display: flex;
+  align-items: stretch;
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  background: #101a21;
+  border-bottom: 1px solid var(--fxide-border);
+}
+
+.fxide-v12 .fxide-edit-area {
+  position: relative;
+  z-index: 2;
+  isolation: auto;
+  flex: 1 1 0;
+  height: 0;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  overflow: visible;
+  background: #0e1419;
+}
+
+.fxide-v12 .fxide-edit-area > div {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Monaco can measure its host. No artificial widget height or CSS translate. */
+.fxide-v12 .fxide-edit-area > .monaco-editor {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+}
+
+.fxide-v12 .fxide-editor-tab {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  max-width: 198px;
+  flex: 0 0 auto;
+}
+
+.fxide-v12 .fxide-editor-tab.current {
+  color: #ecf8ee;
+  background: #1b2d2d;
+  box-shadow: inset 0 2px #b9fa77;
+}
+
+.fxide-v12 .fxide-editor-tab > button:first-child {
+  padding-inline: 10px;
+  font-size: 12px;
+}
+
+.fxide-v12 .fxide-editor-tab .fxide-tab-x { margin-right: 4px; }
+.fxide-v12 .fxide-editor-tab .fxide-tab-x:hover { color: #f2d2cb; }
+
+/* Mobile textarea and number gutter must share exact font metrics. */
+.fxide-v12 .fxide-mobile-editor .fxide-mobile-gutter {
+  flex: 0 0 46px;
+  width: 46px;
+  padding: 12px 7px 12px 0;
+  font: 14px/22px ui-monospace, Consolas, monospace;
+  background: #0f1a22;
+  color: #7d939e;
+}
+.fxide-v12 .fxide-mobile-editor .fxide-mobile-gutter span {
+  height: 22px;
+  line-height: 22px;
+}
+.fxide-v12 .fxide-mobile-editor .fxide-mobile-code {
+  display: block;
+  flex: 1 1 0;
+  width: 0;
+  height: 100%;
+  padding: 12px 14px;
+  border: 0;
+  font: 14px/22px ui-monospace, Consolas, monospace;
+  white-space: pre;
+  overflow: auto;
+  resize: none;
+  tab-size: 2;
+}
+
+/* Toolbar controls are enabled by action, not the element's DOM order. */
+.fxide-v12 .fxide-toolbar {
+  position: relative;
+  z-index: 45;
+}
+.fxide-v12 .fxide-primary-actions {
+  min-width: 0;
+  overflow: visible;
+}
+.fxide-v12 .fxide-primary-actions > button[aria-label="Run preview"] {
+  color: #102012;
+  background: #b9fa77;
+  border-color: #b9fa77;
+  font-weight: 700;
+}
+.fxide-v12 .fxide-primary-actions > button[aria-label="Analyze project"] {
+  color: #e1eef0;
+  background: #1a2831;
+  border-color: #354a55;
+  font-weight: 500;
+}
+
+/* Wide screens: editor and preview share row one; console owns row two. */
+@media (min-width: 1101px) {
+  .fxide-v12 .fxide-body,
+  .fxide-v12.fxide-no-explorer .fxide-body,
+  .fxide-v12.fxide-hide-preview .fxide-body,
+  .fxide-v12.fxide-no-explorer.fxide-hide-preview .fxide-body {
+    position: relative;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(105px, var(--fxide-console-height, 178px));
+    overflow: visible;
+  }
+  .fxide-v12:not(.fxide-hide-preview) .fxide-body,
+  .fxide-v12:not(.fxide-hide-preview).fxide-no-explorer .fxide-body {
+    grid-template-columns: 44px minmax(0, 1fr) minmax(240px, var(--fxide-preview-width, 345px));
+  }
+}
+
+/* Both wide and medium desktops use an overlay explorer. */
+@media (min-width: 821px) {
+  .fxide-v12 .fxide-activity {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    position: relative;
+    z-index: 32;
+    min-width: 0;
+    overflow: visible;
+  }
+  .fxide-v12 .fxide-sidebar,
+  .fxide-v12.fxide-no-explorer .fxide-sidebar {
+    position: absolute;
+    left: 44px;
+    top: 0;
+    bottom: 0;
+    width: min(var(--fxide-explorer-width, 218px), calc(100% - 44px));
+    grid-column: auto;
+    grid-row: auto;
+    z-index: 30;
+    background: #111a20;
+    border: 1px solid #42545a;
+    border-top: 0;
+    border-radius: 0 0 8px 0;
+    box-shadow: 12px 12px 35px #0009;
+  }
+  .fxide-v12.fxide-no-explorer .fxide-sidebar {
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .fxide-v12 .fxide-editor,
+  .fxide-v12.fxide-no-explorer .fxide-editor,
+  .fxide-v12.fxide-no-explorer.fxide-hide-preview .fxide-editor {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .fxide-v12 .fxide-preview {
+    grid-column: 3;
+    grid-row: 1;
+    min-width: 0;
+    min-height: 0;
+  }
+  .fxide-v12 .fxide-console {
+    grid-column: 2 / -1;
+    grid-row: 2;
+    min-width: 0;
+    min-height: 0;
+  }
+  .fxide-v12.fxide-hide-preview .fxide-editor,
+  .fxide-v12.fxide-no-explorer.fxide-hide-preview .fxide-editor {
+    grid-column: 2 / -1;
+    grid-row: 1;
+  }
+  .fxide-v12.fxide-hide-preview .fxide-console { grid-column: 2 / -1; }
+  .fxide-v12.fxide-hide-console .fxide-editor { grid-row: 1 / -1; }
+  .fxide-v12.fxide-hide-console .fxide-preview { grid-row: 1 / -1; }
+  .fxide-v12.fxide-hide-preview.fxide-hide-console .fxide-editor,
+  .fxide-v12.fxide-no-explorer.fxide-hide-preview.fxide-hide-console .fxide-editor {
+    grid-column: 2 / -1;
+    grid-row: 1 / -1;
+  }
+  .fxide-v12 .fxide-activity button { position: relative; }
+  .fxide-v12 .fxide-activity button::after {
+    content: attr(aria-label);
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 10px);
+    transform: translateY(-50%);
+    color: #eef9f4;
+    background: #24333c;
+    border: 1px solid #49606b;
+    border-radius: 6px;
+    padding: 7px 10px;
+    box-shadow: 0 9px 20px #0008;
+    font: 11px var(--sans, system-ui, sans-serif);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    z-index: 100;
+  }
+  .fxide-v12 .fxide-activity button:is(:hover, :focus-visible)::after {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* Mid-size desktop: preview stacks beneath editor; console remains accessible. */
+@media (min-width: 821px) and (max-width: 1100px) {
+  .fxide-v12 .fxide-body,
+  .fxide-v12.fxide-no-explorer .fxide-body,
+  .fxide-v12.fxide-hide-preview .fxide-body,
+  .fxide-v12.fxide-no-explorer.fxide-hide-preview .fxide-body {
+    position: relative;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(105px, var(--fxide-console-height, 178px));
+    overflow: visible;
+  }
+  .fxide-v12:not(.fxide-hide-preview) .fxide-body,
+  .fxide-v12:not(.fxide-hide-preview).fxide-no-explorer .fxide-body {
+    grid-template-rows: minmax(0, 1fr) 170px minmax(100px, var(--fxide-console-height, 160px));
+  }
+  .fxide-v12 .fxide-editor { grid-column: 2; grid-row: 1; }
+  .fxide-v12:not(.fxide-hide-preview) .fxide-preview {
+    grid-column: 2;
+    grid-row: 2;
+    border-top: 1px solid #31444e;
+  }
+  .fxide-v12:not(.fxide-hide-preview) .fxide-console {
+    grid-column: 2;
+    grid-row: 3;
+  }
+  .fxide-v12.fxide-hide-preview .fxide-editor { grid-column: 2 / -1; grid-row: 1; }
+  .fxide-v12.fxide-hide-preview .fxide-console { grid-column: 2 / -1; grid-row: 2; }
+  .fxide-v12.fxide-hide-console:not(.fxide-hide-preview) .fxide-preview { grid-row: 2 / 4; }
+  .fxide-v12.fxide-hide-preview.fxide-hide-console .fxide-editor { grid-row: 1 / -1; }
+}
+
+/* Phones and narrow tablets: a single active panel; no extra grid columns. */
+@media (max-width: 820px) {
+  .fxide-v12 .fxide-body,
+  .fxide-v12.fxide-no-explorer .fxide-body {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .fxide-v12 .fxide-activity { display: none; }
+  .fxide-v12 .fxide-sidebar,
+  .fxide-v12 .fxide-editor,
+  .fxide-v12 .fxide-preview,
+  .fxide-v12 .fxide-console {
+    display: none;
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
+    width: 100%;
+    border: 0;
+  }
+  .fxide-v12 .fxide-sidebar.fxide-mobile-active,
+  .fxide-v12 .fxide-editor.fxide-mobile-active,
+  .fxide-v12 .fxide-preview.fxide-mobile-active,
+  .fxide-v12 .fxide-console.fxide-mobile-active {
+    display: flex;
+  }
+  .fxide-v12.fxide-no-explorer .fxide-sidebar.fxide-mobile-active {
+    visibility: visible;
+    pointer-events: auto;
+  }
+  .fxide-v12.fxide-hide-preview .fxide-preview.fxide-mobile-active,
+  .fxide-v12.fxide-hide-console .fxide-console.fxide-mobile-active {
+    display: flex;
+  }
+  .fxide-v12 .fxide-primary-actions {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+  }
+  .fxide-v12 .fxide-menu-container { flex-shrink: 0; }
+  .fxide-v12 .fxide-editor .fxide-tabbar { max-width: 100%; }
+  .fxide-v12 .fxide-editor-tab { max-width: 165px; }
+  .fxide-v12 .fxide-mobile-editor .fxide-mobile-gutter {
+    font-size: 16px;
+    line-height: 24px;
+  }
+  .fxide-v12 .fxide-mobile-editor .fxide-mobile-gutter span {
+    height: 24px;
+    line-height: 24px;
+  }
+  .fxide-v12 .fxide-mobile-editor .fxide-mobile-code {
+    font-size: 16px;
+    line-height: 24px;
+  }
+}
+
+/* ======================================================
+   FORGEX DAY 4 — MOBILE IMMERSIVE STUDIO
+   Keep all existing v1.2 desktop styles intact.
+   ====================================================== */
+
+@media (max-width: 820px) {
+  .fxide-v12.fxide-expanded {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    min-height: 0;
+    margin: 0;
+    border-radius: 0;
+    z-index: 8000;
+  }
+
+  .fxide-v12.fxide-expanded .fxide-toolbar {
+    flex: 0 0 auto;
+    min-width: 0;
+    padding: 10px 10px 7px;
+    padding-top: max(10px, env(safe-area-inset-top));
+  }
+
+  .fxide-v12.fxide-expanded .fxide-primary-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    flex: 0 1 auto;
+    width: 100%;
+    max-width: 100%;
+    min-height: 44px;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .fxide-v12.fxide-expanded .fxide-body {
+    flex: 1 1 0;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .fxide-v12 .fxide-mobile-nav {
+    flex: 0 0 auto;
+    width: 100%;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .fxide-v12 .fxide-mobile-nav button {
+    min-width: 0;
+    min-height: 56px;
+    padding: 7px 2px;
+    gap: 5px;
+  }
+
+  .fxide-v12 .fxide-mobile-nav button span {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    font-size: 10px;
+  }
+
+  .fxide-v12 .fxide-preview iframe {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    flex: 1 1 0;
+  }
+
+  .fxide-v12 .fxide-dialog-backdrop {
+    padding: 12px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .fxide-v12 .fxide-dialog {
+    max-width: 100%;
+    max-height: 85dvh;
+    overflow-y: auto;
+  }
+
+  .fxide-v12 .fxide-toast {
+    left: 10px;
+    right: 10px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    max-width: none;
+  }
+}
+
+/* FORGEX DAY 4 — CONSISTENT MOBILE TOOLBAR */
+
+@media (max-width: 820px) {
+  .fxide-v12 .fxide-primary-actions {
+    justify-content: flex-start;
+    gap: 7px;
+    padding-bottom: 5px;
+  }
+
+  .fxide-v12 .fxide-primary-actions > button,
+  .fxide-v12 .fxide-primary-actions > .fxide-menu-container > button {
+    flex: 0 0 44px;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    border-radius: 8px;
+  }
+
+  .fxide-v12 .fxide-primary-actions > .fxide-menu-container {
+    flex: 0 0 44px;
+    width: 44px;
+  }
+
+  /* Keep icons; hide text and dropdown arrows on mobile. */
+  .fxide-v12 .fxide-primary-actions > button > span,
+  .fxide-v12 .fxide-primary-actions > .fxide-menu-container > button > span,
+  .fxide-v12 .fxide-primary-actions > .fxide-menu-container > button > svg:last-child {
+    display: none;
+  }
+
+  .fxide-v12 .fxide-primary-actions > button > svg,
+  .fxide-v12 .fxide-primary-actions > .fxide-menu-container > button > svg {
+    flex-shrink: 0;
+  }
+
+  /* Visually identify an opened dropdown. */
+  .fxide-v12 .fxide-menu-container > button[aria-expanded="true"] {
+    border-color: #b9fa77;
+    background: #263d2d;
+  }
+}
+
+/* FORGEX DAY 4 — VISIBLE WORKSPACE NOTIFICATIONS */
+
+.fxide-v12 .fxide-toast {
+  position: fixed;
+  top: auto;
+  bottom: 24px;
+  right: 24px;
+  left: auto;
+
+  z-index: 9000;
+  width: max-content;
+  max-width: min(420px, calc(100vw - 32px));
+
+  padding: 14px 16px;
+  border: 1px solid #527a59;
+  border-radius: 10px;
+
+  background: #243a2c;
+  color: #e3fbd5;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+@media (max-width: 820px) {
+  .fxide-v12 .fxide-toast {
+    left: 12px;
+    right: 12px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    width: auto;
+    max-width: none;
+  }
+}
+
+/* FORGEX PREVIEW V2 — VIEWPORT SELECTOR */
+
+.fxide-v12 .fxide-preview .fxide-pane-header {
+  height: auto;
+  min-height: 38px;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-block: 5px;
+}
+
+.fxide-v12 .fxide-preview-device {
+  flex: 0 0 auto;
+  width: 112px;
+  max-width: 100%;
+  min-height: 30px;
+  padding: 4px 7px;
+  border: 1px solid #405760;
+  border-radius: 6px;
+  background: #1b2b34;
+  color: #e2f0eb;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.fxide-v12 .fxide-preview-device:focus-visible {
+  outline: 2px solid #b9fa77;
+  outline-offset: 2px;
+}
+
+/* FORGEX PREVIEW V2 — FOCUS MODE */
+
+.fxide-v12.fxide-preview-focused {
+  position: fixed;
+  inset: 0;
+  z-index: 8100;
+  width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  margin: 0;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.fxide-v12.fxide-preview-focused .fxide-body {
+  display: flex !important;
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.fxide-v12.fxide-preview-focused > .fxide-toolbar,
+.fxide-v12.fxide-preview-focused .fxide-activity,
+.fxide-v12.fxide-preview-focused .fxide-sidebar,
+.fxide-v12.fxide-preview-focused .fxide-editor,
+.fxide-v12.fxide-preview-focused .fxide-console,
+.fxide-v12.fxide-preview-focused .fxide-mobile-nav,
+.fxide-v12.fxide-preview-focused .fxide-statusbar {
+  display: none !important;
+}
+
+.fxide-v12.fxide-preview-focused .fxide-preview {
+  position: relative;
+  display: flex !important;
+  flex: 1 1 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  border: 0;
+  overflow: hidden;
+}
+
+.fxide-v12.fxide-preview-focused .fxide-preview-resizer {
+  display: none;
+}
+
+.fxide-v12.fxide-preview-focused .fxide-preview iframe {
+  max-width: 100%;
+  min-height: 0;
+}
+
+/* FORGEX DAY 4 — PROFESSIONAL BOTTOM PANEL */
+
+.fxide-v12 .fxide-console-header {
+  min-height: 40px;
+  gap: 8px;
+}
+
+.fxide-v12 .fxide-console-modes {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 3px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.fxide-v12 .fxide-console-modes button {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 9px 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: #9cabb5;
+  font-size: 11px;
+}
+
+.fxide-v12 .fxide-console-modes button.active {
+  background: transparent;
+  border-bottom-color: #b9fa77;
+  color: #e9f7e7;
+  font-weight: 700;
+}
+
+.fxide-v12 .fxide-console-modes button:hover {
+  color: #f0f8f1;
+}
+
+.fxide-v12 .fxide-console-modes button:focus-visible {
+  outline: 2px solid #b9fa77;
+  outline-offset: -2px;
+}
+
+.fxide-v12 .fxide-console-header > button {
+  flex-shrink: 0;
+}
+
+/* FORGEX — OUTPUT FILTERS */
+
+.fxide-v12 .fxide-output-tools {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: 115px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  margin-bottom: 8px;
+  background: #111e26;
+  border: 1px solid #314854;
+  border-radius: 7px;
+}
+
+.fxide-v12 .fxide-output-tools select,
+.fxide-v12 .fxide-output-tools input {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 9px;
+  border: 1px solid #405862;
+  border-radius: 5px;
+  background: #0d181f;
+  color: #e2f0ed;
+  font-size: 12px;
+}
+
+.fxide-v12 .fxide-output-tools > span {
+  font-size: 11px;
+  color: #a9c1c8;
+  white-space: nowrap;
+}
+
+.fxide-v12 .fxide-output-tools :is(input, select):focus-visible {
+  outline: 2px solid #b9fa77;
+  outline-offset: 1px;
+}
+
+@media (max-width: 420px) {
+  .fxide-v12 .fxide-output-tools {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .fxide-v12 .fxide-output-tools select {
+    grid-column: 1 / -1;
+  }
+}
+
+/* FORGEX NETWORK INSPECTOR V1 */
+
+.fxide-v12 .fxide-network-list {
+  display: grid;
+  gap: 6px;
+  padding: 8px 4px;
+  min-width: 0;
+}
+
+.fxide-v12 .fxide-network-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 10px;
+  border-bottom: 1px solid #29404a;
+  font-size: 12px;
+}
+
+.fxide-v12 .fxide-network-row code {
+  color: #d4e5e9;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.fxide-v12 .fxide-network-row small {
+  color: #9db4be;
+  white-space: nowrap;
+}
+
+.fxide-v12 .fxide-network-ok {
+  color: #b9fa77;
+  font-weight: 700;
+}
+
+.fxide-v12 .fxide-network-error {
+  color: #ffb4a7;
+  font-weight: 700;
+}
+
+@media (max-width: 480px) {
+  .fxide-v12 .fxide-network-row {
+    gap: 7px;
+    padding-inline: 4px;
+    font-size: 11px;
+  }
+}
+
+/* FORGEX NETWORK INSPECTOR V2 */
+
+.fxide-v12 .fxide-network-tools {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid #304650;
+  border-radius: 7px;
+  background: #101c24;
+}
+
+.fxide-v12 .fxide-network-tools input,
+.fxide-v12 .fxide-network-tools select {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 7px 9px;
+  border: 1px solid #405862;
+  border-radius: 6px;
+  background: #0b161d;
+  color: #e2f0ed;
+  font-size: 12px;
+}
+
+.fxide-v12 .fxide-network-tools small {
+  color: #abc0c8;
+  white-space: nowrap;
+}
+
+.fxide-v12 .fxide-network-item {
+  border-bottom: 1px solid #29404a;
+}
+
+.fxide-v12 .fxide-network-item summary {
+  cursor: pointer;
+}
+
+.fxide-v12 .fxide-network-item summary:hover {
+  background: #1a303a;
+}
+
+.fxide-v12 .fxide-network-details {
+  padding: 10px 14px;
+  background: #0b171e;
+  color: #b6cbd1;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.fxide-v12 .fxide-network-details p {
+  margin: 5px 0;
+}
+
+@media (max-width: 480px) {
+  .fxide-v12 .fxide-network-tools {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .fxide-v12 .fxide-network-tools select {
+    grid-column: 1 / -1;
+  }
+}
+
+/* FORGEX Expanded Mode Recommendation */
+
+.fxide-v12 .fxide-expand-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: min(440px, 45vw);
+  padding: 3px 7px;
+  border: 1px solid #46634e;
+  border-radius: 6px;
+  background: #1b3026;
+  color: #d5f4d2;
+  font-size: 10px;
+}
+
+.fxide-v12 .fxide-expand-tip > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fxide-v12 .fxide-statusbar
+.fxide-expand-tip > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 3px 7px;
+  border: 1px solid #597d58;
+  border-radius: 5px;
+  background: #2c4930;
+  color: #d5ffb4;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fxide-v12 .fxide-statusbar
+.fxide-expand-tip > button:hover {
+  background: #3a5b3b;
+}
+
+.fxide-v12 .fxide-statusbar
+.fxide-expand-tip-dismiss {
+  padding: 3px;
+  border-color: transparent;
+  background: transparent;
+  color: #afc6b7;
+}
+
+@media (max-width: 820px) {
+  .fxide-v12 .fxide-expand-tip {
+    display: none;
+  }
+}
+
+/* FORGEX — Top Editor Recommendation */
+
+.fxide-v12 .fxide-top-guidance {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #17271f;
+  border-bottom: 1px solid #405e49;
+  color: #d4e9d6;
+}
+
+.fxide-v12 .fxide-top-guidance-text {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 260px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.fxide-v12 .fxide-top-guidance-text svg {
+  flex-shrink: 0;
+  color: #b9fa77;
+}
+
+.fxide-v12 .fxide-top-guidance-text strong {
+  color: #f0f7ef;
+}
+
+.fxide-v12 .fxide-top-guidance-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.fxide-v12 .fxide-top-guidance button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 6px 11px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.fxide-v12 .fxide-top-guidance-expand {
+  border: 1px solid #64875d;
+  background: #29452f;
+  color: #d6ffbd;
+  font-weight: 700;
+}
+
+.fxide-v12 .fxide-top-guidance-close {
+  border: 1px solid transparent;
+  background: transparent;
+  color: #abc0b0;
+}
+
+.fxide-v12 .fxide-top-guidance button:focus-visible {
+  outline: 2px solid #b9fa77;
+  outline-offset: 2px;
+}
+
+@media (max-width: 820px) {
+  .fxide-v12 .fxide-top-guidance {
+    display: none;
+  }
+}
+
+/* FORGEX local HTML preview navigation */
+
+.fxide-v12 .fxide-preview-pages {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 10px;
+  min-width: 0;
+  background: #15232a;
+  border-bottom: 1px solid #344a51;
+  color: #a9c0b8;
+  font-size: 11px;
+}
+
+.fxide-v12 .fxide-preview-pages select {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 8px;
+  background: #0d191f;
+  color: #ddf1e4;
+  border: 1px solid #40584d;
+  border-radius: 5px;
+  font-size: 11px;
+}
+
+/* FORGEX Browser Preview Navigation */
+
+.fxide-v12 .fxide-preview-pages button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #40545a;
+  border-radius: 6px;
+  color: #d8ece2;
+  background: #1a2a30;
+  cursor: pointer;
+}
+
+.fxide-v12 .fxide-preview-pages button:hover:not(:disabled) {
+  color: #b9fa77;
+  border-color: #739a65;
+}
+
+.fxide-v12 .fxide-preview-pages button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.fxide-v12 .fxide-preview-path {
+  min-width: 0;
+  flex: 1;
+  padding: 6px 9px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 1px solid #354c52;
+  border-radius: 6px;
+  background: #0d191f;
+  color: #bbd7cb;
+  font-size: 11px;
+}
+
+.fxide-v12 .fxide-preview-pages select {
+  flex: 0 1 150px;
+  max-width: 150px;
+}
+
+@media (max-width: 580px) {
+  .fxide-v12 .fxide-preview-pages label {
+    display: none;
+  }
+
+  .fxide-v12 .fxide-preview-pages select {
+    max-width: 95px;
+  }
+}
+
+/* FORGEX Explorer Workspace Root */
+
+.fxide-v12 .fxide-workspace-root {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  margin: 4px 6px 8px;
+  padding: 9px 10px;
+  border-radius: 6px;
+  background: #1b3028;
+  color: #d7f4ce;
+}
+
+.fxide-v12 .fxide-workspace-root svg {
+  flex-shrink: 0;
+  color: #b9fa77;
+}
+
+.fxide-v12 .fxide-workspace-root strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  letter-spacing: 0.025em;
+}
+
+/* FORGEX Workspace Name Dialog */
+
+.fxide-v12 .fxide-name-dialog {
+  width: min(420px, calc(100vw - 32px));
+  max-width: none;
+  margin: auto;
+  padding: 25px;
+  border: 1px solid #466356;
+  border-radius: 12px;
+  background: #15232a;
+  color: #e8f2ed;
+  box-shadow: 0 28px 70px #000b;
+}
+
+.fxide-v12 .fxide-name-dialog::backdrop {
+  background: #02080bc9;
+  backdrop-filter: blur(3px);
+}
+
+.fxide-v12 .fxide-name-dialog form {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.fxide-v12 .fxide-name-dialog h2 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.fxide-v12 .fxide-name-dialog p {
+  margin: 0;
+  color: #a7bdb5;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.fxide-v12 .fxide-name-dialog label {
+  color: #d7e9dd;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.fxide-v12 .fxide-name-dialog input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #4e6e60;
+  border-radius: 7px;
+  outline: none;
+  background: #0d191f;
+  color: #ffffff;
+  font: inherit;
+}
+
+.fxide-v12 .fxide-name-dialog input:focus {
+  border-color: #b9fa77;
+}
+
+.fxide-v12 .fxide-name-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 9px;
+}
+
+.fxide-v12 .fxide-name-actions button {
+  padding: 10px 15px;
+  border: 1px solid #405b54;
+  border-radius: 7px;
+  background: #25363b;
+  color: #e8f2ed;
+  cursor: pointer;
+}
+
+.fxide-v12 .fxide-name-actions button[type="submit"] {
+  border-color: #b9fa77;
+  background: #b9fa77;
+  color: #142214;
+  font-weight: 700;
+}
+
+/* FORGEX Preview API Connection */
+
+.fxide-v12 .fxide-ai-connect {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #344a51;
+  background: #17272d;
+}
+
+.fxide-v12 .fxide-ai-connect label {
+  color: #b3cbc1;
+  font-size: 11px;
+}
+
+.fxide-v12 .fxide-ai-connect input {
+  flex: 1 1 120px;
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid #425c60;
+  border-radius: 6px;
+  background: #0d191f;
+  color: #e5f4ee;
+  font: 11px monospace;
+}
+
+.fxide-v12 .fxide-ai-connect button {
+  padding: 7px 10px;
+  border: 1px solid #6c9a57;
+  border-radius: 6px;
+  background: #27432e;
+  color: #d8ffbb;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
