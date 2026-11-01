@@ -29,6 +29,10 @@ export const metadata: Metadata = {
   description:
     "Inspect real source code, investigate risks, and build with confidence. By BraxCode Digitals Foundation.",
   applicationName: "FORGEX",
+  icons: {
+    icon: "/forgex-logo.png",
+    apple: "/forgex-logo.png",
+  },
   robots: {
     index: true,
     follow: true,
@@ -40,12 +44,14 @@ export const metadata: Metadata = {
     description:
       "Inspect real source code, investigate risks, and build with confidence.",
     url: "https://forgex-gamma.vercel.app",
+    images: [{ url: "/forgex-logo.png" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "FORGEX — Developer Intelligence",
     description:
       "Inspect real source code, investigate risks, and build with confidence.",
+    images: ["/forgex-logo.png"],
   },
 };
 

@@ -1,7 +1,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Code2, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import styles from "./public.module.css";
 
 export default function PublicLayout({
@@ -18,7 +18,14 @@ export default function PublicLayout({
           aria-label="FORGEX DevStudio home"
         >
           <span className={styles.brandIcon}>
-            <Code2 size={22} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/forgex-logo.png"
+              alt="FORGEX logo"
+              width={26}
+              height={26}
+              style={{ borderRadius: 6 }}
+            />
           </span>
 
           <span className={styles.brandText}>

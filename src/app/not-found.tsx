@@ -1,6 +1,6 @@
 
 import Link from "next/link";
-import { ArrowLeft, Code2, Home } from "lucide-react";
+import { ArrowLeft, Home } from "lucide-react";
 import styles from "./not-found.module.css";
 
 export default function NotFound() {
@@ -9,7 +9,14 @@ export default function NotFound() {
       <div className={styles.content}>
         <div className={styles.brand}>
           <span className={styles.brandIcon}>
-            <Code2 size={21} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/forgex-logo.png"
+              alt="FORGEX logo"
+              width={21}
+              height={21}
+              style={{ borderRadius: 5 }}
+            />
           </span>
           <span>FORGEX DevStudio</span>
         </div>
