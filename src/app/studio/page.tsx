@@ -10,7 +10,6 @@ import {
   ChevronRight,
   CircleAlert,
   Clock3,
-  Code2,
   FileCode2,
   FilePlus2,
   Files,
@@ -1119,7 +1118,14 @@ export default function Home() {
           }}
         >
           <span className="brandmark">
-            <Code2 size={21} strokeWidth={2.3} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/forgex-logo.png"
+              alt="FORGEX logo"
+              width={21}
+              height={21}
+              style={{ borderRadius: 5 }}
+            />
           </span>
           <span className="brandword">
             FORGEX<small>DEVELOPER INTELLIGENCE</small>
