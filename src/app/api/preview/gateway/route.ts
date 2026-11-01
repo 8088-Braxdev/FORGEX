@@ -132,9 +132,13 @@ const providers = new Map<string, Handler>([
 ]);
 
 export async function POST(request: Request) {
-  if (process.env.NODE_ENV !== "development") {
+  const previewGatewayEnabled =
+    process.env.NODE_ENV === "development" ||
+    process.env.FORGEX_ENABLE_PREVIEW_AI === "1";
+
+  if (!previewGatewayEnabled) {
     return NextResponse.json(
-      { error: "Not found." },
+      { error: "Preview gateway is unavailable." },
       { status: 404 }
     );
   }

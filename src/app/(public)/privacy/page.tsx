@@ -192,25 +192,26 @@ export default function PrivacyPage() {
 
         <section className={styles.legalSection}>
           <h2>10. Privacy Contact</h2>
-          {contactEmail ? (
-            <p>
-              For privacy questions or data-related requests,
-              contact{" "}
-              <a
-                className={styles.inlineLink}
-                href={`mailto:${contactEmail}`}
-              >
-                {contactEmail}
-              </a>
-              .
-            </p>
-          ) : (
-            <p className={styles.reviewNote}>
-              A verified privacy contact email has not yet
-              been configured. This must be completed
-              before public release.
-            </p>
-          )}
+          <p>
+            For privacy questions or data-related requests,
+            contact{" "}
+            <a
+              className={styles.inlineLink}
+              href={`mailto:${contactEmail}`}
+            >
+              {contactEmail}
+            </a>{" "}
+            or{" "}
+            <a
+              className={styles.inlineLink}
+              href="https://wa.me/255618811359"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              WhatsApp
+            </a>
+            .
+          </p>
         </section>
       </div>
     </article>

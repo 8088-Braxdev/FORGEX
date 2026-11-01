@@ -72,7 +72,7 @@ export default function PublicLayout({
             rel="noopener noreferrer"
             aria-label="Contact FORGEX support on WhatsApp"
           >
-            WhatsApp 0618811359
+            WhatsApp
           </a>
           <a href="mailto:braxtonbruzzzy@gmail.com">Email support</a>
         </nav>

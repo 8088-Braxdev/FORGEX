@@ -45,9 +45,13 @@ type GeminiResult = {
 };
 
 export async function POST(request: Request) {
-  if (process.env.NODE_ENV !== "development") {
+  const previewAiEnabled =
+    process.env.NODE_ENV === "development" ||
+    process.env.FORGEX_ENABLE_PREVIEW_AI === "1";
+
+  if (!previewAiEnabled) {
     return NextResponse.json(
-      { error: "Not found." },
+      { error: "AI Preview is unavailable." },
       { status: 404 }
     );
   }

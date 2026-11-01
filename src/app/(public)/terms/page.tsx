@@ -180,24 +180,25 @@ export default function TermsPage() {
 
         <section className={styles.legalSection}>
           <h2>10. Contact</h2>
-          {contactEmail ? (
-            <p>
-              Questions about these terms can be sent to{" "}
-              <a
-                className={styles.inlineLink}
-                href={`mailto:${contactEmail}`}
-              >
-                {contactEmail}
-              </a>
-              .
-            </p>
-          ) : (
-            <p className={styles.reviewNote}>
-              A verified support email must be added
-              before these terms are published
-              as final production terms.
-            </p>
-          )}
+          <p>
+            Questions about these terms can be sent to{" "}
+            <a
+              className={styles.inlineLink}
+              href={`mailto:${contactEmail}`}
+            >
+              {contactEmail}
+            </a>{" "}
+            or{" "}
+            <a
+              className={styles.inlineLink}
+              href="https://wa.me/255618811359"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              WhatsApp
+            </a>
+            .
+          </p>
         </section>
       </div>
     </article>

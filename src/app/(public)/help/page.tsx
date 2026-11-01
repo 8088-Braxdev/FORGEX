@@ -55,9 +55,10 @@ export default function HelpPage() {
           </p>
           <p>
             Approved preview APIs (Gemini AI and Open-Meteo weather) require
-            explicit user consent. They remain disabled in production until
-            owner-controlled credentials, rate limits, and audit logging are
-            configured. The development guard is intentional and is not a
+            explicit user consent. They are disabled by default in production.
+            An owner may enable them by setting FORGEX_ENABLE_PREVIEW_AI=1
+            alongside GEMINI_API_KEY, with the built-in rate limits and
+            audit logging active. The guard is intentional and is not a
             defect.
             Imported projects can use the injected{" "}
             <code>window.forgexPreview.ai(prompt)</code> and{" "}
@@ -99,7 +100,7 @@ export default function HelpPage() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              0618811359
+              WhatsApp
             </a>
           </p>
           <p>
