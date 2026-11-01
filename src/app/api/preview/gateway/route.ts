@@ -1,4 +1,10 @@
 import { NextResponse } from "next/server";
+import {
+  APPROVED_PROVIDER_KEYS,
+  isApprovedProvider,
+  makeProviderKey,
+  validateCoordinates,
+} from "@/lib/previewProviders";
 
 export const runtime = "nodejs";
 
@@ -57,18 +63,11 @@ async function currentWeather(
 ): Promise<NextResponse> {
   const { latitude, longitude } = payload;
 
-  if (
-    typeof latitude !== "number" ||
-    typeof longitude !== "number" ||
-    !Number.isFinite(latitude) ||
-    !Number.isFinite(longitude) ||
-    latitude < -90 ||
-    latitude > 90 ||
-    longitude < -180 ||
-    longitude > 180
-  ) {
+  const coordinates = validateCoordinates(latitude, longitude);
+
+  if (!coordinates.ok) {
     return NextResponse.json(
-      { error: "Invalid geographical coordinates." },
+      { error: coordinates.error },
       { status: 400 },
     );
   }
@@ -242,15 +241,23 @@ export async function POST(request: Request) {
       );
     }
 
-    const key = `${payload.provider}.${payload.action}`;
+    const key = makeProviderKey(payload.provider, payload.action);
+
+    if (!isApprovedProvider(key)) {
+      return NextResponse.json(
+        {
+          error: "Provider action not approved.",
+          approved: [...APPROVED_PROVIDER_KEYS],
+        },
+        { status: 403 },
+      );
+    }
+
     const entry = providerMap.get(key);
 
     if (!entry) {
       return NextResponse.json(
-        {
-          error: "Provider action not approved.",
-          approved: providers.map((item) => item.key),
-        },
+        { error: "Provider action not approved." },
         { status: 403 },
       );
     }
