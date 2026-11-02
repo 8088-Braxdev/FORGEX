@@ -211,7 +211,9 @@ export default function Home() {
     const body = document.body;
     const root = document.documentElement;
     const scrollY = window.scrollY;
-    const previous = { position: body.style.position, top: body.style.top, width: body.style.width, overflow: body.style.overflow, scrollBehavior: root.style.scrollBehavior };
+    const previous = { position: body.style.position, top: body.style.top, width: body.style.width, overflow: body.style.overflow, paddingRight: body.style.paddingRight, scrollBehavior: root.style.scrollBehavior };
+    const scrollbarWidth = window.innerWidth - root.clientWidth;
+    body.style.paddingRight = `${parseFloat(getComputedStyle(body).paddingRight) + scrollbarWidth}px`;
     body.style.position = "fixed";
     body.style.top = `-${scrollY}px`;
     body.style.width = "100%";
@@ -230,7 +232,7 @@ export default function Home() {
     media.addEventListener("change", onResize);
     return () => {
       body.style.position = previous.position; body.style.top = previous.top;
-      body.style.width = previous.width; body.style.overflow = previous.overflow;
+      body.style.width = previous.width; body.style.overflow = previous.overflow; body.style.paddingRight = previous.paddingRight;
       root.style.scrollBehavior = "auto"; window.scrollTo(0, scrollY); root.style.scrollBehavior = previous.scrollBehavior;
       document.removeEventListener("keydown", onKey); media.removeEventListener("change", onResize);
       menuTriggerRef.current?.focus({ preventScroll: true });

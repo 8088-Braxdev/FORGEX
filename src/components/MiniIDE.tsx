@@ -279,6 +279,8 @@ export default function MiniIDE({
   const [sideView, setSideView] = useState<SideView>("files");
   const [mobileView, setMobileView] = useState<MobileView>("editor");
   const [smallScreen, setSmallScreen] = useState(false);
+  const [toolbarSize, setToolbarSize] = useState({ compact: false, narrow: false });
+  const compactToolbar = smallScreen || toolbarSize.compact;
   const [previewVisible, setPreviewVisible] = useState(false);
   const [consoleVisible, setConsoleVisible] = useState(true);
   const [openTabs, setOpenTabs] = useState<string[]>([]);
@@ -650,6 +652,24 @@ export default function MiniIDE({
     return () => {
       media.removeEventListener("change", sync);
     };
+  }, []);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const sync = () => {
+      const width = root.clientWidth;
+      const compact = width < 1100; const narrow = width < 330;
+      setToolbarSize(previous => previous.compact === compact && previous.narrow === narrow ? previous : { compact, narrow });
+    };
+    sync();
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", sync);
+      return () => window.removeEventListener("resize", sync);
+    }
+    const observer = new ResizeObserver(sync);
+    observer.observe(root);
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -2117,7 +2137,7 @@ export default function MiniIDE({
     <section
       ref={rootRef}
       id="forgex-mini-ide"
-      className={`fxide fxide-v09 fxide-v10 fxide-v11 fxide-v12  ${expanded ? "fxide-expanded" : ""}  ${previewFocused ? "fxide-preview-focused" : ""} ${explorerVisible ? "" : "fxide-no-explorer"} ${previewVisible ? "" : "fxide-hide-preview"} ${consoleVisible ? "" : "fxide-hide-console"}`}
+      className={`fxide fxide-v09 fxide-v10 fxide-v11 fxide-v12 ${compactToolbar ? "fxide-compact-toolbar" : ""} ${toolbarSize.narrow ? "fxide-narrow-toolbar" : ""} ${expanded ? "fxide-expanded" : ""}  ${previewFocused ? "fxide-preview-focused" : ""} ${explorerVisible ? "" : "fxide-no-explorer"} ${previewVisible ? "" : "fxide-hide-preview"} ${consoleVisible ? "" : "fxide-hide-console"}`}
       style={
         {
           "--fxide-explorer-width": `${explorerWidth}px`,
@@ -2251,7 +2271,7 @@ export default function MiniIDE({
             aria-label="Run preview"
           >
             <Play size={16} />
-            <span>{smallScreen ? "Run" : "Run preview"}</span>
+            <span>{compactToolbar ? "Run" : "Run preview"}</span>
           </button>
           <button
             type="button"
@@ -2272,16 +2292,16 @@ export default function MiniIDE({
               }}
               aria-haspopup="menu"
               aria-expanded={saveMenuOpen}
-              title={smallScreen ? "More workspace actions" : "Save and import options"}
-              aria-label={smallScreen ? "More workspace actions" : "Save and import options"}
+              title={compactToolbar ? "More workspace actions" : "Save and import options"}
+              aria-label={compactToolbar ? "More workspace actions" : "Save and import options"}
             >
-              {smallScreen ? <Ellipsis size={16} /> : <Save size={16} />}
-              <span>{smallScreen ? "More" : "Save"}</span>
+              {compactToolbar ? <Ellipsis size={16} /> : <Save size={16} />}
+              <span>{compactToolbar ? "More" : "Save"}</span>
               <ChevronDown size={13} />
             </button>
             {saveMenuOpen && (
               <div className="fxide-save-menu" role="menu" onKeyDown={menuKeys}>
-                {smallScreen && (
+                {compactToolbar && (
                   <>
                     {onImportFiles && <button type="button" role="menuitem" onClick={() => { setSaveMenuOpen(false); onImportFiles(); }}><Upload size={15} /> Add files</button>}
                     <button type="button" role="menuitem" onClick={() => { setSaveMenuOpen(false); folderInputRef.current?.click(); }}><FolderDown size={15} /> Open folder</button>
