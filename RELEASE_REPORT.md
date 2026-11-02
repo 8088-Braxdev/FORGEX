@@ -41,7 +41,8 @@ PASS means only the boundary named in the evidence column passed. Unit/mocked ch
 | --- | --- | --- |
 | Landing first, CTA to studio, direct studio HTTP route | PASS | Final built HTTP suite. |
 | Current live landing and CTA | PASS | Fresh cloud browser on 2026-11-02: `/` shows landing; CTA reaches `/studio`. These arrived through concurrent upstream work; deployed SHA unknown. |
-| New branch features deployed and browser-tested | NOT TESTED | Local cloud-browser access to the build returned connection refused; a reachable Preview is required. |
+| New branch Preview build | PASS | GitHub's Vercel status and deployment bot report READY for published source commit `f9e821bb2c139e02484fcf408499bf42778dadce`. No production promotion was performed. |
+| New branch browser interactions | NOT TESTED | Local cloud-browser access returned connection refused. Hosted Preview inspection requires Vercel team access; automatic approval review blocked opening the Preview because it may reach a private Vercel dashboard without account/scope authorization. |
 | Legacy welcome and old root OAuth callback migration | PASS | HTTP 308 welcome redirect and 307 `?github=connected` redirect to studio. |
 | Real GitHub OAuth login and workspace restoration on hosting domain | NOT TESTED | Needs approved Preview environment and interactive login. |
 | Support email/WhatsApp and company footer targets | PASS | Built public/help/legal/404 markup checks. No message was sent. External destination availability not verified. |
@@ -89,3 +90,11 @@ PASS means only the boundary named in the evidence column passed. Unit/mocked ch
 - Filesystem saves are not atomic across multiple paths. Tests cover stopping and partial-reporting, not elimination of every possible external filesystem race.
 - Prior reports from concurrent upstream work are archived in `reports/upstream-2026-11-02/`. Their build-only UI PASS labels are historical, not proof of end-to-end behavior.
 - Keep the PR draft until a reachable Preview passes browser/mobile, real OAuth, image import/recovery and native folder tests. Production AI/runtime/linked-folder requirements remain open and are not hidden behind this batch's passing tests.
+
+## Published review evidence — 2026-11-02
+
+- Draft review PR: [#3](https://github.com/8088-Braxdev/FORGEX/pull/3), targeting `main` from `work/forgex-assets-recovery-2026-11-02`. GitHub reported open, draft and mergeable; no merge was performed.
+- Published source commit `f9e821bb2c139e02484fcf408499bf42778dadce` has tree `826c5d3d81d6b5855a38f312bb10068e5ebca50b`, matching the validated local tree byte-for-byte. This publication check does not test FORGEX's in-product publishing flow.
+- The final standalone HTTP suite completed with 1 passed, 0 failed. The unit/contract run completed with 54 passed, 0 failed and its HTTP case skipped; typecheck and build also passed.
+- GitHub reported the Vercel check successful. No GitHub Actions pull-request workflow runs were returned. A Vercel build success is not a browser/mobile/OAuth acceptance result.
+- Read-only deployment inspection returned 403 for team `braxton-bruzzzys-projects`; no credentials or environment values were retrieved. Browser automatic approval separately blocked the Preview navigation because of private dashboard scope. No alternate authentication path or security bypass was attempted.
