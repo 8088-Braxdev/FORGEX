@@ -1,10 +1,10 @@
-
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { Sora, IBM_Plex_Mono } from "next/font/google";
 import { publicMetadata, SITE_ORIGIN } from "@/lib/siteInfo";
 import "./style.css";
 import "./mini-ide.css";
+import "./responsive-polish.css";
 import { AppConfirmProvider } from "@/components/AppConfirmProvider";
 
 
