@@ -1,10 +1,11 @@
-.connection { position: relative; min-width: 0; font-size: 12px; }
+.connection { position: relative; min-width: 0; font: 500 12px/1.5 var(--font-forgex-sans), system-ui, sans-serif; letter-spacing: 0; }
 .connect, .retry, .disconnect { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 14px; border: 1px solid #b9fa77; border-radius: 8px; background: #b9fa77; color: #102013; font: inherit; font-weight: 650; cursor: pointer; }
 .connect:hover:not(:disabled) { background: #d0ff9e; }
 .connect:disabled { background: #243038; border-color: #455862; color: #b6c6cc; cursor: not-allowed; }
 .connection button:focus-visible, .account summary:focus-visible, .panel a:focus-visible { outline: 2px solid #b9fa77; outline-offset: 4px; }
 .retry, .disconnect { background: transparent; color: #dce8e9; border-color: #52666c; }
 .status { margin: 6px 0 0; color: #becbd0; max-width: 260px; line-height: 1.5; overflow-wrap: anywhere; }
+.assistive { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .account summary { display: flex; align-items: center; gap: 8px; min-height: 44px; max-width: 290px; padding: 5px 9px; border: 1px solid #3b5355; border-radius: 8px; cursor: pointer; list-style: none; }
 .account summary::-webkit-details-marker { display: none; }
 .avatar { width: 28px; height: 28px; flex: 0 0 28px; border-radius: 50%; object-fit: cover; }

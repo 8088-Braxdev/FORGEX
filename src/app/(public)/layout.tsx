@@ -3,8 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowUpRight } from "lucide-react";
 import styles from "./public.module.css";
-import SupportLinks from "@/components/SupportLinks";
-import { COMPANY_URL } from "@/lib/siteInfo";
+import SiteFooter from "@/components/SiteFooter";
 
 export default function PublicLayout({
   children,
@@ -42,19 +41,7 @@ export default function PublicLayout({
 
       <main className={styles.pageContent}>{children}</main>
 
-      <footer className={styles.footer}>
-        <span>
-          © {new Date().getFullYear()} <a href={COMPANY_URL} aria-label="BraxCode Digitals Foundation website" target="_blank" rel="noopener noreferrer">BraxCode Digitals Foundation</a>.
-          <span className={styles.footerSub}> FORGEX DevStudio</span>
-        </span>
-
-        <nav aria-label="Footer navigation">
-          <Link href="/">Home</Link>
-          <Link href="/privacy">Privacy Policy</Link>
-          <Link href="/terms">Terms of Service</Link>
-        </nav>
-        <SupportLinks />
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

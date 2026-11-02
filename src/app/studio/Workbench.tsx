@@ -44,7 +44,9 @@ import ChangeSimulation from "@/components/ChangeSimulation";
 import MiniIDE from "@/components/MiniIDE";
 import GitHubPublish from "@/components/GitHubPublish";
 import GitHubConnect from "@/components/GitHubConnect";
-import SupportLinks from "@/components/SupportLinks";
+import SiteFooter from "@/components/SiteFooter";
+import workspaceStyles from "./WorkspaceShell.module.css";
+import { LifeBuoy } from "lucide-react";
 import ChangeIntelligencePanel from "@/components/ChangeIntelligencePanel";
 import {
   readWorkspaceDraft,
@@ -198,7 +200,42 @@ export default function Home() {
     content: string;
   } | null>(null);
   const [showMobileNav, setShowMobileNav] = useState(false);
+  const navigationRef = useRef<HTMLElement>(null);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const [reportMenu, setReportMenu] = useState(false);
+
+  useEffect(() => {
+    if (!showMobileNav) return;
+    const media = window.matchMedia("(max-width: 820px)");
+    if (!media.matches) { setShowMobileNav(false); return; }
+    const body = document.body;
+    const root = document.documentElement;
+    const scrollY = window.scrollY;
+    const previous = { position: body.style.position, top: body.style.top, width: body.style.width, overflow: body.style.overflow, scrollBehavior: root.style.scrollBehavior };
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+    const focusable = () => Array.from(navigationRef.current?.querySelectorAll<HTMLElement>("button:not([disabled]), a[href]") ?? []);
+    focusable()[0]?.focus({ preventScroll: true });
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); setShowMobileNav(false); }
+      if (event.key !== "Tab") return;
+      const items = focusable(); const first = items[0]; const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    const onResize = () => { if (!media.matches) setShowMobileNav(false); };
+    document.addEventListener("keydown", onKey);
+    media.addEventListener("change", onResize);
+    return () => {
+      body.style.position = previous.position; body.style.top = previous.top;
+      body.style.width = previous.width; body.style.overflow = previous.overflow;
+      root.style.scrollBehavior = "auto"; window.scrollTo(0, scrollY); root.style.scrollBehavior = previous.scrollBehavior;
+      document.removeEventListener("keydown", onKey); media.removeEventListener("change", onResize);
+      menuTriggerRef.current?.focus({ preventScroll: true });
+    };
+  }, [showMobileNav]);
 
   function closeRepoDialog() {
     if (busy) return;
@@ -566,7 +603,7 @@ export default function Home() {
     setShowMobileNav(false);
     setReportMenu(false);
     if (section === destination)
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "auto" }));
   }
 
   function openSource(path: string, line?: number) {
@@ -1143,90 +1180,32 @@ export default function Home() {
     ["history", History, "06"],
   ];
   return (
-    <main className="app-shell nav-collapsed">
-      <aside
-        id="forgex-workspace-navigation"
-        className={`sidebar ${showMobileNav ? "mobile-open" : ""}`}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") setShowMobileNav(false);
-        }}
-      >
-        <button
-          type="button"
-          className="sidebar-dismiss"
-          aria-label="Close navigation"
-          onClick={() => setShowMobileNav(false)}
-        >
-          <X size={20} />
+    <main className={workspaceStyles.shell}>
+      <aside ref={navigationRef} id="forgex-workspace-navigation"
+        className={`${workspaceStyles.navigation} ${showMobileNav ? workspaceStyles.open : ""}`}
+        role={showMobileNav ? "dialog" : undefined} aria-modal={showMobileNav || undefined} aria-label="Workspace navigation">
+        <button type="button" className={workspaceStyles.closeButton} aria-label="Close navigation" onClick={() => setShowMobileNav(false)}><X size={20} /></button>
+        <button type="button" className={workspaceStyles.brand} aria-label="FORGEX workspace" onClick={() => goTo("workbench")}>
+          <img src="/brand/mark-96.png" alt="" width={36} height={36} /><span>FORGEX</span>
         </button>
-
-        <button
-          className="brand"
-          aria-label="FORGEX workspace"
-          onClick={() => {
-            goTo("workbench");
-          }}
-        >
-          <span className="brandmark">
-            <img src="/brand/mark-96.png" alt="" width={36} height={36} />
-          </span>
-          <span className="brandword">
-            FORGEX<small>DEVELOPER INTELLIGENCE</small>
-          </span>
-        </button>
-        <div className="sidebar-kicker">
-          WORKSPACE <span>V 0.2</span>
-        </div>
-        <nav className="side-nav">
-          {menu.map(([key, Icon, num]) => (
-            <button
-              type="button"
-              className={`nav-item ${section === key ? "active" : ""}`}
-              key={key}
-              aria-label={navTitle(key)}
-              onClick={() => {
-                goTo(key);
-              }}
-            >
-              <Icon size={17} />
-              <span>{navTitle(key)}</span>
-              <small>{num}</small>
+        <nav aria-label="Workspace sections">
+          {menu.map(([key, Icon]) => (
+            <button type="button" key={key} className={workspaceStyles.navItem}
+              aria-label={navTitle(key)} aria-current={section === key ? "page" : undefined} onClick={() => goTo(key)}>
+              <Icon size={19} /><span>{navTitle(key)}</span>
             </button>
           ))}
         </nav>
-        <div className="side-spacer" />
-        <div className="sidebar-project">
-          <div className="side-project-head">
-            <span className="project-glow" /> LOCAL WORKSPACE{" "}
-          </div>
-          <strong>
-            {fileCount} source {fileCount === 1 ? "file" : "files"}
-          </strong>
-          <small>{totalLines.toLocaleString()} lines in memory</small>
-          <div className="privacy-caption">
-            <LockKeyhole size={13} /> On-device analysis · GitHub import via
-            server
-          </div>
-        </div>
-        <div className="sidebar-bottom">
-          <div>AN INDEPENDENT PROJECT BY</div>
-          <a href="https://braxcode.com" target="_blank" rel="noopener noreferrer">BraxCode Digitals Foundation</a>
-          <p>Built with intent. Made for builders.</p>
-        </div>
+        <a className={`${workspaceStyles.navItem} ${workspaceStyles.help}`} href="/help" aria-label="Help and support"><LifeBuoy size={19} /><span>Help and support</span></a>
       </aside>
-      {showMobileNav && (
-        <button
-          className="mobile-shade"
-          aria-label="Close navigation"
-          onClick={() => setShowMobileNav(false)}
-        />
-      )}
-      <section className="content">
-        <header className="topbar">
+      {showMobileNav && <button className={workspaceStyles.shade} tabIndex={-1} aria-label="Close navigation" onClick={() => setShowMobileNav(false)} />}
+      <section className={workspaceStyles.content}>
+        <header className={`${workspaceStyles.topbar} topbar`}>
           <div className="topbar-left">
             <button
               type="button"
-              className="icon-only mobile-menu"
+              className={workspaceStyles.menuButton}
+              ref={menuTriggerRef}
               aria-label={showMobileNav ? "Close menu" : "Open menu"}
               aria-expanded={showMobileNav}
               onClick={() => setShowMobileNav((open) => !open)}
@@ -1235,7 +1214,7 @@ export default function Home() {
             </button>
 
             <span className="breadcrumbs">
-              Workspace <ChevronRight size={13} /> <b>{navTitle(section)}</b>
+              <span className={workspaceStyles.pathPrefix}>Workspace</span><ChevronRight size={13} /><b>{section === "workbench" ? "Studio" : navTitle(section)}</b>
             </span>
           </div>
           <div className="topbar-right">
@@ -2110,50 +2089,7 @@ onMouseDown={(event) => {
             }}
           />
 
-          <footer className="site-footer">
-            <span>
-              © {new Date().getFullYear()} <a href="https://braxcode.com" target="_blank" rel="noopener noreferrer">BraxCode Digitals Foundation</a>{" "}
-              <span className="footer-divider">/</span> FORGEX STUDIO
-            </span>
-            
-<nav
-  aria-label="Product and legal information"
-  style={{
-    display: "flex",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: 14,
-    fontSize: 11,
-  }}
->
-  <a
-    href="/"
-    target="_blank"
-    rel="noopener noreferrer"
-    style={{ color: "#b9fa77" }}
-  >
-    About FORGEX
-  </a>
-  <a
-    href="/privacy"
-    target="_blank"
-    rel="noopener noreferrer"
-    style={{ color: "#b9fa77" }}
-  >
-    Privacy
-  </a>
-  <a
-    href="/terms"
-    target="_blank"
-    rel="noopener noreferrer"
-    style={{ color: "#b9fa77" }}
-  >
-    Terms
-  </a>
-</nav>
-
-            <SupportLinks />
-          </footer>
+          <SiteFooter />
         </div>
       </section>
       <input

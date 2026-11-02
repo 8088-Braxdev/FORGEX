@@ -1,0 +1,6 @@
+.links { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; font: 500 12px/1.5 var(--font-forgex-sans), system-ui, sans-serif; }
+.links a { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; color: #abbcc4; text-decoration: none; text-underline-offset: 4px; }
+.links a:hover { color: #dff6cd; text-decoration: underline; }
+.links a:focus-visible { outline: 2px solid #b9fa77; outline-offset: 4px; border-radius: 3px; }
+.links svg { flex: 0 0 auto; }
+@media (pointer: coarse) { .links a { min-height: 44px; } }

@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { ArrowLeft, Home } from "lucide-react";
 import styles from "./not-found.module.css";
+import SiteFooter from "@/components/SiteFooter";
 
 export default function NotFound() {
   return (
@@ -36,9 +37,7 @@ export default function NotFound() {
           </Link>
         </div>
 
-        <footer>
-          <a href="https://braxcode.com" target="_blank" rel="noopener noreferrer">BraxCode Digitals Foundation</a> · FORGEX
-        </footer>
+        <SiteFooter />
       </div>
     </main>
   );

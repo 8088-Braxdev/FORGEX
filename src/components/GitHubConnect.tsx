@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Check, ChevronDown, Github, LogOut, RefreshCw } from "lucide-react";
 import { saveWorkspaceDraft, type RepoIdentity } from "@/lib/workspaceDraft";
 import type { PreviewBinaryAsset } from "@/lib/previewAssets";
@@ -25,6 +25,7 @@ export default function GitHubConnect({ hasWorkspace, currentFiles, assets, sele
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [retry, setRetry] = useState(0);
+  const availabilityId = useId();
 
   useEffect(() => {
     if (busy) return;
@@ -105,13 +106,15 @@ export default function GitHubConnect({ hasWorkspace, currentFiles, assets, sele
             <button type="button" className={styles.disconnect} disabled={busy} onClick={() => void disconnect()}><LogOut size={14} />{busy ? "Disconnecting…" : "Disconnect"}</button>
           </div>
         </details>
+      ) : error ? (
+        <button type="button" className={styles.retry} disabled={busy} onClick={() => setRetry(n => n + 1)}><RefreshCw size={15} /> Retry GitHub</button>
       ) : (
-        <button type="button" className={styles.connect} disabled={busy || !status?.configured} onClick={() => void connect()}>
-          <Github size={16} />{busy ? "Connecting…" : status ? "Connect GitHub" : error ? "GitHub unavailable" : "Checking GitHub…"}
+        <button type="button" className={styles.connect} aria-label={busy ? "Connecting GitHub" : status?.configured ? "Connect GitHub" : status ? "GitHub unavailable" : "Checking GitHub"} aria-describedby={status && !status.configured ? availabilityId : undefined} title={status && !status.configured ? "GitHub sign-in is currently unavailable. You can continue editing." : undefined} disabled={busy || !status?.configured} onClick={() => void connect()}>
+          <Github size={16} />{busy ? "Connecting…" : status?.configured ? "Connect GitHub" : status ? "GitHub unavailable" : "Checking GitHub…"}
         </button>
       )}
-      {status && !status.configured ? <p className={styles.status}>GitHub connection is temporarily unavailable. Guest editing is available.</p> : null}
-      {error ? <div role="status" className={styles.status}>{error} <button type="button" className={styles.retry} disabled={busy} onClick={() => setRetry(n => n + 1)}><RefreshCw size={12} /> Retry</button></div> : null}
+      {status && !status.configured ? <p id={availabilityId} className={styles.assistive}>GitHub sign-in is currently unavailable. You can continue editing.</p> : null}
+      {error ? <p role="status" className={styles.assistive}>{error}</p> : null}
     </section>
   );
 }

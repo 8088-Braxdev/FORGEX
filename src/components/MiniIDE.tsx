@@ -46,6 +46,7 @@ import {
   Trash2,
   AlertCircle,
   Command,
+  Ellipsis,
 } from "lucide-react";
 import { analyzeProject, type Finding, type SourceFile } from "@/lib/analyzer";
 import type { WorkspaceDraft, RepoIdentity } from "../lib/workspaceDraft";
@@ -416,6 +417,25 @@ export default function MiniIDE({
     null | "explorer" | "preview" | "console" | "height"
   >(null);
   const [newMenuOpen, setNewMenuOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 12 });
+
+  function positionMenu(button: HTMLButtonElement) {
+    const rect = button.getBoundingClientRect();
+    setMenuPosition({ top: Math.max(12, Math.min(rect.bottom + 8, window.innerHeight - 220)), left: Math.max(12, Math.min(rect.left, window.innerWidth - 297)) });
+  }
+
+  function menuKeys(event: KeyboardEvent<HTMLDivElement>) {
+    const items = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button[role="menuitem"]:not(:disabled)'));
+    const current = items.indexOf(document.activeElement as HTMLButtonElement);
+    if (event.key === "Escape") {
+      event.preventDefault(); setNewMenuOpen(false); setSaveMenuOpen(false);
+      (event.currentTarget.previousElementSibling as HTMLButtonElement | null)?.focus();
+    } else if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+      event.preventDefault();
+      const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (current + (event.key === "ArrowUp" ? -1 : 1) + items.length) % items.length;
+      items[next]?.focus();
+    }
+  }
   const [livePreview, setLivePreview] = useState(false);
 
   const [consoleMode, setConsoleMode] = useState<
@@ -2104,6 +2124,8 @@ export default function MiniIDE({
           "--fxide-preview-width": `${previewWidth}px`,
           "--fxide-console-height": `${consoleHeight}px`,
           "--fxide-height": `${ideHeight}px`,
+          "--fxide-menu-top": `${menuPosition.top}px`,
+          "--fxide-menu-left": `${menuPosition.left}px`,
         } as CSSProperties
       }
       aria-label="FORGEX IDE workspace"
@@ -2125,6 +2147,7 @@ export default function MiniIDE({
         <div className="fxide-primary-actions">
           <button
             type="button"
+            className="fxide-action-secondary"
             onClick={() => {
               setPaletteMode("commands");
               setPaletteQuery("");
@@ -2139,7 +2162,8 @@ export default function MiniIDE({
           <div className="fxide-menu-container" ref={newMenuRef}>
             <button
               type="button"
-              onClick={() => {
+              onClick={(event) => {
+                positionMenu(event.currentTarget);
                 setNewMenuOpen((v) => !v);
                 setSaveMenuOpen(false);
               }}
@@ -2153,7 +2177,7 @@ export default function MiniIDE({
               <ChevronDown size={13} />
             </button>
             {newMenuOpen && (
-              <div className="fxide-save-menu" role="menu">
+              <div className="fxide-save-menu" role="menu" onKeyDown={menuKeys}>
                 <button
                   type="button"
                   role="menuitem"
@@ -2187,6 +2211,7 @@ export default function MiniIDE({
           {onImportFiles && (
             <button
               type="button"
+              className="fxide-action-secondary"
               onClick={onImportFiles}
               title="Add source files to IDE"
               aria-label="Add files"
@@ -2198,6 +2223,7 @@ export default function MiniIDE({
 
           <button
             type="button"
+            className="fxide-action-secondary"
             onClick={() => folderInputRef.current?.click()}
             title="Open a local folder in FORGEX IDE"
             aria-label="Open folder from device"
@@ -2209,6 +2235,7 @@ export default function MiniIDE({
           {onImportRepository && (
             <button
               type="button"
+              className="fxide-action-secondary"
               onClick={onImportRepository}
               title="Import GitHub repository"
               aria-label="Import GitHub repository"
@@ -2224,7 +2251,7 @@ export default function MiniIDE({
             aria-label="Run preview"
           >
             <Play size={16} />
-            <span>Run preview</span>
+            <span>{smallScreen ? "Run" : "Run preview"}</span>
           </button>
           <button
             type="button"
@@ -2238,21 +2265,31 @@ export default function MiniIDE({
           <div className="fxide-menu-container" ref={saveMenuRef}>
             <button
               type="button"
-              onClick={() => {
+              onClick={(event) => {
+                positionMenu(event.currentTarget);
                 setSaveMenuOpen((current) => !current);
                 setNewMenuOpen(false);
               }}
               aria-haspopup="menu"
               aria-expanded={saveMenuOpen}
-              title="Save and import options"
-              aria-label="Save and import options"
+              title={smallScreen ? "More workspace actions" : "Save and import options"}
+              aria-label={smallScreen ? "More workspace actions" : "Save and import options"}
             >
-              <Save size={16} />
-              <span>Save</span>
+              {smallScreen ? <Ellipsis size={16} /> : <Save size={16} />}
+              <span>{smallScreen ? "More" : "Save"}</span>
               <ChevronDown size={13} />
             </button>
             {saveMenuOpen && (
-              <div className="fxide-save-menu" role="menu">
+              <div className="fxide-save-menu" role="menu" onKeyDown={menuKeys}>
+                {smallScreen && (
+                  <>
+                    {onImportFiles && <button type="button" role="menuitem" onClick={() => { setSaveMenuOpen(false); onImportFiles(); }}><Upload size={15} /> Add files</button>}
+                    <button type="button" role="menuitem" onClick={() => { setSaveMenuOpen(false); folderInputRef.current?.click(); }}><FolderDown size={15} /> Open folder</button>
+                    {onImportRepository && <button type="button" role="menuitem" onClick={() => { setSaveMenuOpen(false); onImportRepository(); }}><GitBranch size={15} /> Import repository</button>}
+                    <button type="button" role="menuitem" onClick={() => { setSaveMenuOpen(false); setPaletteMode("commands"); setPaletteQuery(""); setPaletteOpen(true); }}><Command size={15} /> Command palette</button>
+                    <div role="separator" className="fxide-menu-separator" />
+                  </>
+                )}
                 <button
                   type="button"
                   role="menuitem"
