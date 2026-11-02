@@ -134,3 +134,46 @@
     white-space: nowrap;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Studio polish — presentation-only removals.                        */
+/* Professional IDEs do not show marketing headings, numbered kickers   */
+/* ("SECURITY LENS / 002") or dev-only bridge controls in the          */
+/* workspace. These rules remove that noise on every viewport.        */
+/* No application logic is changed by this layer.                     */
+/* ------------------------------------------------------------------ */
+
+/* The studio starts at the workspace status, not a marketing paragraph.
+   This also removes the desktop/mobile inconsistency: the heading used
+   to render on desktop and be hidden on phones. */
+.fx-workspace-heading,
+.fx-workspace-privacy {
+  display: none;
+}
+
+/* Section kickers carried machine-style numbering (… / 002, … / 006). */
+.page-heading .eyebrow {
+  display: none;
+}
+
+/* Numbered badges inside advisory cards (01 Locate, 02 Understand, 03 Verify). */
+.signal-item > span {
+  display: none;
+}
+
+/* "CHECK 01"… labels in the Release Gate list. */
+.gate-item > small {
+  display: none;
+}
+
+/* Dev-only Gemini bridge row: unusable on production deployments and it
+   stretched the preview header into a long horizontal strip. */
+.fxide-v12 .fxide-ai-connect {
+  display: none;
+}
+
+/* Preview page switcher wraps on narrow widths instead of overflowing. */
+.fxide-v12 .fxide-preview-pages {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
