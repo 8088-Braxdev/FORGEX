@@ -15,6 +15,20 @@ export default function ImageViewer({ asset, onViewSource }: { asset: PreviewBin
   const payload = asset.dataUrl.slice(asset.dataUrl.indexOf(',') + 1);
   const bytes = base64 ? Math.floor(payload.length * 3 / 4) - (payload.endsWith('==') ? 2 : payload.endsWith('=') ? 1 : 0) : new TextEncoder().encode(decodeURIComponent(payload)).length;
   const format = asset.path.split('.').pop()?.toUpperCase() ?? 'Image';
+  function downloadImage() {
+    const data = base64
+      ? Uint8Array.from(atob(payload), character => character.charCodeAt(0))
+      : new TextEncoder().encode(decodeURIComponent(payload));
+    const mime = asset.dataUrl.slice(5, asset.dataUrl.indexOf(',')).split(';')[0];
+    const url = URL.createObjectURL(new Blob([data], { type: mime }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = asset.path.split('/').pop() ?? 'image';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
   return (
     <section className={styles.viewer} aria-label={`Image viewer: ${asset.path}`}>
       <header className={styles.toolbar}>
@@ -24,7 +38,7 @@ export default function ImageViewer({ asset, onViewSource }: { asset: PreviewBin
           <span>{zoom === null ? 'Fit' : `${Math.round(zoom * 100)}%`}</span>
           <button type="button" aria-label="Zoom in" onClick={() => setZoom(n => Math.min(4, (n ?? 1) + .25))}><ZoomIn size={16} /></button>
           <button type="button" aria-label="Fit image" onClick={() => setZoom(null)}><Maximize2 size={16} /></button>
-          <a href={asset.dataUrl} download={asset.path.split('/').pop()} aria-label="Download image"><Download size={16} /></a>
+          <button type="button" onClick={downloadImage} aria-label="Download image"><Download size={16} /></button>
           {onViewSource ? <button type="button" onClick={onViewSource}>View source</button> : null}
         </div>
       </header>
