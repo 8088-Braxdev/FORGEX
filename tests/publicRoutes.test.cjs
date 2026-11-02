@@ -22,6 +22,7 @@ test('built public routes, SEO, support, legacy OAuth and PWA assets', { skip: !
   const oauth = await fetch(`${origin}/?github=connected`, { redirect: 'manual' });
   assert.equal(oauth.status, 307); assert.equal(oauth.headers.get('location'), '/studio?github=connected');
   const studio = await read('/studio'); assert.match(studio, /id="forgex-mini-ide"/); assert.match(studio, /noindex/);
+  assert.equal(studio.match(/<title>([^<]+)<\/title>/)?.[1], 'Studio | FORGEX DevStudio');
   assert.ok(!studio.includes('LOCAL RULE ENGINE'));
   const robots = await read('/robots.txt'); assert.match(robots, /Disallow: \/studio/);
   const sitemap = await read('/sitemap.xml'); assert.ok(!sitemap.includes('/studio')); assert.ok(!sitemap.includes('/api/'));

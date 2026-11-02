@@ -426,7 +426,7 @@ export default function Home() {
         const restore = await confirmAction({
           title: "Restore previous workspace?",
           message:
-            `FORGEX found ${saved.files.length} locally saved file(s).\n\n` +
+            `FORGEX found ${saved.files.length + (saved.assets?.length ?? 0)} locally saved file(s), including ${saved.assets?.length ?? 0} image(s).\n\n` +
             "You can restore this workspace or start a new session.\n\n" +
             "Choosing Not Now will preserve the saved draft " +
             "without asking again about this same version " +
@@ -463,7 +463,7 @@ export default function Home() {
         setExternalImportKey((value) => value + 1);
         setResult(null);
 
-        setNotice(`Restored ${saved.files.length} files from browser storage.`);
+        setNotice(`Restored ${saved.files.length + (saved.assets?.length ?? 0)} files, including ${saved.assets?.length ?? 0} images, from browser storage.`);
       })
       .catch(() => {
         if (active) {
@@ -861,11 +861,11 @@ export default function Home() {
   async function importRepository() {
     if (!repoUrl.trim() || busy) return;
 
-    if (files.length > 0 || repoIdentity !== null) {
+    if (files.length > 0 || assets.length > 0 || repoIdentity !== null) {
       const approved = await confirmAction({
         title: "Import another repository?",
         message:
-          `Current workspace: ${files.length} file(s).\n\n` +
+          `Current workspace: ${files.length + assets.length} file(s), including ${assets.length} image(s).\n\n` +
           "Importing this repository will replace the current " +
           "working workspace and its repository connection.\n\n" +
           "Export a project backup before continuing if you " +
@@ -1272,8 +1272,8 @@ export default function Home() {
 
             <div className="fx-workspace-status" role="status">
               <span>
-                <Files size={15} /> {fileCount}{" "}
-                {fileCount === 1 ? "file" : "files"} ·{" "}
+                <Files size={15} /> {fileCount + assets.length}{" "}
+                {fileCount + assets.length === 1 ? "file" : "files"} ·{" "}
                 {totalLines.toLocaleString()} lines
               </span>
               <span>

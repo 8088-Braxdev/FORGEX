@@ -1618,11 +1618,11 @@ export default function MiniIDE({
   }
 
   async function createWorkspace(template: "blank" | "web") {
-    if (files.length > 0) {
+    if (files.length > 0 || previewBinaryAssets.length > 0) {
       const approved = await confirmAction({
         title: "Replace current workspace?",
         message:
-          `Your current workspace contains ${files.length} file(s).\n\n` +
+          `Your current workspace contains ${files.length + previewBinaryAssets.length} file(s), including ${previewBinaryAssets.length} image(s).\n\n` +
           "Replacing it will discard the current working files. " +
           "Export a project backup before continuing.\n\n" +
           "Your GitHub repository will not be modified.",
@@ -1745,8 +1745,8 @@ export default function MiniIDE({
         const approved = await confirmAction({
           title: "Restore project backup?",
           message:
-            `Backup contains ${restored.length} file(s).\n\n` +
-            `Your current workspace contains ${files.length} file(s).\n\n` +
+            `Backup contains ${restored.length + (draft.assets?.length ?? 0)} file(s), including ${draft.assets?.length ?? 0} image(s).\n\n` +
+            `Your current workspace contains ${files.length + previewBinaryAssets.length} file(s).\n\n` +
             "Restoring this backup will replace your current working files. " +
             "Export your current workspace first if you need to keep it.\n\n" +
             "Your GitHub repository will not be modified.",
@@ -1769,7 +1769,7 @@ export default function MiniIDE({
       setLivePreview(false);
       setTouched([]);
       setMobileView("editor");
-      setNotice(`Restored ${restored.length} files from backup.`);
+      setNotice(`Restored ${restored.length + (draft.assets?.length ?? 0)} files, including ${draft.assets?.length ?? 0} images, from backup.`);
     } catch (error) {
       setNotice(
         error instanceof Error ? error.message : "Could not import backup.",
@@ -1803,8 +1803,8 @@ export default function MiniIDE({
         const approved = await confirmAction({
           title: "Restore saved workspace?",
           message:
-            `Saved draft contains ${restored.length} file(s).\n\n` +
-            `Your current workspace contains ${files.length} file(s).\n\n` +
+            `Saved draft contains ${restored.length + (draft.assets?.length ?? 0)} file(s), including ${draft.assets?.length ?? 0} image(s).\n\n` +
+            `Your current workspace contains ${files.length + previewBinaryAssets.length} file(s).\n\n` +
             "Restoring this draft will replace your current working files. " +
             "Export a project backup first if you need to keep them.\n\n" +
             "Your GitHub repository will remain unchanged.",
@@ -1827,7 +1827,7 @@ export default function MiniIDE({
       setEditorClosed(false);
       setLivePreview(false);
       setMobileView("editor");
-      setNotice(`Restored ${restored.length} locally saved files.`);
+      setNotice(`Restored ${restored.length + (draft.assets?.length ?? 0)} locally saved files, including ${draft.assets?.length ?? 0} images.`);
     } catch {
       setNotice("Saved browser draft is invalid or inaccessible.");
     }
@@ -2116,8 +2116,8 @@ export default function MiniIDE({
           <div>
             <strong>FORGEX IDE</strong>
             <small>
-              {files.length
-                ? `${files.length} files · local workspace`
+              {files.length || previewBinaryAssets.length
+                ? `${files.length + previewBinaryAssets.length} files · local workspace`
                 : "Empty workspace"}
             </small>
           </div>
@@ -3630,7 +3630,7 @@ export default function MiniIDE({
           {active ? ` · ${active.content.split(/\r?\n/).length} lines` : ""}
         </span>
         <span>
-          {files.length} files · {totalLines.toLocaleString()} lines
+          {files.length + previewBinaryAssets.length} files · {totalLines.toLocaleString()} lines
         </span>
         {previewDirty && (
           <span className="fxide-status-note">Preview may be outdated</span>
