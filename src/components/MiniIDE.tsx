@@ -3624,9 +3624,6 @@ export default function MiniIDE({
 
       <nav
         className="fxide-mobile-nav"
-        style={{
-          gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
-        }}
         aria-label="Mini IDE mobile navigation"
       >
         {(

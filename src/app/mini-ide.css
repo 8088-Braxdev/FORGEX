@@ -151,7 +151,7 @@
   .fxide-v09 .fxide-sidebar.fxide-mobile-active,.fxide-v09 .fxide-editor.fxide-mobile-active,.fxide-v09 .fxide-preview.fxide-mobile-active,.fxide-v09 .fxide-console.fxide-mobile-active {display:flex}
   .fxide-v09.fxide-hide-preview .fxide-preview.fxide-mobile-active,.fxide-v09.fxide-hide-console .fxide-console.fxide-mobile-active {display:flex}
   .fxide-v09 .fxide-resize-handle {display:none}
-  .fxide-v09 .fxide-mobile-nav {min-height:59px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:#121e26;border-top:1px solid var(--fxide-border)}
+  .fxide-v09 .fxide-mobile-nav {min-height:59px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));background:#121e26;border-top:1px solid var(--fxide-border)}
   .fxide-v09 .fxide-mobile-nav button {min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;border-top:2px solid transparent;color:#91a9b6;background:none;text-transform:capitalize;font-size:10px;min-height:58px}
   .fxide-v09 .fxide-mobile-nav button.active {border-top-color:#b9fa77;color:#b9fa77;background:#203127}
   .fxide-v09 .fxide-tabs {min-height:42px}
@@ -716,6 +716,9 @@
 .fxide-v12.fxide-narrow-toolbar .fxide-primary-actions > button:not(.fxide-expand-button) > svg,
 .fxide-v12.fxide-narrow-toolbar .fxide-primary-actions > .fxide-menu-container > button > svg { display: none; }
 .fxide-v12.fxide-compact-toolbar.fxide-expanded .fxide-toolbar { padding-top: max(10px, env(safe-area-inset-top)); }
+.fxide-v12.fxide-narrow-toolbar .fxide-mobile-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.fxide-v12.fxide-narrow-toolbar .fxide-mobile-nav button { min-height: 44px; padding: 4px 2px; gap: 2px; }
+@media (max-width: 820px) { .fxide-v12 { --fx-notice-bottom: calc(102px + env(safe-area-inset-bottom)); } .fxide-v12.fxide-narrow-toolbar { --fx-notice-bottom: calc(132px + env(safe-area-inset-bottom)); } }
 
 /* FORGEX DAY 4 — VISIBLE WORKSPACE NOTIFICATIONS */
 

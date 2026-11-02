@@ -1,6 +1,8 @@
 
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+
 import {
   CheckCircle2,
   AlertTriangle,
@@ -40,9 +42,9 @@ const themes = {
     Icon: AlertTriangle,
   },
   info: {
-    background: "#192e36",
-    border: "#416672",
-    accent: "#a8dae9",
+    background: "#17252d",
+    border: "#38505a",
+    accent: "#b9fa77",
     title: "FORGEX notification",
     Icon: Info,
   },
@@ -53,6 +55,14 @@ export default function AppNotice({
   tone = "info",
   onDismiss,
 }: Props) {
+  const dismissRef = useRef(onDismiss);
+  const [paused, setPaused] = useState(false);
+  useEffect(() => { dismissRef.current = onDismiss; }, [onDismiss]);
+  useEffect(() => {
+    if (!message || paused || tone === "error" || tone === "warning") return;
+    const timer = window.setTimeout(() => dismissRef.current(), 8000);
+    return () => window.clearTimeout(timer);
+  }, [message, tone, paused]);
   if (!message) return null;
 
   const theme = themes[tone];
@@ -61,16 +71,20 @@ export default function AppNotice({
   return (
     <div
       role={tone === "error" ? "alert" : "status"}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setPaused(false); }}
       style={{
         position: "fixed",
         right: 16,
-        bottom: "calc(16px + env(safe-area-inset-bottom))",
+        bottom: "var(--fx-notice-bottom, calc(16px + env(safe-area-inset-bottom)))",
         zIndex: 9000,
         display: "flex",
         alignItems: "flex-start",
         gap: 12,
         width: "min(420px, calc(100vw - 32px))",
-        padding: "14px 15px",
+        padding: "10px 12px",
         border: `1px solid ${theme.border}`,
         borderRadius: 11,
         background: theme.background,
@@ -87,7 +101,7 @@ export default function AppNotice({
       <div style={{ flex: 1, minWidth: 0 }}>
         <strong
           style={{
-            display: "block",
+            display: tone === "info" ? "none" : "block",
             fontSize: 12,
             marginBottom: 5,
           }}
@@ -117,8 +131,8 @@ export default function AppNotice({
           flexShrink: 0,
           display: "grid",
           placeItems: "center",
-          width: 28,
-          height: 28,
+          width: 40,
+          height: 40,
           border: 0,
           borderRadius: 6,
           background: "transparent",
