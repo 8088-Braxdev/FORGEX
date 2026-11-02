@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>FORGEX responsive QA</title>
+<style>body{margin:0;background:#243039;color:#eef4f5;font:14px system-ui}header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:12px 20px}label{display:flex;align-items:center;gap:8px}select,button{padding:8px;color:inherit;background:#102029;border:1px solid #70838c;border-radius:4px}main{padding:12px;overflow:auto}iframe{display:block;margin:auto;border:1px solid #72848d;background:#0b0f13;box-sizing:content-box}pre{padding:12px 20px;white-space:pre-wrap;font:12px/1.5 monospace}</style></head>
+<body><header><strong>FORGEX responsive QA</strong>
+<label>Route <select id="route"><option value="/studio">Studio</option><option value="/">Landing</option><option value="/help">Help</option><option value="/privacy">Privacy</option></select></label>
+<label>Width <select id="width"><option>320</option><option>360</option><option>375</option><option selected>390</option><option>428</option><option>768</option><option>1024</option><option>1280</option></select></label>
+<label>Height <select id="height"><option selected>800</option><option>480</option></select></label><button id="measure">Check layout</button>
+</header><main><iframe title="Responsive FORGEX" id="app" src="/studio" width="390" height="800"></iframe></main><pre id="results" aria-live="polite">Choose a viewport and interact with the real app below.</pre>
+<script>
+const frame=document.getElementById('app');
+document.getElementById('route').addEventListener('change',event=>{frame.src=event.target.value;});
+document.getElementById('width').addEventListener('change',event=>{frame.width=event.target.value;});
+document.getElementById('height').addEventListener('change',event=>{frame.height=event.target.value;});
+document.getElementById('measure').addEventListener('click',()=>{
+ const doc=frame.contentDocument, win=frame.contentWindow;
+ const rect=element=>{if(!element)return null;const r=element.getBoundingClientRect();return {x:Math.round(r.x),y:Math.round(r.y),width:Math.round(r.width),height:Math.round(r.height)};};
+ const controls=Array.from(doc.querySelectorAll('.fxide-primary-actions > button,.fxide-primary-actions > div > button')).filter(el=>el.getBoundingClientRect().width>0).map(el=>({name:el.getAttribute('aria-label'),text:el.innerText,...rect(el)}));
+ const drawer=doc.querySelector('[aria-label="Workspace navigation"]');
+ document.getElementById('results').textContent=JSON.stringify({viewport:win.innerWidth,height:win.innerHeight,bodyOverflow:doc.documentElement.scrollWidth-win.innerWidth,toolbar:rect(doc.querySelector('.fxide-toolbar')),controls,drawer:rect(drawer),drawerVisible:drawer?getComputedStyle(drawer).visibility:null,bodyPosition:doc.body.style.position,scrollY:win.scrollY},null,2);
+});
+</script></body></html>

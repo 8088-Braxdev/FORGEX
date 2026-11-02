@@ -10,3 +10,7 @@ extension/out/
 .vercel/
 *.tsbuildinfo
 npm-debug.log*
+
+*.pem
+*.key
+.env.*.bak

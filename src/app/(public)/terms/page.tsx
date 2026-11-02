@@ -1,16 +1,12 @@
 
 import type { Metadata } from "next";
 import styles from "../public.module.css";
+import { publicMetadata, SUPPORT_EMAIL } from "@/lib/siteInfo";
 
-export const metadata: Metadata = {
-  title: "Terms of Service | FORGEX DevStudio",
-  description:
-    "Terms governing the use of FORGEX DevStudio and its developer intelligence tools.",
-};
+export const metadata: Metadata = publicMetadata("Terms of Service", "Terms governing the use of FORGEX DevStudio and its developer intelligence tools.", "/terms");
 
 const contactEmail =
-  process.env.NEXT_PUBLIC_FORGEX_SUPPORT_EMAIL?.trim() ||
-  "braxtonbruzzzy@gmail.com";
+  SUPPORT_EMAIL;
 
 export default function TermsPage() {
   return (
@@ -27,7 +23,7 @@ export default function TermsPage() {
       </p>
 
       <p className={styles.updated}>
-        Effective date: October 30, 2026
+        Effective date: November 2, 2026
       </p>
 
       <div className={styles.legalBody}>
@@ -180,7 +176,6 @@ export default function TermsPage() {
 
         <section className={styles.legalSection}>
           <h2>10. Contact</h2>
-          {contactEmail ? (
             <p>
               Questions about these terms can be sent to{" "}
               <a
@@ -191,13 +186,7 @@ export default function TermsPage() {
               </a>
               .
             </p>
-          ) : (
-            <p className={styles.reviewNote}>
-              A verified support email must be added
-              before these terms are published
-              as final production terms.
-            </p>
-          )}
+
         </section>
       </div>
     </article>

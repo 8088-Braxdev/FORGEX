@@ -1,4 +1,5 @@
 import type { SourceFile } from "./analyzer";
+import { validatePreviewAssets, type PreviewBinaryAsset } from "./previewAssets";
 import { validateWorkspace } from "./ideCore";
 
 export type RepoIdentity = {
@@ -11,6 +12,7 @@ export type RepoIdentity = {
 
 export type WorkspaceDraft = {
   savedAt: number;
+  assets?: PreviewBinaryAsset[];
   files: SourceFile[];
   baselineFiles: SourceFile[];
   githubBaselineFiles?: SourceFile[] | null;
@@ -19,13 +21,14 @@ export type WorkspaceDraft = {
   repoIdentity: RepoIdentity | null;
 };
 
-const DB_NAME = "forgex-local-workspace-v2";
+const DB_NAME = "forgex-local-workspace-v3";
+const LEGACY_DB_NAME = "forgex-local-workspace-v2";
 const STORE_NAME = "drafts";
 const KEY = "active";
 
-function openDatabase(): Promise<IDBDatabase> {
+function openDatabase(name = DB_NAME): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1);
+    const request = indexedDB.open(name, 1);
 
     request.onupgradeneeded = () => {
       if (!request.result.objectStoreNames.contains(STORE_NAME)) {
@@ -46,7 +49,7 @@ function openDatabase(): Promise<IDBDatabase> {
   });
 }
 
-function verifyDraft(value: WorkspaceDraft): WorkspaceDraft {
+export function verifyDraft(value: WorkspaceDraft): WorkspaceDraft {
   if (!value || !Number.isFinite(value.savedAt)) {
     throw new Error("Invalid workspace recovery data.");
   }
@@ -103,42 +106,45 @@ importedPaths: [
         }
       : null;
 
+const assets = validatePreviewAssets(value.assets ?? [], files.map(file => file.path));
+
 return {
   savedAt: value.savedAt,
+  assets,
   repoIdentity,
   files,
   baselineFiles,
   githubBaselineFiles,
 
-selectedPath: files.some(
+selectedPath: [...files, ...assets].some(
   (file) => file.path === value.selectedPath
 )
   ? value.selectedPath
-  : files[0]?.path ?? "",
+  : files[0]?.path ?? assets[0]?.path ?? "",
 
     repoUrl: typeof value.repoUrl === "string" ? value.repoUrl : "",
   };
 }
 
-export async function readWorkspaceDraft(): Promise<WorkspaceDraft | null> {
-  const db = await openDatabase();
+async function readDraft(name: string): Promise<{ found: boolean; draft: WorkspaceDraft | null }> {
+  const db = await openDatabase(name);
 
   return new Promise((resolve, reject) => {
-    let raw: WorkspaceDraft | undefined;
+    let raw: WorkspaceDraft | null | undefined;
 
     const transaction = db.transaction(STORE_NAME, "readonly");
 
     const request = transaction.objectStore(STORE_NAME).get(KEY);
 
     request.onsuccess = () => {
-      raw = request.result as WorkspaceDraft | undefined;
+      raw = request.result as WorkspaceDraft | null | undefined;
     };
 
     transaction.oncomplete = () => {
       db.close();
 
       try {
-        resolve(raw ? verifyDraft(raw) : null);
+        resolve({ found: raw !== undefined, draft: raw ? verifyDraft(raw) : null });
       } catch (error) {
         reject(error);
       }
@@ -154,6 +160,15 @@ export async function readWorkspaceDraft(): Promise<WorkspaceDraft | null> {
       reject(transaction.error);
     };
   });
+}
+
+export async function readWorkspaceDraft(): Promise<WorkspaceDraft | null> {
+  const current = await readDraft(DB_NAME);
+  if (current.found) return current.draft;
+  const legacy = await readDraft(LEGACY_DB_NAME);
+  if (legacy.draft) await saveWorkspaceDraft(legacy.draft);
+  else await clearWorkspaceDraft();
+  return legacy.draft;
 }
 
 export async function saveWorkspaceDraft(value: WorkspaceDraft): Promise<void> {
@@ -188,7 +203,8 @@ export async function clearWorkspaceDraft(): Promise<void> {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_NAME, "readwrite");
 
-    transaction.objectStore(STORE_NAME).delete(KEY);
+    // A tombstone prevents cleared drafts from being resurrected from legacy storage.
+    transaction.objectStore(STORE_NAME).put(null, KEY);
 
     transaction.oncomplete = () => {
       db.close();

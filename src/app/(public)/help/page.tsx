@@ -2,12 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Code2, FolderOpen, Github, MonitorPlay, ShieldCheck } from "lucide-react";
 import styles from "../public.module.css";
+import { publicMetadata } from "@/lib/siteInfo";
 
-export const metadata: Metadata = {
-  title: "Help & Support | FORGEX DevStudio",
-  description:
-    "How to use FORGEX DevStudio: import files, connect GitHub, preview projects, and get support.",
-};
+export const metadata: Metadata = publicMetadata("Help & Support | FORGEX DevStudio", "How to use FORGEX DevStudio: import files, connect GitHub, preview projects, and get support.", "/help");
 
 export default function HelpPage() {
   return (
@@ -51,7 +48,7 @@ export default function HelpPage() {
             Preview supports static HTML, CSS, and JavaScript. It does not run
             npm, Node servers, or framework build steps. Local images and pages
             resolve relative to the project. Browser security limits apply to
-            network requests.
+            network requests. AI and weather connections are disabled on production deployments until an approved authentication and quota policy is configured. API Tester is separate and remains subject to browser CORS rules.
           </p>
         </section>
 
@@ -64,6 +61,14 @@ export default function HelpPage() {
             create a pull request on a new branch. FORGEX never pushes directly
             to your default branch. Publishing requires explicit confirmation.
           </p>
+        </section>
+
+        <section className={styles.legalSection}>
+          <h2>Images, backups and folders</h2>
+          <p>Click an imported image in Explorer to view it, fit it to the panel, zoom or download it. PNG, JPEG, WebP, GIF and ICO are stored separately from editable source. Safe SVGs can be viewed as images or opened as source.</p>
+          <p>Export project backup saves source, images, comparison baselines and repository identity. Older text backups can still be restored. Browser recovery uses storage on this device; keep an exported copy before clearing site data.</p>
+          <p>Open Folder imports a copy. Save folder writes changed files and images to a folder you select after confirmation, and checks for external changes before writing. It does not automatically synchronize or delete disk files. Persistent linked-folder Save/Reload is not yet available.</p>
+          <p>Binary images imported from GitHub are read-only for publishing. Adding new binary images locally blocks publishing until reimport; they remain available in your backup. Workflow files can be read but changes to them cannot be published through FORGEX.</p>
         </section>
 
         <section className={styles.legalSection}>

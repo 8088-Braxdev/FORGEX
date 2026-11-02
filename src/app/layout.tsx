@@ -2,6 +2,7 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { Sora, IBM_Plex_Mono } from "next/font/google";
+import { publicMetadata, SITE_ORIGIN } from "@/lib/siteInfo";
 import "./style.css";
 import "./mini-ide.css";
 import { AppConfirmProvider } from "@/components/AppConfirmProvider";
@@ -21,31 +22,13 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://forgex-gamma.vercel.app"),
-  title: {
-    default: "FORGEX — Developer Intelligence",
-    template: "%s | FORGEX",
-  },
-  description:
-    "Inspect real source code, investigate risks, and build with confidence. By BraxCode Digitals Foundation.",
-  applicationName: "FORGEX",
-  robots: {
-    index: true,
-    follow: true,
-  },
-  openGraph: {
-    type: "website",
-    siteName: "FORGEX",
-    title: "FORGEX — Developer Intelligence",
-    description:
-      "Inspect real source code, investigate risks, and build with confidence.",
-    url: "https://forgex-gamma.vercel.app",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "FORGEX — Developer Intelligence",
-    description:
-      "Inspect real source code, investigate risks, and build with confidence.",
+  ...publicMetadata("FORGEX DevStudio — Developer Intelligence", "Inspect real source code, investigate risks, and build with confidence. By BraxCode Digitals Foundation.", "/"),
+  metadataBase: new URL(SITE_ORIGIN),
+  title: { default: "FORGEX DevStudio — Developer Intelligence", template: "%s | FORGEX DevStudio" },
+  applicationName: "FORGEX DevStudio",
+  icons: {
+    icon: [{ url: "/favicon.ico", sizes: "any" }, { url: "/brand/mark-96.png", type: "image/png", sizes: "96x96" }],
+    apple: [{ url: "/brand/apple-touch-icon.png", sizes: "180x180" }],
   },
 };
 

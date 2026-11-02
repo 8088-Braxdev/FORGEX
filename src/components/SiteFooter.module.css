@@ -1,0 +1,9 @@
+.footer { width: calc(100% - 48px); max-width: 1180px; margin: 24px auto 0; padding: 20px 0 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 24px; border-top: 1px solid #26353c; color: #82969f; font: 400 12px/1.6 var(--font-forgex-sans), system-ui, sans-serif; }
+.footer p { flex: 1 1 245px; margin: 0; overflow-wrap: anywhere; }
+.footer a { color: #abbcc4; text-decoration: none; text-underline-offset: 4px; }
+.footer a:hover { color: #dff6cd; text-decoration: underline; }
+.footer a:focus-visible { outline: 2px solid #b9fa77; outline-offset: 4px; border-radius: 3px; }
+.navigation { display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: center; }
+.navigation a { display: inline-flex; align-items: center; min-height: 40px; }
+@media (max-width: 600px) { .footer { margin-top: 20px; padding-top: 16px; justify-content: center; text-align: center; gap: 0 20px; } .footer p { flex-basis: 100%; margin-bottom: 8px; } .navigation { justify-content: center; } }
+@media (pointer: coarse) { .navigation a { min-height: 44px; } }

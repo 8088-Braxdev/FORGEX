@@ -2,6 +2,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { PreviewBinaryAsset } from "@/lib/previewAssets";
+import { useAppConfirm } from "./AppConfirmProvider";
 import type { SourceFile } from "../lib/analyzer";
 import {
   compareWorkspace,
@@ -13,6 +15,8 @@ import type { RepoIdentity } from "../lib/workspaceDraft";
 type Props = {
   baselineFiles: readonly SourceFile[];
   currentFiles: readonly SourceFile[];
+  assets: PreviewBinaryAsset[];
+  selectedPath?: string;
   onOpenFile: (path: string, line?: number) => void;
   onCaptureBaseline?: () => void;
   githubBaselineFiles: readonly SourceFile[] | null;
@@ -31,12 +35,15 @@ function numbers(line: DiffLine) {
 export default function SourceControlPanel({
   baselineFiles,
   currentFiles,
+  assets,
+  selectedPath,
   onOpenFile,
   onCaptureBaseline,
   githubBaselineFiles,
   repoIdentity,
   repoUrl
 }: Props) {
+  const confirmAction = useAppConfirm();
   const report = useMemo(
     () => compareWorkspace(baselineFiles, currentFiles),
     [baselineFiles, currentFiles]
@@ -63,14 +70,14 @@ export default function SourceControlPanel({
     }
   }, [reviewChange]);
 
-  function captureSnapshot() {
+  async function captureSnapshot() {
     if (!onCaptureBaseline) return;
 
-    const confirmed = window.confirm(
-      "Set the current in-memory files as the comparison snapshot? " +
-        "Existing change markers will be cleared. " +
-        "This does NOT save files, commit or push to GitHub."
-    );
+    const confirmed = await confirmAction({
+      title: "Capture comparison snapshot?",
+      message: "Current files will become the comparison snapshot. This clears local change markers without saving files or publishing to GitHub.",
+      confirmText: "Capture Snapshot", cancelText: "Cancel",
+    });
 
     if (!confirmed) return;
 
@@ -325,8 +332,10 @@ export default function SourceControlPanel({
       </dialog>
 
 <GitHubConnect
-  hasWorkspace={currentFiles.length > 0 || repoIdentity !== null}
+  hasWorkspace={currentFiles.length > 0 || assets.length > 0 || repoIdentity !== null}
   currentFiles={currentFiles}
+  assets={assets}
+  selectedPath={selectedPath}
   baselineFiles={baselineFiles}
   githubBaselineFiles={githubBaselineFiles}
   repoIdentity={repoIdentity}
@@ -337,7 +346,7 @@ export default function SourceControlPanel({
         <button
           type="button"
           className={styles.capture}
-          onClick={captureSnapshot}
+          onClick={() => void captureSnapshot()}
         >
           Capture local snapshot
         </button>

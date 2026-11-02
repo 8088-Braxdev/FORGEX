@@ -1,0 +1,6 @@
+body { margin: 0; padding: 24px; background: #0d141a; color: #eaf3ef; font: 16px/1.6 system-ui, sans-serif; }
+main { max-width: 640px; margin: auto; }
+form { display: grid; gap: 10px; }
+input, button { min-height: 44px; padding: 10px; font: inherit; }
+button { background: #b9fa77; color: #102013; border: 0; cursor: pointer; }
+output { display: block; margin-top: 24px; white-space: pre-wrap; overflow-wrap: anywhere; }

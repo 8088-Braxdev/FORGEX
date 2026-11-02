@@ -12,12 +12,14 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import styles from "./public.module.css";
+import { redirect } from "next/navigation";
+import { publicMetadata } from "@/lib/siteInfo";
 
-export const metadata: Metadata = {
-  title: "FORGEX DevStudio | Developer Intelligence",
-  description:
-    "Understand your code. Predict the impact. Ship with confidence. Inspect source files, review risks, and prepare safer changes.",
-};
+export const metadata: Metadata = publicMetadata(
+  "FORGEX DevStudio — Developer Intelligence",
+  "Understand your code. Predict the impact. Ship with confidence. Inspect source files, review risks, and prepare safer changes.",
+  "/",
+);
 
 const features = [
   {
@@ -82,13 +84,17 @@ const jsonLd = {
   },
 };
 
-export default function WelcomePage() {
+export default async function WelcomePage({ searchParams }: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const query = await searchParams;
+  // Preserve callbacks issued before the studio route was introduced.
+  if (query.github === "connected" || query.github === "failed") {
+    redirect(`/studio?github=${query.github}`);
+  }
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <section className={styles.hero}>
         <div>
           <p className={styles.eyebrow}>
@@ -114,7 +120,7 @@ export default function WelcomePage() {
 
           <div className={styles.heroActions}>
             <Link href="/studio" className={styles.primaryButton}>
-              Launch FORGEX IDE
+              Open FORGEX
               <ArrowRight size={17} />
             </Link>
 

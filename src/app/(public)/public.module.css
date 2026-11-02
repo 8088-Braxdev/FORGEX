@@ -48,7 +48,7 @@
   border-radius: 12px;
   display: grid;
   place-items: center;
-  background: #b9fa77;
+  background: #000;
   color: #112216;
 }
 
@@ -512,4 +512,20 @@
     scroll-behavior: auto;
     transition-duration: 0s;
   }
+}
+
+/* Public navigation and support remain readable on narrow screens. */
+.topbar, .hero, .section, .bottomCta, .footer, .legalWrap { min-width: 0; }
+.brandIcon img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.footer { flex-wrap: wrap; }
+.footer > :global(.fx-support-links) { flex-basis: 100%; }
+@media (max-width: 580px) {
+  .topbar { width: calc(100% - 32px); padding: 16px 0; gap: 18px; }
+  .nav { gap: 4px 10px; justify-content: flex-start; }
+  .nav a { display: inline-flex; align-items: center; min-height: 44px; }
+  .nav .navPrimary { margin-left: auto; }
+  .hero, .section, .bottomCta, .footer, .legalWrap { width: calc(100% - 32px); }
+  .heroTitle { font-size: clamp(36px, 9vw, 50px); letter-spacing: -.055em; }
+  .heroActions > a { flex: 1 1 150px; }
+  .bottomCta { padding: 24px; }
 }

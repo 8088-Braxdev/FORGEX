@@ -1,16 +1,12 @@
 
 import type { Metadata } from "next";
 import styles from "../public.module.css";
+import { publicMetadata, SUPPORT_EMAIL } from "@/lib/siteInfo";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy | FORGEX DevStudio",
-  description:
-    "Learn how FORGEX DevStudio handles local workspaces, GitHub connections, API requests, and browser data.",
-};
+export const metadata: Metadata = publicMetadata("Privacy Policy", "Learn how FORGEX DevStudio handles local workspaces, GitHub connections, API requests, and browser data.", "/privacy");
 
 const contactEmail =
-  process.env.NEXT_PUBLIC_FORGEX_SUPPORT_EMAIL?.trim() ||
-  "braxtonbruzzzy@gmail.com";
+  SUPPORT_EMAIL;
 
 export default function PrivacyPage() {
   return (
@@ -27,7 +23,7 @@ export default function PrivacyPage() {
       </p>
 
       <p className={styles.updated}>
-        Effective date: October 30, 2026
+        Effective date: November 2, 2026
       </p>
 
       <div className={styles.legalBody}>
@@ -192,7 +188,6 @@ export default function PrivacyPage() {
 
         <section className={styles.legalSection}>
           <h2>10. Privacy Contact</h2>
-          {contactEmail ? (
             <p>
               For privacy questions or data-related requests,
               contact{" "}
@@ -204,13 +199,7 @@ export default function PrivacyPage() {
               </a>
               .
             </p>
-          ) : (
-            <p className={styles.reviewNote}>
-              A verified privacy contact email has not yet
-              been configured. This must be completed
-              before public release.
-            </p>
-          )}
+
         </section>
       </div>
     </article>

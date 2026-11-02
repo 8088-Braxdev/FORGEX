@@ -1,54 +1,61 @@
-# FORGEX Studio v0.2
-**Developer Intelligence by BraxCode Digitals Foundation**
+# FORGEX DevStudio
 
-FORGEX is a self-hostable, free static diagnostic workbench. It now includes six working modules, not just links labeled “soon”. The dark/lime visual language continues from v0.1.
+Developer intelligence by [BraxCode Digitals Foundation](https://braxcode.com).
 
-## Setup (Windows PowerShell)
-1. Extract this ZIP once, and open the folder **containing** `package.json` in VS Code. Do not run npm in the parent ZIP folder.
-2. Install Node.js 20.9+ (current Node LTS recommended). Python and Docker are **not** required for this version.
-3. Run:
+FORGEX brings a browser editor, static Preview, advisory analysis, change comparison and confirmation-based GitHub pull requests into one workspace. Start at `/`; open the IDE at `/studio`. GitHub connection is optional for guest editing.
 
-```powershell
-npm install
+## Run locally
+
+Use the repository folder containing `package.json`. Install the supported Node version required by Next.js 15, then run:
+
+```bash
+npm ci
 npm run dev
 ```
 
-4. Open `http://localhost:3000`.
+Open http://localhost:3000. Stop the dev server before a production build on a constrained machine.
 
-If port 3000 is already in use by your old FORGEX, press `Ctrl+C` in the old terminal first. Don't run both servers on the same port.
+## What this branch implements
 
-## What works
-- **Code Workbench:** edit multiple source files, import a selection or folder, run private on-device analysis with Ctrl+Enter; example project included.
-- **Security Center:** evidence, potential impact, rule confidence, and fix guidance.
-- **Project Health:** transparent weighted risk score and per-file summary; local baseline comparison.
-- **Release Gate:** six evidence-based checks, distinguishing detection from actual test execution.
-- **Rulebook:** toggle any of 30 visible rules; browser remembers preferences.
-- **Local History:** saves recent scan summaries (not source code).
-- **Fix Lab:** some selected rules show suggested per-line replacements; user explicitly reviews and applies, then can undo. These are not guaranteed behavior-preserving changes.
-- **Reports:** export Markdown, JSON, or SARIF 2.1.0.
-- Supports JavaScript, TypeScript, JSX/TSX, Python, HTML, CSS and basic JSON heuristics. No arbitrary source execution.
+- Landing-first navigation, legacy `/welcome` redirect, and OAuth return/recovery at `/studio`.
+- GitHub avatar, name/username, connected state, reconnect handling and explicit disconnect; credentials remain in server cookies.
+- Source files and a separate binary asset registry for PNG, JPEG, WebP, GIF and ICO. Safe SVG text can be viewed as an image or edited as source.
+- Image Explorer entries, viewer tabs, fit/zoom, dimensions, format/bytes and image download.
+- Binary-safe backup version 2, IndexedDB recovery and OAuth recovery; version 1 text backups remain readable.
+- Commit-pinned public/private GitHub import with nested images, bounded file sizes and partial-import warnings.
+- Save folder writes changed/new text and binary files after confirmation. External changes are checked before writes; partial failures are reported. It does not delete disk files or create a persistent two-way folder link.
+- Metadata, canonical URLs, share image, robots/sitemap, approved logo assets, favicon and PWA icons. Preview deployments request no indexing.
+- Source/impact analysis, source control and a limited workspace terminal. Findings and scores are advisory.
 
-## Important boundaries
-The engine uses text-pattern heuristics, not an AST, runtime debugger, AI model, penetration test, dependency CVE database, or live GitHub crawler. Findings are leads for a human to review. A clean report does NOT mean code is secure. The score is a convenience indicator, not a certification. Folder import is browser-based. **The web UI analyzes code directly in your browser and does not upload it.** Scan histories store metrics only. An optional `/api/analyze` endpoint exists for developer integrations; if you deliberately call that API, you are sending code to the server. Do not send secrets to a server you do not trust.
+## Limits and boundaries
 
-Limits: 120 files, 400,000 characters per file, 2 million characters per scan. Folder picker excludes node_modules, .git, .next, dist/build when paths are provided. It's not a substitute for a real CLI filesystem scanner.
+Text workspace: 120 files, 400,000 characters per file and 2 million characters total. GitHub import: up to 60 text files at 125,000 bytes per file, plus up to 32 images at 1.5 MB each / 8 MB total. Unsupported/oversized relevant imports are reported as partial. GitHub JSON responses also have a 4 MB transport budget; larger imports are explicitly partial so hosting payload limits do not crash the response. Text analysis does not inspect binary data.
 
-## Security and quality checks
+GitHub publishing supports text changes. Imported binary images are read-only for publishing; adding binary images locally blocks publishing until reimport. Workflow files may be read but their changes cannot be published through FORGEX. Publishing validates the base commit and original imported paths, limits changes to 20 paths, and creates a branch and pull request after confirmation.
 
-```powershell
-npm run test:engine
+Preview executes supported static HTML/CSS/JS in an iframe with `sandbox="allow-scripts"`. It does not install npm packages or run a React/Vite build, Next.js server or operating-system shell. Local asset rewriting covers HTML image/srcset/favicon references and CSS URLs; arbitrary JavaScript asset loaders are not a framework runtime.
+
+Gemini, weather gateway and health bridge endpoints remain development-only. Production credentials alone do not enable them. A production provider policy with authentication, durable quotas and owner budget approval is required. API Tester is separate and subject to browser CORS.
+
+Browser storage can be removed by browser settings or quota pressure. Export a backup before clearing site data or changing devices. Backups contain source code and repository identity: store them privately. Do not import or transmit credentials through Preview prompts.
+
+## Configuration
+
+See `.env.example` for names only. Enter values privately in local ignored environment files or the appropriate hosting environment. Never put GitHub or provider secrets in `NEXT_PUBLIC_` variables. GitHub configuration must match the intended host and `/api/github/callback`; Preview needs its own appropriate credentials. Do not copy production secrets to a Preview.
+
+## Verification
+
+```bash
 npm run typecheck
+node --test tests/*.test.cjs
 npm run build
-npm audit
+npm run test:http
 ```
 
-The package pins Next.js `15.5.28` (October 2026 patched 15.x security release). React and other package updates still require review. If `npm audit` flags issues, inspect the full advisory; do not blindly run `npm audit fix --force`, which can introduce incompatible major releases.
+`test:http` starts the production build locally, runs the HTTP smoke suite and stops the server. Run it after `npm run build`. It does not authenticate real GitHub accounts, consume Gemini quota, install a PWA or substitute for mobile browser QA. See `BASELINE_REPORT.md` and `RELEASE_REPORT.md` for evidence and outstanding checks.
 
-## Roadmap (not yet shipped)
-- Local repository agent / true cross-file code graph
-- GitHub OAuth, branches, pull requests and CI integration
-- Optional AI analysis with explicit cost controls
-- First-class AST parsing, actual test runs, secret redaction and trusted sandboxing
-- Authenticated multi-user cloud operations
+## Support
 
-All UI modules in v0.2 are genuinely interactive; these roadmap items are not represented as completed work.
+- WhatsApp: [0618811359](https://wa.me/255618811359)
+- Email: [braxtonbruzzzy@gmail.com](mailto:braxtonbruzzzy@gmail.com)
+- Company: [BraxCode Digitals Foundation](https://braxcode.com)

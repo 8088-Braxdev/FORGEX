@@ -1,12 +1,6 @@
 import type { MetadataRoute } from "next";
+import { SITE_ORIGIN } from "@/lib/siteInfo";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = "https://forgex-gamma.vercel.app";
-  const now = new Date();
-  return [
-    { url: `${base}/`, lastModified: now, changeFrequency: "weekly", priority: 1 },
-    { url: `${base}/help`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${base}/privacy`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${base}/terms`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
-  ];
+  return ["/", "/help", "/privacy", "/terms"].map(path => ({ url: `${SITE_ORIGIN}${path}` }));
 }
