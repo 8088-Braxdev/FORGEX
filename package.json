@@ -8,7 +8,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "audit:deps": "npm audit",
-    "test:engine": "node tests/engine.test.cjs"
+    "test:engine": "node tests/engine.test.cjs",
+    "test:http": "node scripts/test-http.cjs"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.8.0-rc.3",

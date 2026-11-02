@@ -48,15 +48,16 @@ import {
   Command,
 } from "lucide-react";
 import { analyzeProject, type Finding, type SourceFile } from "@/lib/analyzer";
-import type { RepoIdentity } from "../lib/workspaceDraft";
+import type { WorkspaceDraft, RepoIdentity } from "../lib/workspaceDraft";
 import AppNotice from "./AppNotice";
+import ImageViewer from "./ImageViewer";
+import { prepareFolderWrites, writeFolderChanges, type WorkspaceDirectoryHandle as DirectoryHandle } from "@/lib/folderWrites";
+import { exportWorkspaceBackup, parseWorkspaceBackup, MAX_BACKUP_BYTES } from "@/lib/workspaceBackup";
 import ApiRequestTester from "./ApiRequestTester";
 import {
   buildPreview,
-  exportBackup,
   ideLanguage,
   languageTotals,
-  parseBackup,
   explainRuntimeError,
   explainDiagnostic,
   safeIdePath,
@@ -67,6 +68,7 @@ import {
 
 import {
   readPreviewBinaryAsset,
+  svgPreviewUrl,
   MAX_PREVIEW_IMAGE_BYTES,
   MAX_PREVIEW_IMAGE_TOTAL_BYTES,
   MAX_PREVIEW_IMAGES,
@@ -121,6 +123,8 @@ type IdeDiagnostic = {
 };
 type Props = {
   files: SourceFile[];
+  assets: PreviewBinaryAsset[];
+  onRestoreWorkspace: (draft: WorkspaceDraft) => void;
   selectedPath: string;
   focusRequest?: { path: string; line?: number; id: number };
   externalImportKey?: number;
@@ -134,7 +138,7 @@ type Props = {
   onCreateFile: (path: string) => void;
   onDeleteFile?: (path: string) => void;
   disabledRules?: string[];
-  onNewProject: (files: SourceFile[]) => void;
+  onNewProject: (files: SourceFile[], assets?: PreviewBinaryAsset[]) => void;
   onAnalyze: () => void;
   analyzing?: boolean;
   healthScore?: number | null;
@@ -155,28 +159,13 @@ type EditorRef = {
   getModel?(): { uri: { path: string } } | null;
   focus(): void;
 };
-type DirectoryHandle = {
-  getDirectoryHandle(
-    name: string,
-    options: { create: boolean },
-  ): Promise<DirectoryHandle>;
-  getFileHandle(
-    name: string,
-    options: { create: boolean },
-  ): Promise<{
-    createWritable(): Promise<{
-      write(content: string): Promise<void>;
-      close(): Promise<void>;
-    }>;
-  }>;
-};
 type DirectoryPicker = Window & {
   showDirectoryPicker?: (options?: {
     mode: "readwrite";
   }) => Promise<DirectoryHandle>;
 };
 
-function makeTree(files: SourceFile[]): FolderNode {
+function makeTree(files: readonly { path: string }[]): FolderNode {
   const root: FolderNode = { name: "ROOT", path: "", children: [], files: [] };
   for (const file of files) {
     const parts = file.path.replace(/\\/g, "/").split("/");
@@ -237,6 +226,8 @@ function languageColor(path: string) {
 
 export default function MiniIDE({
   files,
+  assets: previewBinaryAssets,
+  onRestoreWorkspace,
   selectedPath,
   focusRequest,
   externalImportKey,
@@ -342,9 +333,7 @@ export default function MiniIDE({
   const [newFileOpen, setNewFileOpen] = useState(false);
   const [newFileName, setNewFileName] = useState("");
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
-  const [previewBinaryAssets, setPreviewBinaryAssets] = useState<
-    PreviewBinaryAsset[]
-  >([]);
+  const [svgSourcePath, setSvgSourcePath] = useState("");
 
   const [previewAiRoute, setPreviewAiRoute] = useState("/api/chat");
 
@@ -568,9 +557,13 @@ export default function MiniIDE({
   const monacoRef = useRef<MonacoApi | null>(null);
   const monacoDiagnosticsDisposable = useRef<{ dispose(): void } | null>(null);
 
+  const activeAsset = editorClosed ? undefined : previewBinaryAssets.find(asset => asset.path === selectedPath);
   const active = editorClosed
     ? undefined
-    : (files.find((file) => file.path === selectedPath) ?? files[0]);
+    : (files.find((file) => file.path === selectedPath) ?? (activeAsset ? undefined : files[0]));
+  const activePath = activeAsset?.path ?? active?.path;
+  const svgUrl = active && /\.svg$/i.test(active.path) ? svgPreviewUrl(active.content) : null;
+  const imageAsset = activeAsset ?? (active && svgUrl && svgSourcePath !== active.path ? { path: active.path, dataUrl: svgUrl } : undefined);
   const lang = ideLanguage(active?.path ?? "");
   const stats = useMemo(() => languageTotals(files), [files]);
 
@@ -582,8 +575,8 @@ export default function MiniIDE({
     [files],
   );
 
-  const tree = useMemo(() => makeTree(files), [files]);
-  const filePathSignature = files.map((file) => file.path).join("\u0000");
+  const tree = useMemo(() => makeTree([...files, ...previewBinaryAssets]), [files, previewBinaryAssets]);
+  const filePathSignature = [...files, ...previewBinaryAssets].map((file) => file.path).join("\u0000");
 
   useEffect(() => {
     previewTrailRef.current = {
@@ -654,19 +647,19 @@ export default function MiniIDE({
   }, [expanded]);
 
   useEffect(() => {
-    if (!active || editorClosed) return;
+    if (!activePath || editorClosed) return;
     setOpenTabs((previous) => {
       const valid = previous.filter((path) =>
-        files.some((file) => file.path === path),
+        [...files, ...previewBinaryAssets].some((file) => file.path === path),
       );
-      if (!valid.includes(active.path)) valid.push(active.path);
+      if (!valid.includes(activePath)) valid.push(activePath);
       const next = valid.slice(-20);
       return next.length === previous.length &&
         next.every((item, index) => item === previous[index])
         ? previous
         : next;
     });
-  }, [active?.path, filePathSignature, editorClosed]);
+  }, [activePath, filePathSignature, editorClosed]);
 
   useEffect(() => {
     function closeMenus(event: PointerEvent) {
@@ -1186,7 +1179,6 @@ export default function MiniIDE({
   // External imports do not automatically execute a prior project's preview.
   useEffect(() => {
     if (externalImportKey === undefined || externalImportKey === 0) return;
-    setPreviewBinaryAssets([]);
     setPreviewAiEnabled(false);
     setLivePreview(false);
     setPreviewHtml(null);
@@ -1241,7 +1233,7 @@ export default function MiniIDE({
   function closeTab(path: string) {
     const remaining = openTabs.filter((item) => item !== path);
     setOpenTabs(remaining);
-    if (active?.path === path) {
+    if (activePath === path) {
       if (remaining.length) onSelectFile(remaining[remaining.length - 1]);
       else setEditorClosed(true);
     }
@@ -1271,8 +1263,8 @@ export default function MiniIDE({
     const remaining = files.filter((file) => file.path !== path);
     setOpenTabs((previous) => previous.filter((item) => item !== path));
     setTouched((previous) => previous.filter((item) => item !== path));
-    if (!remaining.length) setEditorClosed(true);
-    else if (active?.path === path) onSelectFile(remaining[0].path);
+    if (!remaining.length && !previewBinaryAssets.length) setEditorClosed(true);
+    else if (active?.path === path) onSelectFile(remaining[0]?.path ?? previewBinaryAssets[0].path);
     onDeleteFile(path);
     setPreviewDirty(true);
     setNotice(
@@ -1328,7 +1320,7 @@ export default function MiniIDE({
         .some((part) => ignoredFolders.has(part.toLowerCase()));
 
       const isBinaryImage =
-        path !== null && /\.(png|jpe?g|webp|gif)$/i.test(path);
+        path !== null && /\.(png|jpe?g|webp|gif|ico)$/i.test(path);
 
       if (isBinaryImage && path) {
         if (
@@ -1391,20 +1383,20 @@ export default function MiniIDE({
       }
     }
 
-    if (!imported.length) {
-      setNotice("No supported source files were found in this folder.");
+    if (!imported.length && !nextBinaryAssets.length) {
+      setNotice("No supported files were found in this folder.");
       return;
     }
 
     try {
-      const valid = validateWorkspace(imported);
+      const valid = imported.length ? validateWorkspace(imported) : [];
 
-      if (files.length > 0) {
+      if (files.length > 0 || previewBinaryAssets.length > 0) {
         const approved = await confirmAction({
           title: "Open local folder?",
           message:
             `Selected folder contains ${valid.length} source files and ` +
-            `${nextBinaryAssets.length} preview images.\n\n` +
+            `${nextBinaryAssets.length} images.\n\n` +
             `Skipped files: ${skipped}.\n\n` +
             "Opening this folder will replace your current in-memory workspace. " +
             "Export a backup first if you need to keep your changes.\n\n" +
@@ -1419,14 +1411,12 @@ export default function MiniIDE({
       }
 
       // Parent resets repository identity and establishes a new baseline.
-      onNewProject(valid);
+      onNewProject(valid, nextBinaryAssets);
       setPreviewAiEnabled(false);
-      setPreviewBinaryAssets([]);
-      setPreviewBinaryAssets(nextBinaryAssets);
-      const rootName = selected[0]?.webkitRelativePath.split("/")[0]?.trim();
+        const rootName = selected[0]?.webkitRelativePath.split("/")[0]?.trim();
 
       rememberFolderName(rootName || null);
-      setOpenTabs([valid[0].path]);
+      setOpenTabs([valid[0]?.path ?? nextBinaryAssets[0].path]);
       setEditorClosed(false);
       setTouched([]);
 
@@ -1449,7 +1439,7 @@ export default function MiniIDE({
 
       setNotice(
         `Opened ${valid.length} source files and ` +
-          `${nextBinaryAssets.length} preview images. ` +
+          `${nextBinaryAssets.length} images. ` +
           `${skipped} skipped. Images are preview-only for this session.`,
       );
     } catch (error) {
@@ -1650,7 +1640,6 @@ export default function MiniIDE({
         : [{ path: "untitled.txt", content: "" }];
     onNewProject(next);
     setPreviewAiEnabled(false);
-    setPreviewBinaryAssets([]);
     rememberFolderName(null);
     setTouched([]);
     setPreviewHtml(null);
@@ -1724,12 +1713,16 @@ export default function MiniIDE({
     setSaveMenuOpen(false);
   }
 
+  function workspaceSnapshot(): WorkspaceDraft {
+    return { savedAt: Date.now(), files, assets: previewBinaryAssets, baselineFiles, githubBaselineFiles, selectedPath, repoUrl, repoIdentity };
+  }
+
   function downloadBackup() {
-    if (!files.length) return;
+    if (!files.length && !previewBinaryAssets.length) return;
     try {
       downloadText(
         "forgex-project.forgex.json",
-        exportBackup(files),
+        exportWorkspaceBackup(workspaceSnapshot()),
         "application/json;charset=utf-8",
       );
       setNotice(
@@ -1744,10 +1737,11 @@ export default function MiniIDE({
   async function importBackup(file: File | undefined) {
     if (!file) return;
     try {
-      if (file.size > 4_500_000) throw new Error("Backup is too large.");
-      const restored = parseBackup(await file.text());
+      if (file.size > MAX_BACKUP_BYTES) throw new Error("Backup is too large.");
+      const draft = parseWorkspaceBackup(await file.text());
+      const restored = draft.files;
 
-      if (files.length > 0) {
+      if (files.length > 0 || previewBinaryAssets.length > 0) {
         const approved = await confirmAction({
           title: "Restore project backup?",
           message:
@@ -1764,14 +1758,13 @@ export default function MiniIDE({
         if (!approved) return;
       }
 
-      onNewProject(restored);
+      onRestoreWorkspace(draft);
       setPreviewAiEnabled(false);
-      setPreviewBinaryAssets([]);
       rememberFolderName(null);
       setPreviewHtml(null);
       setLogs([]);
       setPreviewDirty(true);
-      setOpenTabs([restored[0].path]);
+      setOpenTabs(draft.selectedPath ? [draft.selectedPath] : []);
       setEditorClosed(false);
       setLivePreview(false);
       setTouched([]);
@@ -1785,9 +1778,9 @@ export default function MiniIDE({
   }
 
   function saveBrowserDraft() {
-    if (!files.length) return;
+    if (!files.length && !previewBinaryAssets.length) return;
     try {
-      localStorage.setItem(DRAFT_KEY, exportBackup(files));
+      localStorage.setItem(DRAFT_KEY, exportWorkspaceBackup(workspaceSnapshot()));
       setNotice(
         "Saved explicitly to this browser. Clear browser data to remove it.",
       );
@@ -1803,9 +1796,10 @@ export default function MiniIDE({
     try {
       const saved = localStorage.getItem(DRAFT_KEY);
       if (!saved) return setNotice("No saved browser draft found.");
-      const restored = parseBackup(saved);
+      const draft = parseWorkspaceBackup(saved);
+      const restored = draft.files;
 
-      if (files.length > 0) {
+      if (files.length > 0 || previewBinaryAssets.length > 0) {
         const approved = await confirmAction({
           title: "Restore saved workspace?",
           message:
@@ -1822,15 +1816,14 @@ export default function MiniIDE({
         if (!approved) return;
       }
 
-      onNewProject(restored);
+      onRestoreWorkspace(draft);
       setPreviewAiEnabled(false);
-      restoreBrowserDraft();
       rememberFolderName(null);
       setPreviewHtml(null);
       setLogs([]);
       setTouched([]);
       setPreviewDirty(true);
-      setOpenTabs([restored[0].path]);
+      setOpenTabs(draft.selectedPath ? [draft.selectedPath] : []);
       setEditorClosed(false);
       setLivePreview(false);
       setMobileView("editor");
@@ -1843,52 +1836,33 @@ export default function MiniIDE({
 
   async function saveFolder() {
     setSaveMenuOpen(false);
-    if (!files.length) return;
+    if (!files.length && !previewBinaryAssets.length) return;
     const picker = (window as DirectoryPicker).showDirectoryPicker;
-    if (!picker) {
-      setNotice(
-        "Folder save is unavailable here. Use 'Export project backup' on mobile.",
-      );
-      return;
-    }
+    if (!picker) { setNotice("Folder save is unavailable here. Export a project backup instead."); return; }
+    let written = 0;
     try {
-      const valid = validateWorkspace(files);
       const root = await picker.call(window, { mode: "readwrite" });
-
+      const valid = files.length ? validateWorkspace(files) : [];
+      const entries = [
+        ...valid.map(file => ({ path: file.path, bytes: new TextEncoder().encode(file.content) })),
+        ...previewBinaryAssets.map(asset => ({ path: asset.path, bytes: Uint8Array.from(atob(asset.dataUrl.split(",")[1]), char => char.charCodeAt(0)) })),
+      ];
+      const changes = await prepareFolderWrites(root, entries);
+      if (!changes.length) { setNotice("The selected folder already contains these files."); return; }
       const approved = await confirmAction({
-        title: "Save files to selected folder?",
-        message:
-          `FORGEX will write ${valid.length} file(s) ` +
-          "to the folder you selected.\n\n" +
-          "Files with matching names will be overwritten. " +
-          "Other files in the folder will remain unchanged.\n\n" +
-          "Make sure you have a backup of any important files.",
-        confirmText: "Write Files",
-        cancelText: "Cancel",
-        destructive: true,
+        title: "Save changed files to selected folder?",
+        message: `FORGEX will write ${changes.length} changed or new file(s), including images.\n\n` +
+          changes.slice(0, 20).map(file => file.path).join("\n") +
+          (changes.length > 20 ? `\n… and ${changes.length - 20} more.` : "") +
+          "\n\nMatching files will be replaced. Other files are preserved; files removed in FORGEX are not deleted from disk. If a target changes while you review, saving stops.",
+        confirmText: "Save Files", cancelText: "Cancel", destructive: true,
       });
-
       if (!approved) return;
-
-      for (const file of valid) {
-        const segments = file.path.split("/");
-        let folder = root;
-        for (const segment of segments.slice(0, -1)) {
-          folder = await folder.getDirectoryHandle(segment, { create: true });
-        }
-        const handle = await folder.getFileHandle(
-          segments[segments.length - 1],
-          { create: true },
-        );
-        const stream = await handle.createWritable();
-        await stream.write(file.content);
-        await stream.close();
-      }
-      setTouched([]);
-      setNotice(`${valid.length} files saved to the folder you selected.`);
+      written = await writeFolderChanges(root, changes);
+      setTouched([]); setNotice(`${written} changed file(s), including images, saved to the selected folder.`);
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") return;
-      setNotice(error instanceof Error ? error.message : "Folder save failed.");
+      setNotice((error instanceof Error ? error.message : "Folder save failed.") + (written ? ` ${written} file(s) were saved before stopping.` : ""));
     }
   }
 
@@ -1901,10 +1875,10 @@ export default function MiniIDE({
 
   function analyzeAndOpen() {
     if (!files.length || analyzing) return;
-    setExpanded(false);
-    setExplorerVisible(false);
+    setSideView("insights");
+    setExplorerVisible(true);
+    setMobileView("insights");
     onAnalyze();
-    onNavigate?.("health");
   }
 
   function runTerminal(raw: string) {
@@ -2027,12 +2001,12 @@ export default function MiniIDE({
           <button
             type="button"
             key={path}
-            className={`fxide-file ${active?.path === path ? "current" : ""}`}
+            className={`fxide-file ${activePath === path ? "current" : ""}`}
             style={{ paddingLeft: 29 + depth * 12 }}
             title={path}
             onClick={() => selectFile(path)}
           >
-            <FileCode2 size={14} style={{ color: languageColor(path) }} />
+            {previewBinaryAssets.some(asset => asset.path === path) ? <img src={previewBinaryAssets.find(asset => asset.path === path)!.dataUrl} alt="" width={18} height={18} style={{ objectFit: "contain" }} /> : <FileCode2 size={14} style={{ color: languageColor(path) }} />}
             <span>{path.split("/").pop()}</span>
             {touched.includes(path) && <i title="Modified in this session" />}
           </button>
@@ -2137,7 +2111,7 @@ export default function MiniIDE({
       <header className="fxide-toolbar">
         <div className="fxide-identity">
           <span className="fxide-identity-mark">
-            <Code2 size={17} />
+            <img src="/brand/mark-96.png" alt="" width={32} height={32} />
           </span>
           <div>
             <strong>FORGEX IDE</strong>
@@ -2291,7 +2265,7 @@ export default function MiniIDE({
                   type="button"
                   role="menuitem"
                   onClick={() => void saveFolder()}
-                  disabled={!files.length}
+                  disabled={!files.length && !previewBinaryAssets.length}
                 >
                   <FolderDown size={15} /> Save folder (desktop)
                 </button>
@@ -2299,7 +2273,7 @@ export default function MiniIDE({
                   type="button"
                   role="menuitem"
                   onClick={downloadBackup}
-                  disabled={!files.length}
+                  disabled={!files.length && !previewBinaryAssets.length}
                 >
                   <HardDriveDownload size={15} /> Export project backup
                 </button>
@@ -2307,7 +2281,7 @@ export default function MiniIDE({
                   type="button"
                   role="menuitem"
                   onClick={saveBrowserDraft}
-                  disabled={!files.length}
+                  disabled={!files.length && !previewBinaryAssets.length}
                 >
                   <Save size={15} /> Save browser draft
                 </button>
@@ -2500,6 +2474,8 @@ export default function MiniIDE({
               <SourceControlPanel
                 baselineFiles={baselineFiles}
                 currentFiles={files}
+                assets={previewBinaryAssets}
+                selectedPath={selectedPath}
                 githubBaselineFiles={githubBaselineFiles}
                 repoIdentity={repoIdentity}
                 repoUrl={repoUrl}
@@ -2521,7 +2497,7 @@ export default function MiniIDE({
                 />
               </div>
               <div className="fxide-scroll">
-                {files.length > 0 && (
+                {(files.length > 0 || previewBinaryAssets.length > 0) && (
                   <div className="fxide-workspace-root">
                     <Folder size={15} />
                     <strong>
@@ -2532,14 +2508,14 @@ export default function MiniIDE({
                   </div>
                 )}
 
-                {!files.length && (
+                {!files.length && !previewBinaryAssets.length && (
                   <p className="fxide-muted">
                     No files yet. Create a project or import source using FORGEX
                     Workbench.
                   </p>
                 )}
                 {fileSearch.trim()
-                  ? files
+                  ? [...files, ...previewBinaryAssets]
                       .filter((file) =>
                         file.path
                           .toLowerCase()
@@ -2683,7 +2659,7 @@ export default function MiniIDE({
                 </>
               )}
               <p className="fxide-muted">
-                Source edits are local. GitHub push is not enabled.
+                Review changes in Source Control before publishing a pull request.
               </p>
             </div>
           )}
@@ -2710,17 +2686,17 @@ export default function MiniIDE({
             aria-label="Open editor tabs"
           >
             {openTabs
-              .filter((path) => files.some((file) => file.path === path))
+              .filter((path) => [...files, ...previewBinaryAssets].some((file) => file.path === path))
               .map((path) => (
                 <div
-                  className={`fxide-editor-tab ${active?.path === path ? "current" : ""}`}
+                  className={`fxide-editor-tab ${activePath === path ? "current" : ""}`}
                   key={path}
                   role="presentation"
                 >
                   <button
                     type="button"
                     role="tab"
-                    aria-selected={active?.path === path}
+                    aria-selected={activePath === path}
                     title={path}
                     onClick={() => selectFile(path)}
                   >
@@ -2747,8 +2723,9 @@ export default function MiniIDE({
             )}
             <span className="fxide-tab-spacer" />
             <span className="fxide-tab-language">
-              {active ? lang.name : "Text"}
+              {activeAsset ? "Image" : active ? lang.name : "Text"}
             </span>
+            {active && svgUrl && svgSourcePath === active.path ? <button type="button" onClick={() => setSvgSourcePath("")}>View image</button> : null}
             {active && onDeleteFile && (
               <button
                 type="button"
@@ -2762,7 +2739,7 @@ export default function MiniIDE({
             )}
           </div>
           <div className="fxide-edit-area">
-            {active ? (
+            {imageAsset ? <ImageViewer key={imageAsset.path} asset={imageAsset} onViewSource={svgUrl && active ? () => setSvgSourcePath(active.path) : undefined} /> : active ? (
               smallScreen ? (
                 <div className="fxide-mobile-editor">
                   <div
@@ -3094,6 +3071,8 @@ export default function MiniIDE({
   <button
     type="button"
     aria-pressed={previewAiEnabled}
+    disabled={process.env.NODE_ENV !== "development"}
+    aria-describedby="fxide-ai-policy"
     onClick={() => {
       if (previewAiEnabled) {
         setPreviewAiEnabled(false);
@@ -3116,6 +3095,9 @@ export default function MiniIDE({
   >
     {previewAiEnabled ? "Disconnect" : "Connect Gemini"}
   </button>
+  <p id="fxide-ai-policy" className="fxide-muted">
+    {process.env.NODE_ENV === "development" ? "Each AI request requires your approval and configured server credentials." : "AI connections are unavailable on this deployment. Static Preview remains available."}
+  </p>
 </div>
 
           {previewPages.length > 1 && (

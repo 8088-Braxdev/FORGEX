@@ -1,16 +1,9 @@
 import type { MetadataRoute } from "next";
+import { isPreviewDeployment, SITE_ORIGIN } from "@/lib/siteInfo";
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: {
-      userAgent: "*",
-      allow: ["/", "/welcome", "/privacy", "/terms"],
-      disallow: [
-        "/studio",
-        "/api/",
-        "/_next/",
-      ],
-    },
-    sitemap: "https://forgex-gamma.vercel.app/sitemap.xml",
+    rules: { userAgent: "*", ...(isPreviewDeployment ? { disallow: "/" } : { allow: "/", disallow: ["/studio", "/api/"] }) },
+    sitemap: `${SITE_ORIGIN}/sitemap.xml`,
   };
 }

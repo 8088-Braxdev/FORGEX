@@ -1,3 +1,4 @@
+import { readSmallJson, RequestBodyError } from "@/lib/requestBody";
 import {
   createCipheriv,
   createDecipheriv,
@@ -5,6 +6,7 @@ import {
   randomBytes,
 } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { importGitHubRepository, parseRepository, GitHubImportError, GITHUB_TEXT_PATH } from "@/lib/githubImport";
 import { safeIdePath } from "@/lib/ideCore";
 import {
   createOrReusePullRequest,
@@ -151,7 +153,7 @@ async function connect() {
     return response;
   } catch {
     return NextResponse.json(
-      { error: "Configure GitHub App in .env.local first." },
+      { error: "GitHub connection is currently unavailable. Please contact support." },
       { status: 503 },
     );
   }
@@ -385,260 +387,17 @@ async function repositories(request: NextRequest) {
 }
 
 async function importPrivateRepository(request: NextRequest) {
-  if (request.headers.get("origin") !== request.nextUrl.origin) {
-    return NextResponse.json(
-      { error: "Invalid request origin." },
-      { status: 403 },
-    );
-  }
-
+  if (request.headers.get("origin") !== request.nextUrl.origin) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
   const session = decrypt<Session>(request.cookies.get(SESSION)?.value);
-
-  if (!session) {
-    return NextResponse.json(
-      { error: "Connect GitHub again to import private repositories." },
-      { status: 401 },
-    );
-  }
-
-  const body: unknown = await request.json().catch(() => null);
-
-  const input =
-    body && typeof body === "object" && "url" in body ? body.url : null;
-
-  if (typeof input !== "string" || input.length > 300) {
-    return NextResponse.json(
-      { error: "Enter a GitHub repository URL." },
-      { status: 400 },
-    );
-  }
-
-  let owner: string;
-  let repo: string;
-
+  if (!session) return NextResponse.json({ error: "Connect GitHub again to import private repositories." }, { status: 401 });
+  let url: string;
   try {
-    const url = new URL(input.trim());
-    const parts = url.pathname.split("/").filter(Boolean);
-
-    if (
-      url.origin !== "https://github.com" ||
-      parts.length !== 2 ||
-      url.search ||
-      url.hash ||
-      url.username ||
-      url.password
-    ) {
-      throw new Error("Invalid GitHub URL");
-    }
-
-    [owner, repo] = parts;
-    repo = repo.replace(/\.git$/i, "");
-
-    if (
-      !/^[A-Za-z0-9-]{1,39}$/.test(owner) ||
-      !/^[A-Za-z0-9_.-]{1,100}$/.test(repo) ||
-      repo.startsWith(".")
-    ) {
-      throw new Error("Invalid repository name");
-    }
-  } catch {
-    return NextResponse.json(
-      { error: "Use https://github.com/owner/repo." },
-      { status: 400 },
-    );
-  }
-
-  const base =
-    `https://api.github.com/repos/` +
-    `${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
-
-  const headers = {
-    Accept: "application/vnd.github+json",
-    Authorization: `Bearer ${session.token}`,
-    "X-GitHub-Api-Version": "2022-11-28",
-  };
-
-  async function githubRead<T>(suffix: string): Promise<T> {
-    const response = await fetch(base + suffix, {
-      headers,
-      cache: "no-store",
-      signal: AbortSignal.timeout(15000),
-    });
-
-    if (response.status === 401) {
-      throw new Error("GitHub session expired. Reconnect GitHub.");
-    }
-
-    if (response.status === 403) {
-      throw new Error("GitHub denied access. Check FORGEX App permissions.");
-    }
-
-    if (response.status === 404) {
-      throw new Error("Repository or Git data is not accessible to FORGEX.");
-    }
-
-    if (!response.ok) {
-      throw new Error(`GitHub API returned HTTP ${response.status}.`);
-    }
-
-    return (await response.json()) as T;
-  }
-
-  type TreeEntry = {
-    path: string;
-    type: string;
-    mode?: string;
-    size?: number;
-    sha?: string;
-  };
-
-  try {
-    const info = await githubRead<{
-      default_branch?: string;
-    }>("");
-
-    if (!info.default_branch) {
-      throw new Error("Repository has no default branch.");
-    }
-
-    const branch = await githubRead<{
-      commit?: {
-        sha?: string;
-        commit?: {
-          tree?: { sha?: string };
-        };
-      };
-    }>(`/branches/${encodeURIComponent(info.default_branch)}`);
-
-    const commitSha = branch.commit?.sha;
-    const treeSha = branch.commit?.commit?.tree?.sha;
-
-    if (!commitSha || !treeSha) {
-      throw new Error("Cannot identify repository commit and tree.");
-    }
-
-    const tree = await githubRead<{
-      tree?: TreeEntry[];
-      truncated?: boolean;
-    }>(`/git/trees/${encodeURIComponent(treeSha)}?recursive=1`);
-
-    if (!Array.isArray(tree.tree)) {
-      throw new Error("GitHub returned no file tree.");
-    }
-
-    const supported =
-      /\.(js|jsx|mjs|cjs|ts|tsx|py|json|css|html|htm|md|scss|yml|yaml)$/i;
-
-    const ignored =
-      /(^|\/)(node_modules|\.git|\.next|dist|build|coverage|vendor)(\/|$)|(^|\/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock)$|\.min\.(js|css)$|\.snap$/i;
-
-    const eligible = tree.tree.filter(
-      (entry) =>
-        entry.type === "blob" &&
-        entry.mode !== "120000" &&
-        typeof entry.sha === "string" &&
-        /^[a-f0-9]{40,64}$/i.test(entry.sha) &&
-        typeof entry.size === "number" &&
-        entry.size >= 0 &&
-        entry.size <= 125_000 &&
-        supported.test(entry.path) &&
-        !ignored.test(entry.path) &&
-        !entry.path.split("/").some((segment) => segment.startsWith(".env")) &&
-        !!safeIdePath(entry.path),
-    );
-
-    const selected = eligible.slice(0, 60);
-
-    const files: {
-      path: string;
-      content: string;
-    }[] = [];
-
-    let skipped = eligible.length - selected.length;
-    let totalChars = 0;
-
-    for (let index = 0; index < selected.length; index += 4) {
-      const batch = await Promise.all(
-        selected.slice(index, index + 4).map(async (entry) => {
-          try {
-            const blob = await githubRead<{
-              content?: string;
-              encoding?: string;
-            }>(`/git/blobs/${encodeURIComponent(entry.sha!)}`);
-
-            if (blob.encoding !== "base64" || !blob.content) {
-              return null;
-            }
-
-            const bytes = Buffer.from(
-              blob.content.replace(/\s/g, ""),
-              "base64",
-            );
-
-            if (bytes.length > 125_000) {
-              return null;
-            }
-
-            const content = bytes.toString("utf8");
-
-            if (content.includes("\0")) {
-              return null;
-            }
-
-            return {
-              path: entry.path,
-              content,
-            };
-          } catch {
-            return null;
-          }
-        }),
-      );
-
-      for (const file of batch) {
-        if (!file || totalChars + file.content.length > 2_000_000) {
-          skipped++;
-          continue;
-        }
-
-        files.push(file);
-        totalChars += file.content.length;
-      }
-    }
-
-    if (!files.length) {
-      throw new Error("No supported source files were imported.");
-    }
-
-    return NextResponse.json(
-      {
-        repository: `${owner}/${repo}`,
-        branch: info.default_branch,
-        commitSha,
-        files,
-        skipped,
-        partial: !!tree.truncated || skipped > 0,
-      },
-      {
-        headers: {
-          "Cache-Control": "no-store",
-        },
-      },
-    );
-  } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Private import failed.",
-      },
-      {
-        status: 502,
-        headers: {
-          "Cache-Control": "no-store",
-        },
-      },
-    );
-  }
+    const body = await readSmallJson(request);
+    if (!body || typeof body !== 'object' || !('url' in body) || typeof body.url !== 'string' || body.url.length > 300) throw new Error("Enter a GitHub repository URL.");
+    url = body.url.trim(); parseRepository(url);
+  } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid repository URL." }, { status: error instanceof RequestBodyError ? error.status : 400 }); }
+  try { return NextResponse.json(await importGitHubRepository(url, session.token), { headers: { 'Cache-Control': 'no-store' } }); }
+  catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Repository import failed." }, { status: error instanceof GitHubImportError ? error.status : 502, headers: { 'Cache-Control': 'no-store' } }); }
 }
 
 async function publishPullRequest(request: NextRequest) {
@@ -737,11 +496,8 @@ async function publishPullRequest(request: NextRequest) {
       if (
         !p ||
         p !== file.path ||
-        !/\.(js|jsx|mjs|cjs|ts|tsx|py|json|css|html|htm|md|scss|yml|yaml)$/i.test(
-          p,
-        ) ||
+        !GITHUB_TEXT_PATH.test(p) ||
         p.split("/").some((x) => x.toLowerCase().startsWith(".env")) ||
-        /^\.github\/workflows\//i.test(p) ||
         /(^|\/)(node_modules|\.git|\.next|dist|build|vendor)(\/|$)/i.test(p)
       ) {
         throw new Error(`Unsafe file path: ${file.path}`);
@@ -821,6 +577,10 @@ if (invalidImportedPaths || baselineMismatch) {
   const changed = [...new Set([...original.keys(), ...working.keys()])]
     .sort()
     .filter((path) => original.get(path) !== working.get(path));
+
+  if (changed.some(path => /^\.github\/workflows\//i.test(path))) {
+    return NextResponse.json({ error: "Workflow files are read-only in FORGEX publishing. Restore their original contents before publishing." }, { status: 400 });
+  }
 
   if (!changed.length || changed.length > 20) {
     return NextResponse.json(
@@ -1434,12 +1194,14 @@ async function getPullRequestStatus(request: NextRequest) {
 }
 
 async function status(request: NextRequest) {
-  const configured = Boolean(
-    process.env.GITHUB_CLIENT_ID &&
-    process.env.GITHUB_CLIENT_SECRET &&
-    process.env.GITHUB_COOKIE_KEY &&
-    process.env.FORGEX_APP_ORIGIN,
-  );
+  let configured = false;
+  try {
+    config();
+    cryptoKey();
+    configured = true;
+  } catch {
+    // Report availability without disclosing configuration values.
+  }
 
   const session = decrypt<Session>(request.cookies.get(SESSION)?.value);
 
@@ -1461,10 +1223,7 @@ async function status(request: NextRequest) {
     });
 
     if (response.status === 401) {
-      const expired = NextResponse.json({
-        connected: false,
-        configured,
-      });
+      const expired = NextResponse.json({ connected: false, configured }, { headers: { "Cache-Control": "no-store" } });
 
       expired.cookies.delete(SESSION);
       return expired;
@@ -1479,13 +1238,19 @@ async function status(request: NextRequest) {
       name?: string | null;
       avatar_url?: string;
     };
+    const login = user.login ?? session.login;
+    if (!/^[A-Za-z0-9-]{1,39}$/.test(login)) throw new Error("Invalid profile");
+    const avatar = user.avatar_url ? new URL(user.avatar_url) : null;
+    const avatarUrl = avatar?.protocol === "https:" &&
+      avatar.hostname === "avatars.githubusercontent.com" ? avatar.href : undefined;
 
     return NextResponse.json(
       {
         connected: true,
-        login: user.login ?? session.login,
-        name: user.name ?? null,
-        avatarUrl: user.avatar_url ?? null,
+        login,
+        name: typeof user.name === "string" ? user.name.slice(0, 100) : undefined,
+        avatarUrl,
+        profileUrl: `https://github.com/${login}`,
         configured,
       },
       { headers: { "Cache-Control": "no-store" } },
@@ -1493,7 +1258,7 @@ async function status(request: NextRequest) {
   } catch {
     return NextResponse.json(
       { error: "GitHub status unavailable" },
-      { status: 503 },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }
 }

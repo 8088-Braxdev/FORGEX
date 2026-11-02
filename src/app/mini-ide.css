@@ -220,7 +220,7 @@
 .fxide-v11 .fxide-console-modes button {background:transparent;border:0;color:#9baeb9;padding:6px 8px;border-radius:5px;font-size:10px;white-space:nowrap;}
 .fxide-v11 .fxide-console-modes button.active {color:#c9fbaa;background:#2a4232;}
 .fxide-v11 .fxide-console-header {gap:7px;}
-.fxide-v11 .fxide-problem {display:flex;align-items:start;gap:8px;width:100%;border:0;border-bottom:1px solid #263a44;padding:8px 9px;background:transparent;text-align:left;color:#d7e2e8;}
+.fxide-v11 .fxide-problem {display:flex;align-items:flex-start;gap:8px;width:100%;border:0;border-bottom:1px solid #263a44;padding:8px 9px;background:transparent;text-align:left;color:#d7e2e8;}
 .fxide-v11 .fxide-problem:hover {background:#1c3135;}
 .fxide-v11 .fxide-problem>span {font:10px var(--mono,monospace);color:#e7a46c;}
 .fxide-v11 .fxide-problem.fxide-log-error>span {color:#f2a1a1;}
@@ -1433,3 +1433,6 @@
   font-weight: 700;
   cursor: pointer;
 }
+
+.fxide-v12 .fxide-identity-mark { background: #000; }
+.fxide-identity-mark img { display: block; object-fit: contain; }

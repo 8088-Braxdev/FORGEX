@@ -1,33 +1,19 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
-import { Github, LogOut } from "lucide-react";
-import type { RepoIdentity } from "../lib/workspaceDraft";
+import { Check, ChevronDown, Github, LogOut, RefreshCw } from "lucide-react";
+import { saveWorkspaceDraft, type RepoIdentity } from "@/lib/workspaceDraft";
+import type { PreviewBinaryAsset } from "@/lib/previewAssets";
 import { useAppConfirm } from "./AppConfirmProvider";
+import styles from "./GitHubConnect.module.css";
 
-type Status = {
-  connected: boolean;
-  login?: string;
-  name?: string | null;
-  avatarUrl?: string | null;
-  configured: boolean;
-};
+type Status = { connected: boolean; configured: boolean; login?: string; name?: string; avatarUrl?: string; profileUrl?: string };
+type RecoveryFile = { path: string; content: string };
 
-type RecoveryFile = {
-  path: string;
-  content: string;
-};
-
-export default function GitHubConnect({
-  hasWorkspace,
-  currentFiles,
-  baselineFiles,
-  githubBaselineFiles,
-  repoIdentity,
-  repoUrl,
-}: {
+export default function GitHubConnect({ hasWorkspace, currentFiles, assets, selectedPath, baselineFiles, githubBaselineFiles, repoIdentity, repoUrl }: {
   hasWorkspace: boolean;
+  assets: PreviewBinaryAsset[];
+  selectedPath?: string;
   currentFiles: readonly RecoveryFile[];
   baselineFiles: readonly RecoveryFile[];
   githubBaselineFiles: readonly RecoveryFile[] | null;
@@ -38,258 +24,94 @@ export default function GitHubConnect({
   const [status, setStatus] = useState<Status | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [inviteDismissed, setInviteDismissed] = useState(false);
+  const [retry, setRetry] = useState(0);
+
   useEffect(() => {
+    if (busy) return;
     let cancelled = false;
-
-    fetch("/api/github/session", { cache: "no-store" })
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Status unavailable");
-        return (await res.json()) as Status;
-      })
-      .then((data) => {
-        if (!cancelled) setStatus(data);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError("Cannot check GitHub connection.");
+    let pending: AbortController | null = null;
+    async function refresh() {
+      pending?.abort();
+      const controller = new AbortController();
+      pending = controller;
+      try {
+        const response = await fetch("/api/github/session", { cache: "no-store", signal: controller.signal });
+        if (!response.ok) throw new Error("Connection unavailable");
+        const data = await response.json() as Status;
+        if (!cancelled) { setStatus(data); setError(""); }
+      } catch {
+        if (!cancelled && !controller.signal.aborted) {
+          setStatus(null);
+          setError("Cannot check GitHub right now.");
         }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-
-async function connect() {
-  setError("");
-
-  if (hasWorkspace) {
-    const confirmed = await confirmAction({
-      title: "Connect your GitHub account",
-      message:
-        "GitHub authorization will temporarily leave FORGEX.\n\n" +
-        "Your current workspace will be saved in browser storage " +
-        "and offered for recovery when you return.\n\n" +
-        "For additional safety, export a project backup before continuing.",
-      confirmText: "Connect GitHub",
-      cancelText: "Cancel",
-    });
-
-    if (!confirmed) return;
-
-    try {
-      sessionStorage.setItem(
-        "forgex-oauth-recovery-v1",
-        JSON.stringify({
-          savedAt: Date.now(),
-          files: currentFiles.map((file) => ({ ...file })),
-          baseline: baselineFiles.map((file) => ({ ...file })),
-          githubBaseline: githubBaselineFiles
-            ? githubBaselineFiles.map((file) => ({ ...file }))
-            : null,
-          repoIdentity: repoIdentity
-            ? {
-                ...repoIdentity,
-                importedPaths: [...repoIdentity.importedPaths],
-              }
-            : null,
-          repoUrl,
-        }),
-      );
-    } catch {
-      setError(
-        "Browser storage is unavailable or full. " +
-        "Use Save > Export project backup before connecting.",
-      );
-      return;
+      }
     }
+    const onFocus = () => { void refresh(); };
+    void refresh();
+    window.addEventListener("focus", onFocus);
+    const timer = window.setInterval(onFocus, 60_000);
+    return () => { cancelled = true; pending?.abort(); window.clearInterval(timer); window.removeEventListener("focus", onFocus); };
+  }, [retry, busy]);
+
+  async function connect() {
+    if (busy || !status?.configured) return;
+    setError("");
+    if (hasWorkspace) {
+      const confirmed = await confirmAction({
+        title: "Connect your GitHub account",
+        message: "GitHub authorization will temporarily leave FORGEX. Your workspace will be saved on this device for recovery when you return. Export a project backup for an additional copy.",
+        confirmText: "Connect GitHub", cancelText: "Cancel",
+      });
+      if (!confirmed) return;
+      try {
+        const savedAt = Date.now();
+        await saveWorkspaceDraft({ savedAt, files: [...currentFiles], assets,
+          baselineFiles: [...baselineFiles], githubBaselineFiles: githubBaselineFiles ? [...githubBaselineFiles] : null,
+          selectedPath: selectedPath ?? currentFiles[0]?.path ?? assets[0]?.path ?? "", repoIdentity, repoUrl });
+        sessionStorage.setItem("forgex-oauth-recovery-v1", JSON.stringify({ savedAt, storage: "indexeddb" }));
+      } catch {
+        setError("Browser storage is full or unavailable. Export a project backup before connecting.");
+        return;
+      }
+    }
+    setBusy(true);
+    window.location.assign("/api/github/connect");
   }
-
-  window.location.assign("/api/github/connect");
-}
-
 
   async function disconnect() {
-    setBusy(true);
-    setError("");
-
+    setBusy(true); setError("");
     try {
-      const res = await fetch("/api/github/session", {
-        method: "POST",
-      });
-
-      if (!res.ok) throw new Error("Disconnect failed");
-
-      setStatus((previous) => ({
-        connected: false,
-        configured: previous?.configured ?? false,
-      }));
-    } catch {
-      setError("Could not disconnect. Try again.");
-    } finally {
-      setBusy(false);
-    }
+      const response = await fetch("/api/github/session", { method: "POST" });
+      if (!response.ok) throw new Error("Disconnect failed");
+      setStatus(previous => ({ connected: false, configured: previous?.configured ?? false }));
+    } catch { setError("Could not disconnect. Try again."); }
+    finally { setBusy(false); }
   }
 
-  const buttonStyle = {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 7,
-    padding: "9px 14px",
-    border: "1px solid #7ab86a",
-    borderRadius: 7,
-    background: "#3a6b3a",
-    color: "#f1ffe4",
-    fontSize: 12,
-    fontWeight: 600,
-    cursor: "pointer",
-  } as const;
-
+  const connected = status?.connected && status.login;
   return (
-    <section
-      style={{
-        borderTop: "1px solid #30464f",
-        padding: "12px 0",
-        marginTop: 12,
-      }}
-    >
-      <strong
-        style={{
-          fontSize: 11,
-          letterSpacing: ".06em",
-        }}
-      >
-        GITHUB CONNECTION
-      </strong>
-
-      {status?.connected ? (
-        <>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              marginTop: 8,
-            }}
-          >
-            {status.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={status.avatarUrl}
-                alt={status.login ? `${status.login} avatar` : "GitHub avatar"}
-                width={32}
-                height={32}
-                style={{
-                  borderRadius: "50%",
-                  border: "1px solid #30464f",
-                }}
-              />
-            ) : (
-              <span
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
-                  background: "#25402d",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Github size={16} />
-              </span>
-            )}
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <strong style={{ fontSize: 13, color: "#e7f3f0" }}>
-                {status.name || status.login}
-              </strong>
-              <span style={{ fontSize: 11, color: "#b9fa77" }}>
-                Connected as @{status.login}
-              </span>
-            </div>
+    <section className={styles.connection} aria-label="GitHub account">
+      {connected ? (
+        <details className={styles.account}>
+          <summary>
+            {status.avatarUrl ? <img className={styles.avatar} src={status.avatarUrl} alt="" width={28} height={28} referrerPolicy="no-referrer" /> : <Github size={22} />}
+            <span className={styles.identity}><strong>{status.name || `@${status.login}`}</strong><span className={styles.connected}><Check size={11} /> Connected</span></span>
+            <ChevronDown size={14} />
+          </summary>
+          <div className={styles.panel}>
+            <p>Signed in as <strong>@{status.login}</strong></p>
+            {status.profileUrl ? <a href={status.profileUrl} target="_blank" rel="noopener noreferrer">View GitHub profile</a> : null}
+            <p>Use Repository to import a project. Review your changes before publishing a pull request.</p>
+            <button type="button" className={styles.disconnect} disabled={busy} onClick={() => void disconnect()}><LogOut size={14} />{busy ? "Disconnecting…" : "Disconnect"}</button>
           </div>
-
-          <button
-            type="button"
-            disabled={busy}
-            style={buttonStyle}
-            onClick={disconnect}
-          >
-            <LogOut size={14} />
-            Disconnect
-          </button>
-
-          <p style={{ fontSize: 11 }}>
-            Use the publishing panel to review changes and create a pull
-            request.
-          </p>
-        </>
+        </details>
       ) : (
-        <>
-          {inviteDismissed ? (
-            <button
-              type="button"
-              onClick={() => setInviteDismissed(false)}
-              style={buttonStyle}
-            >
-              <Github size={15} />
-              Connect GitHub (optional)
-            </button>
-          ) : (
-            <>
-              <p style={{ fontSize: 12, lineHeight: 1.6 }}>
-                Want to work with GitHub repositories? Connect your account when
-                you're ready. You can continue using FORGEX without signing in.
-              </p>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 8,
-                }}
-              >
-                <button
-                  type="button"
-                  style={buttonStyle}
-                  disabled={!status?.configured}
-                  onClick={connect}
-                >
-                  <Github size={15} />
-                  Connect GitHub
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setInviteDismissed(true)}
-                  style={{
-                    ...buttonStyle,
-                    background: "transparent",
-                    color: "#aebfc6",
-                  }}
-                >
-                  Maybe later
-                </button>
-              </div>
-            </>
-          )}
-        </>
+        <button type="button" className={styles.connect} disabled={busy || !status?.configured} onClick={() => void connect()}>
+          <Github size={16} />{busy ? "Connecting…" : status ? "Connect GitHub" : error ? "GitHub unavailable" : "Checking GitHub…"}
+        </button>
       )}
-
-      {status && !status.configured && (
-        <p role="status" style={{ fontSize: 11 }}>
-          Configure your GitHub App in .env.local first.
-        </p>
-      )}
-
-      {error && (
-        <p role="alert" style={{ fontSize: 11, color: "#f5b1a9" }}>
-          {error}
-        </p>
-      )}
+      {status && !status.configured ? <p className={styles.status}>GitHub connection is temporarily unavailable. Guest editing is available.</p> : null}
+      {error ? <div role="status" className={styles.status}>{error} <button type="button" className={styles.retry} disabled={busy} onClick={() => setRetry(n => n + 1)}><RefreshCw size={12} /> Retry</button></div> : null}
     </section>
   );
 }

@@ -1,6 +1,6 @@
 
 import Link from "next/link";
-import { ArrowLeft, Code2, Home } from "lucide-react";
+import { ArrowLeft, Home } from "lucide-react";
 import styles from "./not-found.module.css";
 
 export default function NotFound() {
@@ -9,7 +9,7 @@ export default function NotFound() {
       <div className={styles.content}>
         <div className={styles.brand}>
           <span className={styles.brandIcon}>
-            <Code2 size={21} />
+            <img src="/brand/mark-96.png" alt="" width={40} height={40} />
           </span>
           <span>FORGEX DevStudio</span>
         </div>
@@ -37,10 +37,7 @@ export default function NotFound() {
         </div>
 
         <footer>
-          <a href="https://braxcode.com" target="_blank" rel="noopener noreferrer">
-            BraxCode Digitals Foundation
-          </a>{" "}
-          · FORGEX
+          <a href="https://braxcode.com" target="_blank" rel="noopener noreferrer">BraxCode Digitals Foundation</a> · FORGEX
         </footer>
       </div>
     </main>

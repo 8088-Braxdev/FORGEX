@@ -1,5 +1,7 @@
+import { safeIdePath } from "./paths";
+export { safeIdePath } from "./paths";
 import type { SourceFile } from "./analyzer";
-import type { PreviewBinaryAsset } from "./previewAssets";
+import { svgPreviewUrl, type PreviewBinaryAsset } from "./previewAssets";
 export const IDE_MAX_FILES = 120;
 export const IDE_MAX_CHARS = 2_000_000;
 
@@ -64,24 +66,6 @@ export function languageTotals(files: SourceFile[]) {
     .sort((a, b) => b.lines - a.lines || a.name.localeCompare(b.name));
 }
 
-export function safeIdePath(path: string): string | null {
-  const normalized = path.replace(/\\/g, "/");
-  const segments = normalized.split("/");
-  if (!normalized || normalized.startsWith("/") || segments.length > 24)
-    return null;
-  if (
-    segments.some(
-      (segment) =>
-        !segment ||
-        segment === "." ||
-        segment === ".." ||
-        /[<>:"|?*\x00-\x1f]/.test(segment) ||
-        segment.length > 120,
-    )
-  )
-    return null;
-  return normalized;
-}
 
 export function validateWorkspace(files: SourceFile[]): SourceFile[] {
   if (
@@ -211,10 +195,7 @@ const localSvgUrl = (
     return null;
   }
 
-  return (
-    "data:image/svg+xml;charset=utf-8," +
-    encodeURIComponent(svg)
-  );
+  return svgPreviewUrl(svg);
 };
 
 const rewriteCssSvgUrls = (
@@ -285,6 +266,28 @@ const dataUrl =
       );
     },
   );
+
+// Resolve responsive images and imported favicon references without opening the sandbox.
+html = html.replace(/<(?:img|source)\b[^>]*>/gi, tag => tag.replace(
+  /\bsrcset\s*=\s*(["'])(.*?)\1/i,
+  (attribute, quote: string, value: string) => {
+    if (/data:/i.test(value)) return attribute;
+    const rewritten = value.split(",").map(candidate => {
+      const match = candidate.trim().match(/^(\S+)(.*)$/);
+      if (!match) return candidate;
+      const dataUrl = localSvgUrl(entry.path, match[1]) ?? localBinaryUrl(entry.path, match[1]);
+      return dataUrl ? dataUrl + match[2] : candidate.trim();
+    }).join(", ");
+    return `srcset=${quote}${rewritten}${quote}`;
+  },
+));
+html = html.replace(/<link\b[^>]*>/gi, tag => {
+  if (!/\brel\s*=\s*["'][^"']*(?:icon)[^"']*["']/i.test(tag)) return tag;
+  return tag.replace(/\bhref\s*=\s*(["'])(.*?)\1/i, (attribute, quote: string, reference: string) => {
+    const dataUrl = localSvgUrl(entry.path, reference) ?? localBinaryUrl(entry.path, reference);
+    return dataUrl ? `href=${quote}${dataUrl}${quote}` : attribute;
+  });
+});
 
 // Resolve SVG images loaded from the local workspace.
 html = html.replace(/<img\b[^>]*>/gi, (tag) =>

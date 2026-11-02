@@ -1,0 +1,17 @@
+.connection { position: relative; min-width: 0; font-size: 12px; }
+.connect, .retry, .disconnect { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 14px; border: 1px solid #b9fa77; border-radius: 8px; background: #b9fa77; color: #102013; font: inherit; font-weight: 650; cursor: pointer; }
+.connect:hover:not(:disabled) { background: #d0ff9e; }
+.connect:disabled { background: #243038; border-color: #455862; color: #b6c6cc; cursor: not-allowed; }
+.connection button:focus-visible, .account summary:focus-visible, .panel a:focus-visible { outline: 2px solid #b9fa77; outline-offset: 4px; }
+.retry, .disconnect { background: transparent; color: #dce8e9; border-color: #52666c; }
+.status { margin: 6px 0 0; color: #becbd0; max-width: 260px; line-height: 1.5; overflow-wrap: anywhere; }
+.account summary { display: flex; align-items: center; gap: 8px; min-height: 44px; max-width: 290px; padding: 5px 9px; border: 1px solid #3b5355; border-radius: 8px; cursor: pointer; list-style: none; }
+.account summary::-webkit-details-marker { display: none; }
+.avatar { width: 28px; height: 28px; flex: 0 0 28px; border-radius: 50%; object-fit: cover; }
+.identity { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.identity strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+.connected { display: flex; gap: 4px; align-items: center; color: #b9fa77; font-size: 10px; }
+.panel { position: absolute; top: calc(100% + 8px); right: 0; width: min(280px, calc(100vw - 32px)); padding: 16px; display: grid; gap: 12px; background: #142128; color: #dce8e9; border: 1px solid #435963; border-radius: 9px; box-shadow: 0 14px 35px #0007; z-index: 60; overflow-wrap: anywhere; }
+.panel p { margin: 0; line-height: 1.6; }
+.panel a { color: #b9fa77; }
+@media (max-width: 480px) { .connect { padding: 10px; } .identity strong { max-width: 115px; } }
