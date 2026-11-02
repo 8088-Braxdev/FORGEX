@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Check, ChevronDown, Github, LogOut, RefreshCw } from "lucide-react";
 import { saveWorkspaceDraft, type RepoIdentity } from "@/lib/workspaceDraft";
 import type { PreviewBinaryAsset } from "@/lib/previewAssets";
@@ -26,6 +26,7 @@ export default function GitHubConnect({ hasWorkspace, currentFiles, assets, sele
   const [busy, setBusy] = useState(false);
   const [retry, setRetry] = useState(0);
   const availabilityId = useId();
+  const navigationTimerRef = useRef(0);
 
   useEffect(() => {
     if (busy) return;
@@ -54,6 +55,23 @@ export default function GitHubConnect({ hasWorkspace, currentFiles, assets, sele
     return () => { cancelled = true; pending?.abort(); window.clearInterval(timer); window.removeEventListener("focus", onFocus); };
   }, [retry, busy]);
 
+  // Browsers can restore this page from the back/forward cache when the user
+  // cancels the GitHub authorization and navigates back. The connect flow
+  // leaves `busy` latched, which froze the control on "Connecting…" after
+  // such a restore. Release the state whenever the page is shown again.
+  useEffect(() => {
+    const onPageshow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        setBusy(false);
+        setRetry((count) => count + 1);
+      }
+    };
+    window.addEventListener("pageshow", onPageshow);
+    return () => window.removeEventListener("pageshow", onPageshow);
+  }, []);
+
+  useEffect(() => () => window.clearTimeout(navigationTimerRef.current), []);
+
   async function connect() {
     if (busy || !status?.configured) return;
     setError("");
@@ -76,6 +94,9 @@ export default function GitHubConnect({ hasWorkspace, currentFiles, assets, sele
       }
     }
     setBusy(true);
+    // Safety net: if the redirect to GitHub never leaves this page, recover
+    // the control instead of staying on "Connecting…" indefinitely.
+    navigationTimerRef.current = window.setTimeout(() => setBusy(false), 12_000);
     window.location.assign("/api/github/connect");
   }
 
