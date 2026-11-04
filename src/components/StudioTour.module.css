@@ -1,7 +1,7 @@
 /* FORGEX studio product tour */
 
-/* Dim layer over the studio; the spotlight ring punches through visually
-   by sitting above this layer around the highlighted element. */
+/* Dim layer: pointer-events none, so the studio stays fully usable and
+   the fixed tour button never scrolls under it. */
 .dim {
   position: fixed;
   inset: 0;
@@ -10,7 +10,6 @@
   pointer-events: none;
 }
 
-/* Bright ring around the element the current step explains. */
 .spotlight {
   position: fixed;
   z-index: 9410;
@@ -23,8 +22,6 @@
   transition: top 160ms ease, left 160ms ease, width 160ms ease, height 160ms ease;
 }
 
-/* Dialog layer: centered; pointer-events stay off the layer itself so
-   the highlighted control remains clickable. */
 .backdrop {
   position: fixed;
   inset: 0;
@@ -125,43 +122,33 @@
   background: #d0ff9e;
 }
 
-/* Persistent reopen button.
-   Collapsed mode: fixed top-right, just below the studio topbar, clear of
-   the footer and the GitHub control. Never scrolls. */
+/* Tour button.
+   Parked INSIDE the studio topbar band (real heights read from
+   WorkspaceShell.module.css: topbar min-height 70px desktop, 64px
+   mobile). Fixed position, so it never scrolls. It sits in the topbar
+   band — above the IDE — and never overlaps the IDE toolbar row. */
 .reopen {
   position: fixed;
-  top: calc(78px + env(safe-area-inset-top));
-  right: 14px;
-  z-index: 9999;
+  top: 0;
+  right: 0;
+  height: calc(70px + env(safe-area-inset-top));
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  min-height: 38px;
-  padding: 8px 13px;
-  border: 1px solid #3a5a49;
-  border-radius: 999px;
-  background: #101a21ee;
-  color: #c9dccf;
+  padding: 0 14px;
+  background: transparent;
+  border: 0;
+  color: #9fd8a8;
   font-size: 12px;
   cursor: pointer;
-  box-shadow: 0 10px 26px #0007;
+  z-index: 9999;
 }
 
 .reopen:hover {
-  color: #e9f5ec;
-  border-color: #568350;
-  background: #16241c;
+  color: #b9fa77;
 }
 
-/* Expanded IDE: shift left of the IDE's own expand control (top-right of
-   the IDE toolbar) so the button remains visible without covering the
-   toolbar. The IDE sets its own fixed top; this offset sits beside it. */
-.reopenExpanded {
-  top: calc(14px + env(safe-area-inset-top));
-  right: 64px;
-}
-
-/* Hidden while the tour dialog is open so it cannot cover content. */
+/* Inside the topbar band the pill styling is dropped: it reads as a
+   topbar action, exactly like the GitHub control on the other side. */
 .reopenHidden {
   display: none;
 }
@@ -172,8 +159,6 @@
     padding: 0;
   }
 
-  /* On phones the dialog is a bottom sheet; the spotlight ring stays
-     visible above it so the user still sees what is highlighted. */
   .card {
     width: 100%;
     border-radius: 14px 14px 0 0;
@@ -192,32 +177,11 @@
       0 0 24px #b9fa7766;
   }
 
-  /* Below the studio topbar on phones too, never over the mobile nav. */
+  /* Mobile topbar band: 64px (WorkspaceShell real height) + safe area. */
   .reopen {
-    top: calc(70px + env(safe-area-inset-top));
-    right: 10px;
-    padding: 7px 11px;
-    min-height: 34px;
+    height: calc(64px + env(safe-area-inset-top));
+    padding: 0 10px;
     font-size: 11px;
-  }
-
-  .reopenExpanded {
-    top: calc(10px + env(safe-area-inset-top));
-    right: 56px;
-  }
-}
-
-/* Very narrow phones: keep the Tour pill small and inside the viewport. */
-@media (max-width: 360px) {
-  .reopen {
-    right: 8px;
-    padding: 6px 10px;
-    min-height: 32px;
-    font-size: 11px;
-  }
-
-  .reopenExpanded {
-    right: 52px;
   }
 }
 
