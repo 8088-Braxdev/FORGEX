@@ -1122,9 +1122,6 @@ export default function Home() {
             <img
               src="/forgex-logo.png"
               alt="FORGEX logo"
-              width={21}
-              height={21}
-              style={{ borderRadius: 5 }}
             />
           </span>
           <span className="brandword">

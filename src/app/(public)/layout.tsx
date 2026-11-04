@@ -22,9 +22,6 @@ export default function PublicLayout({
             <img
               src="/forgex-logo.png"
               alt="FORGEX logo"
-              width={26}
-              height={26}
-              style={{ borderRadius: 6 }}
             />
           </span>
 
