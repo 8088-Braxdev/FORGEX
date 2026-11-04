@@ -195,9 +195,9 @@ export type PreviewDocument = { html: string; entry: string };
  * hosts, icon webfonts from their own hosts, and call their own HTTPS/WSS
  * APIs. Images and fonts cannot execute script, and the sandbox keeps an
  * opaque origin with no FORGEX credentials attached. The preview fetch
- * override additionally blocks requests aimed at the FORGEX origin itself.
- * Target APIs still enforce their own CORS policy; no server-side proxy
- * is involved.
+ * and XHR overrides additionally block requests aimed at the FORGEX
+ * origin itself. Target APIs still enforce their own CORS policy; no
+ * server-side proxy is involved.
  */
 const PREVIEW_SCRIPT_HOSTS =
   "https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://esm.sh";
@@ -467,7 +467,7 @@ document.addEventListener('click', function(event) {
   parent.postMessage({
     kind: 'forgex-preview-navigation',
     channel: channel,
-    href: href.slice(0, 512)
+    href: hid.slice(0, 512)
   }, '*');
 }, true);
 
@@ -717,7 +717,7 @@ window.fetch = function(input, init) {
     };
 
     var message = {
-      kind: 'forgex-preview-request',
+      kind: ' forgex-preview-request',
       channel: channel,
       id: id,
       path: isAI ? '/api/preview/ai' : input
@@ -735,6 +735,37 @@ window.fetch = function(input, init) {
     parent.postMessage(message, '*');
   });
 };
+
+// Many libraries (axios, older SDKs) send requests with XMLHttpRequest
+// instead of fetch. Those requests used to escape the fetch wrapper and
+// hit the FORGEX origin for relative URLs, producing the confusing
+// "Failed to load resource: https://forgex-gamma.vercel.app/studio".
+// Route XHR the same way as fetch: absolute https/wss URLs pass through
+// and get real responses; relative non-bridge URLs fail immediately with
+// a clear explanation.
+(function(){
+  var originalOpen = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function(method, url) {
+    if (typeof url === 'string') {
+      if (isPreviewExternalUrl(url)) {
+        return originalOpen.apply(this, arguments);
+      }
+      if (
+        url.charAt(0) === '/' &&
+        url !== '/api/preview/ai' &&
+        url !== '/api/preview/health' &&
+        url !== '/api/preview/gateway'
+      ) {
+        emit('error', [
+          'Blocked request: relative URLs resolve to the FORGEX origin inside this sandbox. Call your API with its full https:// address.',
+          'Requested: ' + url
+        ], 'Preview sandbox');
+        throw new Error('Blocked: relative URL "' + url + '" resolves to the FORGEX origin. Call your API with its full https:// address.');
+      }
+    }
+    return originalOpen.apply(this, arguments);
+  };
+})();
 
     window.addEventListener('error',function(e){
       if(e.target&&e.target!==window){
@@ -847,7 +878,8 @@ export function parseBackup(text: string): SourceFile[] {
 /** General next-step guidance, not a verified runtime root cause. */
 export function explainRuntimeError(message: string): string {
   if (
-    /relative URLs resolve to the FORGEX origin/i.test(message)
+    /relative URL/i.test(message) &&
+    /FORGEX origin/i.test(message)
   ) {
     return "Inside the sandbox, a relative URL points at FORGEX itself, which is blocked. Call your API with its full https:// address instead.";
   }
