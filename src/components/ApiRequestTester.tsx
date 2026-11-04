@@ -276,11 +276,12 @@ export default function ApiRequestTester({
     };
 
     try {
-      let apiResult: ApiResult;
+      // Explicit null sentinel: strict TypeScript can prove every path
+      // either assigns a real result or throws before setResult runs.
+      let apiResult: ApiResult | null = null;
 
       if (isExternal) {
         // Direct browser attempt, short timeout.
-        let directOk = false;
         try {
           const direct = await fetch(target.toString(), {
             method,
@@ -293,14 +294,12 @@ export default function ApiRequestTester({
             mode: "cors",
             signal: AbortSignal.timeout(DIRECT_TIMEOUT_MS),
           });
-          directOk = true;
           apiResult = await finishDirect(direct);
-        } catch (directError) {
-          directOk = false;
-          void directError;
+        } catch {
+          apiResult = null;
         }
 
-        if (!directOk) {
+        if (apiResult === null) {
           // CORS or network blocked the direct call; retry via proxy.
           const proxied = await fetchViaProxy(
             target,
@@ -348,6 +347,10 @@ export default function ApiRequestTester({
           signal: controller.signal,
         });
         apiResult = await finishDirect(response);
+      }
+
+      if (apiResult === null) {
+        throw new Error("The request could not be completed.");
       }
 
       setResult(apiResult);
