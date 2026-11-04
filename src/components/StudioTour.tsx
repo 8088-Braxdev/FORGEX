@@ -57,6 +57,14 @@ const TOUR_STEPS: TourStep[] = [
   },
 ];
 
+/** True when the element is actually rendered and takes space on screen. */
+function isVisible(element: Element): boolean {
+  const style = window.getComputedStyle(element);
+  if (style.display === "none" || style.visibility === "hidden") return false;
+  const rect = element.getBoundingClientRect();
+  return rect.width > 1 && rect.height > 1;
+}
+
 export default function StudioTour() {
   const [index, setIndex] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -89,8 +97,9 @@ export default function StudioTour() {
   }, []);
 
   // Measure the element the current step highlights so the spotlight ring
-  // follows it, and scroll it into view. Re-measures on resize/scroll so
-  // the ring stays on target while the layout moves.
+  // follows it, and scroll it into view. Invisible or missing targets
+  // fall back to a centered dialog so the ring never floats over a
+  // collapsed pane.
   useEffect(() => {
     if (index === null) {
       setTargetRect(null);
@@ -107,13 +116,18 @@ export default function StudioTour() {
     } catch {
       element = null;
     }
-    if (!element) {
+    if (!element || !isVisible(element)) {
       setTargetRect(null);
       return;
     }
     element.scrollIntoView({ behavior: "smooth", block: "center" });
+    const measured = element;
     const measure = () => {
-      const rect = element!.getBoundingClientRect();
+      if (!isVisible(measured)) {
+        setTargetRect(null);
+        return;
+      }
+      const rect = measured.getBoundingClientRect();
       setTargetRect({
         top: rect.top,
         left: rect.left,
@@ -173,7 +187,6 @@ export default function StudioTour() {
 
   const step = index === null ? null : TOUR_STEPS[index];
   const last = index === TOUR_STEPS.length - 1;
-  const hasTarget = Boolean(step?.target && targetRect);
 
   return (
     <>
@@ -193,7 +206,7 @@ export default function StudioTour() {
             />
           )}
           <div
-            className={`${styles.backdrop} ${hasTarget ? styles.anchored : ""}`}
+            className={styles.backdrop}
             role="dialog"
             aria-modal="true"
             aria-label={step.title}
@@ -227,9 +240,11 @@ export default function StudioTour() {
         </>
       )}
 
+      {/* Hidden while the tour is open so it never covers footer content
+          (email, support links) during a walkthrough. */}
       <button
         type="button"
-        className={styles.reopen}
+        className={`${styles.reopen} ${index !== null ? styles.reopenHidden : ""}`}
         onClick={reopen}
         aria-label="Open the FORGEX tour"
         title="Open the FORGEX tour"
