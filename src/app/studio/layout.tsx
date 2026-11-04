@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import StudioTour from "@/components/StudioTour";
 
 export const metadata: Metadata = {
   title: "Studio",
@@ -11,5 +12,10 @@ export const metadata: Metadata = {
 };
 
 export default function StudioLayout({ children }: { children: ReactNode }) {
-  return children;
+  return (
+    <>
+      {children}
+      <StudioTour />
+    </>
+  );
 }
