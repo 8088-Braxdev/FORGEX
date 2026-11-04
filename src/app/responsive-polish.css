@@ -59,6 +59,23 @@
     white-space: normal;
     gap: 8px 14px;
   }
+
+  /* Preview controls wrap instead of forming a long horizontal strip. */
+  .fxide-v12 .fxide-preview .fxide-pane-header {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .fxide-v12 .fxide-preview-device {
+    width: 100px;
+  }
+
+  /* Network and output tool rows stack on the narrowest phones. */
+  .fxide-v12 .fxide-network-row,
+  .fxide-v12 .fxide-network-tools,
+  .fxide-v12 .fxide-output-tools {
+    gap: 6px;
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -132,6 +149,69 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Very narrow phones (320–360px): readable sizes, no cramped preview. */
+/* Phones differ widely; these rules scale up from the smallest common */
+/* width instead of assuming one device size.                          */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 420px) {
+  /* The sandboxed preview iframe needs a minimum comfortable width. */
+  .fxide-v12 .fxide-preview iframe {
+    min-height: 320px;
+  }
+
+  .fxide-v12 .fxide-preview .fxide-pane-header {
+    font-size: 11px;
+  }
+
+  .fxide-v12 .fxide-preview .fxide-pane-header button {
+    padding: 5px 7px;
+    font-size: 10px;
+  }
+
+  .fxide-v12 .fxide-preview-device {
+    width: 88px;
+    font-size: 10px;
+  }
+
+  /* Preview page switcher wraps on two lines instead of overflowing. */
+  .fxide-v12 .fxide-preview-pages {
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 11px;
+  }
+
+  .fxide-v12 .fxide-preview-pages select {
+    max-width: 100%;
+  }
+
+  /* Console problems rows breathe at tiny widths. */
+  .fxide-v11 .fxide-problem {
+    padding: 10px 8px;
+  }
+
+  .fxide-v11 .fxide-problem code {
+    font-size: 10.5px;
+  }
+}
+
+/* 320px and below: the smallest common phone width. */
+@media (max-width: 340px) {
+  .fxide-v12 .fxide-console-modes button {
+    padding-inline: 8px;
+    font-size: 9.5px;
+  }
+
+  .fxide-v12 .fxide-preview iframe {
+    min-height: 300px;
+  }
+
+  .fxide-v12 .fxide-mobile-nav button span {
+    font-size: 9px;
   }
 }
 
