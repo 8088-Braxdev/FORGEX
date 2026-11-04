@@ -192,14 +192,16 @@ export type PreviewDocument = { html: string; entry: string };
  * and styles from inside the sandboxed preview. Everything else in those
  * categories stays blocked, keeping the injection surface small.
  *
- * Images, fonts and data requests are deliberately broader, like a
- * deployed website: real apps load avatars and media from arbitrary HTTPS
- * hosts, icon webfonts from their own hosts, and call their own HTTPS/WSS
- * APIs. Images and fonts cannot execute script, and the sandbox keeps an
- * opaque origin with no FORGEX credentials attached. The preview fetch
- * and XHR overrides additionally block requests aimed at the FORGEX
- * origin itself. Target APIs still enforce their own CORS policy; no
- * server-side proxy is involved.
+ * Data requests use a two-stage strategy so imported apps receive real
+ * responses even when the target API has no CORS headers: direct
+ * https/wss calls are attempted first, and anything the browser blocks
+ * (the sandbox sends Origin: null) retries through FORGEX's server-side
+ * preview proxy. The proxy performs a genuine server-to-server request,
+ * which is not subject to browser CORS, and returns status, contentType
+ * and body; the sandbox shim rebuilds a real Response object so app code
+ * cannot tell the difference. The proxy keeps SSRF protections: https
+ * targets only, private networks blocked, FORGEX origin blocked, size
+ * and rate limits enforced, and no FORGEX credentials are attached.
  */
 const PREVIEW_SCRIPT_HOSTS =
   "https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://esm.sh";
@@ -297,13 +299,10 @@ export function buildPreview(
   // In a srcdoc iframe every relative resource URL resolves against the
   // FORGEX page itself (/studio), so unresolvable references produce real
   // network requests to the FORGEX origin that fail as confusing console
-  // errors ("Failed to load resource: .../studio"). Two build-stage rules
-  // prevent that: empty src/href/srcset attributes are stripped (they
-  // never carry a resource), and script/link/img/source references that
-  // do not resolve to a workspace file or an absolute/data URL are
-  // removed and reported once, instead of being left to hit FORGEX.
+  // errors. Empty attributes are stripped (they never carry a resource),
+  // and script/link/img references that do not resolve to a workspace
+  // file are removed and reported once instead of being left to hit FORGEX.
 
-  // 1. Strip empty resource attributes on media elements.
   html = html.replace(
     /<(img|script|source)\b([^>]*?)\ssrc\s*=\s*(["'])\s*\3/gi,
     (_match, tag: string, before: string) => `<${tag}${before}`,
@@ -317,8 +316,6 @@ export function buildPreview(
     (_match, tag: string, before: string) => `<${tag}${before}`,
   );
 
-  // 2. Drop relative <script src> references that do not exist in the
-  //    workspace. (Absolute CDN URLs and data: URLs are preserved.)
   const droppedResources: string[] = [];
   html = html.replace(
     /<script\b[^>]*\bsrc\s*=\s*(["'])(.*?)\1[^>]*>\s*<\/script>/gi,
@@ -331,13 +328,10 @@ export function buildPreview(
     },
   );
 
-  // 3. Drop relative stylesheet/other links that do not exist in the
-  //    workspace, except icon links handled by the favicon rewriter.
   html = html.replace(
     /<link\b[^>]*>/gi,
     (tag) => {
       if (/\brel\s*=\s*["'][^"']*(?:icon)[^"']*["']/i.test(tag)) return tag;
-      if (/\bhref\s*=\s*(["'])(?:(?!\1)[\s\S])*\1/i.test(tag) === false) return tag;
       const hrefMatch = /\bhref\s*=\s*(["'])(.*?)\1/i.exec(tag);
       if (!hrefMatch) return tag;
       const ref = hrefMatch[2];
@@ -349,11 +343,9 @@ export function buildPreview(
     },
   );
 
-  // 4. Drop relative image sources that do not exist in the workspace.
   html = html.replace(
     /<img\b[^>]*>/gi,
     (tag) => {
-      if (/\busemap\b|\bismap\b/i.test(tag)) return tag;
       const srcMatch = /\bsrc\s*=\s*(["'])(.*?)\1/i.exec(tag);
       if (!srcMatch) return tag;
       const ref = srcMatch[2];
@@ -664,71 +656,155 @@ window.addEventListener('message', function(event) {
   ));
 });
 
-// Outbound data requests pass through to the browser network stack so an
-// imported project can call its own APIs and render real responses.
-// Only HTTPS/WSS is permitted, and requests aimed at the FORGEX origin
-// itself always fail. FORGEX bridge routes are handled separately below.
+// The sandboxed iframe sends Origin: null, so APIs without CORS headers for
+// that origin have their responses blocked by the browser: the fetch
+// promise rejects with a TypeError carrying no status, and apps that
+// swallow errors leave the console silent. Direct https calls are still
+// attempted first (fast path), and blocked calls retry through the
+// FORGEX server proxy, which performs a real server-to-server request
+// (CORS does not apply) and returns status, contentType and body.
 var originalFetch = window.fetch ? window.fetch.bind(window) : null;
 var previewAppHost = ${JSON.stringify(APP_HOST).replace(/</g, "\\u003c")};
+var PREVIEW_PROXY_ROUTE = '/api/preview/proxy';
+var PROXYABLE_BRIDGES = ['/api/preview/ai', '/api/preview/health', '/api/preview/gateway'];
 
-function isPreviewExternalUrl(input) {
+function isExternalHttpsUrl(input) {
   var raw = '';
-
   try {
     if (typeof input === 'string') raw = input;
     else if (input && typeof input.url === 'string') raw = input.url;
   } catch (error) {
     return false;
   }
-
   if (typeof raw !== 'string') return false;
   if (raw.indexOf('https://') !== 0 && raw.indexOf('wss://') !== 0) return false;
-
   var hostMatch = /^(?:https|wss):\\/\\/([^\\/?#]+)/i.exec(raw);
   var hostname = hostMatch ? hostMatch[1].toLowerCase() : '';
-
   if (!hostname) return false;
-
-  // An imported project must never call the FORGEX origin itself.
   if (previewAppHost !== '' && hostname === previewAppHost) return false;
-
   return true;
 }
 
-window.fetch = function(input, init) {
-  if (isPreviewExternalUrl(input) && originalFetch) {
-    return originalFetch(input, init);
+function proxyViaServer(target, method, init, resolve, reject) {
+  var bodyText = null;
+  try {
+    if (init && typeof init.body === 'string') bodyText = init.body;
+  } catch (error) {
+    bodyText = null;
   }
 
-  var isAI =
+  var headers = {};
+  try {
+    if (init && init.headers) {
+      if (typeof init.headers.forEach === 'function') {
+        init.headers.forEach(function(value, name) { headers[name] = value; });
+      } else if (typeof init.headers === 'object') {
+        for (var name in init.headers) headers[name] = init.headers[name];
+      }
+    }
+  } catch (error) {
+    headers = {};
+  }
+
+  originalFetch.call(window, PREVIEW_PROXY_ROUTE, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      target: target,
+      method: method,
+      headers: headers,
+      body: bodyText
+    })
+  }).then(function(proxyResponse) {
+    if (!proxyResponse.ok) {
+      proxyResponse.json().then(function(info) {
+        reject(new TypeError((info && info.error) || 'The preview proxy could not reach the target API.'));
+      }).catch(function() {
+        reject(new TypeError('The preview proxy could not reach the target API.'));
+      });
+      return;
+    }
+    proxyResponse.json().then(function(envelope) {
+      resolve(new Response(
+        typeof envelope.body === 'string' ? envelope.body : '',
+        {
+          status: envelope.status || 502,
+          headers: { 'Content-Type': envelope.contentType || 'text/plain' }
+        }
+      ));
+    }).catch(function() {
+      reject(new TypeError('The preview proxy returned an unreadable response.'));
+    });
+  }).catch(function() {
+    reject(new TypeError('The preview proxy is unavailable.'));
+  });
+}
+
+window.fetch = function(input, init) {
+  var isBridge =
     input === '/api/preview/ai' ||
+    input === '/api/preview/health' ||
+    input === '/api/preview/gateway' ||
     (
       typeof input === 'string' &&
       previewAiRoute !== '' &&
       input === previewAiRoute
     );
 
-  var isHealth = input === '/api/preview/health';
+  if (isBridge) {
+    return bridgeFetch(input, init);
+  }
+
+  if (isExternalHttpsUrl(input) && originalFetch) {
+    var method = (init && init.method) || 'GET';
+    return originalFetch(input, init).catch(function(directError) {
+      // CORS or network block on the direct call: retry through the
+      // server proxy so the app still receives the real response.
+      return new Promise(function(resolve, reject) {
+        proxyViaServer(input, method, init, resolve, reject);
+      });
+    });
+  }
+
+  return Promise.reject(
+    new TypeError('Blocked: relative URLs resolve to the FORGEX origin inside this sandbox. Call your API with its full https:// address.')
+  );
+};
+
+// XHR uses the same strategy: direct https first, proxy fallback on
+// failure, and a clear rejection for relative non-bridge URLs.
+(function(){
+  var originalOpen = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function(method, url) {
+    if (typeof url === 'string') {
+      if (isExternalHttpsUrl(url)) {
+        this.addEventListener('error', function() {
+          emit('warn', ['Direct request failed; the target API may not allow browser origins. Use fetch for automatic proxy fallback: ' + url], 'Preview sandbox');
+        });
+        return originalOpen.apply(this, arguments);
+      }
+      if (
+        url.charAt(0) === '/' &&
+        PROXYABLE_BRIDGES.indexOf(url) === -1
+      ) {
+        throw new Error('Blocked: relative URL "' + url + '" resolves to the FORGEX origin. Call your API with its full https:// address.');
+      }
+    }
+    return originalOpen.apply(this, arguments);
+  };
+})();
+
+// Bridge routes keep their postMessage-based flow, unchanged from before.
+function bridgeFetch(input, init) {
+  var isAI = input === '/api/preview/ai';
   var isGateway = input === '/api/preview/gateway';
+  var isHealth = input === '/api/preview/health';
 
   if (
-    (!isAI && !isHealth && !isGateway) ||
     !init ||
     String(init.method || 'GET').toUpperCase() !== 'POST' ||
     typeof init.body !== 'string'
   ) {
-    // Relative URLs inside this sandbox resolve against the FORGEX origin
-    // and are blocked by design. Say so plainly instead of a generic error.
-    if (
-      typeof input === 'string' &&
-      input.charAt(0) === '/' &&
-      !isAI && !isHealth && !isGateway
-    ) {
-      return Promise.reject(
-        new TypeError('Blocked: relative URLs resolve to the FORGEX origin inside this sandbox. Call your API with its full https:// address.')
-      );
-    }
-
     return Promise.reject(
       new TypeError('This preview request is not supported.')
     );
@@ -819,38 +895,7 @@ window.fetch = function(input, init) {
 
     parent.postMessage(message, '*');
   });
-};
-
-// Many libraries (axios, older SDKs) send requests with XMLHttpRequest
-// instead of fetch. Those requests used to escape the fetch wrapper and
-// hit the FORGEX origin for relative URLs, producing the confusing
-// "Failed to load resource: https://forgex-gamma.vercel.app/studio".
-// Route XHR the same way as fetch: absolute https/wss URLs pass through
-// and get real responses; relative non-bridge URLs fail immediately with
-// a clear explanation.
-(function(){
-  var originalOpen = XMLHttpRequest.prototype.open;
-  XMLHttpRequest.prototype.open = function(method, url) {
-    if (typeof url === 'string') {
-      if (isPreviewExternalUrl(url)) {
-        return originalOpen.apply(this, arguments);
-      }
-      if (
-        url.charAt(0) === '/' &&
-        url !== '/api/preview/ai' &&
-        url !== '/api/preview/health' &&
-        url !== '/api/preview/gateway'
-      ) {
-        emit('error', [
-          'Blocked request: relative URLs resolve to the FORGEX origin inside this sandbox. Call your API with its full https:// address.',
-          'Requested: ' + url
-        ], 'Preview sandbox');
-        throw new Error('Blocked: relative URL "' + url + '" resolves to the FORGEX origin. Call your API with its full https:// address.');
-      }
-    }
-    return originalOpen.apply(this, arguments);
-  };
-})();
+}
 
     window.addEventListener('error',function(e){
       if(e.target&&e.target!==window){
@@ -969,6 +1014,13 @@ export function explainRuntimeError(message: string): string {
     return "Inside the sandbox, a relative URL points at FORGEX itself, which is blocked. Call your API with its full https:// address instead.";
   }
   if (
+    /preview proxy could not|preview proxy is unavailable|preview proxy returned/i.test(
+      message,
+    )
+  ) {
+    return "The API did not allow a direct browser call from the sandbox, and the server proxy could not complete it either. Check the target URL, whether the API is online, and whether it needs an Authorization header.";
+  }
+  if (
     /is sandboxed|lacks the 'allow-same-origin'|Failed to read the '(?:local|session)Storage'/i.test(
       message,
     )
@@ -989,7 +1041,7 @@ export function explainRuntimeError(message: string): string {
   if (/TypeError|Cannot read properties|is not a function/i.test(message))
     return "Check for null/undefined values and verify the called method or object type.";
   if (/Failed to fetch|NetworkError|Content Security Policy|CSP/i.test(message))
-    return "The sandbox allows outbound HTTPS/WSS data requests. This failure usually means the target API blocked the request by CORS or the network dropped it; verify the URL and the provider's CORS policy.";
+    return "The sandbox attempts direct calls first and falls back to the FORGEX server proxy when an API does not allow browser origins. Verify the target URL and the provider's availability.";
   return "Inspect the reported source location and the full error message; reproduce before changing code.";
 }
 
