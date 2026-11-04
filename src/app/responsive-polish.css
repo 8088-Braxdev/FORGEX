@@ -38,7 +38,7 @@ footer img[alt="FORGEX"] {
   object-fit: cover;
 }
 
-/* PWA/mobile chrome and any other brand image surfaces. */
+/* Any other brand image surface (manifest icons, about marks). */
 img[src*="/brand/"] {
   border-radius: 9px;
   object-fit: cover;
@@ -46,8 +46,6 @@ img[src*="/brand/"] {
 
 /* ================================================================== */
 /* 2. PREVIEW HEADER — buttons stay inside the header row.            */
-/* The preview pane header wraps into clean rows on narrow widths;   */
-/* icon controls keep square hit areas; nothing overflows the row.    */
 /* ================================================================== */
 
 .fxide-preview .fxide-pane-header {
@@ -81,18 +79,7 @@ img[src*="/brand/"] {
 }
 
 /* ================================================================== */
-/* 3. TOUR BUTTON — parked below the topbar, never over the IDE.     */
-/* The component already hides it during the tour and while the IDE  */
-/* is expanded; these rules keep it out of the IDE toolbar band and   */
-/* fully clickable on every device.                                   */
-/* ================================================================== */
-
-/* Component file styles the pill; nothing needed here beyond ensuring
-   the studio layout reserves no overlap. Belt-and-braces: keep the pill
-   above the IDE z-index but below modals. */
-
-/* ================================================================== */
-/* 4. CONSOLE / NETWORK / API TESTER — wrap and scroll, never overflow. */
+/* 3. CONSOLE / NETWORK / API TESTER — wrap and scroll, never overflow. */
 /* ================================================================== */
 
 .fxide-v12 .fxide-console-modes {
@@ -136,7 +123,7 @@ img[src*="/brand/"] {
 }
 
 /* ================================================================== */
-/* 5. MOBILE — 820px and below: stable IDE, preview, console.        */
+/* 4. MOBILE — 820px and below: stable IDE, preview, console.        */
 /* ================================================================== */
 
 @media (max-width: 820px) {
@@ -227,7 +214,7 @@ img[src*="/brand/"] {
 }
 
 /* ================================================================== */
-/* 6. NARROW PHONES — 420px / 340px: readable, never cramped.        */
+/* 5. NARROW PHONES — 420px / 340px: readable, never cramped.         */
 /* ================================================================== */
 
 @media (max-width: 420px) {
@@ -279,12 +266,12 @@ img[src*="/brand/"] {
   }
 
   .fxide-v12 .fxide-mobile-nav button span {
-    font-size:  nav-btn-font;
+    font-size: 9px;
   }
 }
 
 /* ================================================================== */
-/* 7. STUDIO POLISH — presentation-only removals.                    */
+/* 6. STUDIO POLISH — presentation-only removals.                    */
 /* ================================================================== */
 
 .fx-workspace-heading,
@@ -315,5 +302,5 @@ img[src*="/brand/"] {
 /* Preview page switcher wraps instead of overflowing. */
 .fxide-v12 .fxide-preview-pages {
   flex-wrap: wrap;
-  row-gap:  6px;
+  row-gap: 6px;
 }
