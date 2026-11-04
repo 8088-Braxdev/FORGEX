@@ -1,7 +1,7 @@
 /* FORGEX studio product tour */
 
 /* Dim layer: pointer-events none, so the studio stays fully usable and
-   the fixed tour button never scrolls under it. */
+   the fixed tour control never scrolls under it. */
 .dim {
   position: fixed;
   inset: 0;
@@ -122,33 +122,45 @@
   background: #d0ff9e;
 }
 
-/* Tour button.
-   Parked INSIDE the studio topbar band (real heights read from
-   WorkspaceShell.module.css: topbar min-height 70px desktop, 64px
-   mobile). Fixed position, so it never scrolls. It sits in the topbar
-   band — above the IDE — and never overlaps the IDE toolbar row. */
+/* Tour control.
+   Parked at the very bottom of the left studio rail, the VS Code
+   pattern (like the account/settings controls). Rail facts read from
+   WorkspaceShell.module.css: fixed, left:0, width:64px, z-index:100,
+   background #0e171d. Fixed position — it never scrolls. Visible in
+   every IDE mode; never over any toolbar or content row. */
 .reopen {
   position: fixed;
-  top: 0;
-  right: 0;
-  height: calc(70px + env(safe-area-inset-top));
-  display: inline-flex;
-  align-items: center;
-  padding: 0 14px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  left: 0;
+  width: 64px;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
   background: transparent;
-  border: 0;
-  color: #9fd8a8;
-  font-size: 12px;
+  color: #95aab5;
   cursor: pointer;
-  z-index: 9999;
+  z-index: 110;
 }
 
 .reopen:hover {
-  color: #b9fa77;
+  color: #e5ecef;
+  background: #18262e;
 }
 
-/* Inside the topbar band the pill styling is dropped: it reads as a
-   topbar action, exactly like the GitHub control on the other side. */
+.reopen:focus-visible {
+  outline: 2px solid #b9fa77;
+  outline-offset: 3px;
+}
+
+/* Rail items are icon-only on desktop; the label lives in the
+   aria-label/title so the pill stays a clean rail icon. */
+.reopen span {
+  display: none;
+}
+
 .reopenHidden {
   display: none;
 }
@@ -177,10 +189,24 @@
       0 0 24px #b9fa7766;
   }
 
-  /* Mobile topbar band: 64px (WorkspaceShell real height) + safe area. */
+  /* On phones the left rail is hidden (nav becomes a drawer), so the
+     tour control parks bottom-right, above the IDE mobile nav and
+     clear of the preview pane. */
   .reopen {
-    height: calc(64px + env(safe-area-inset-top));
-    padding: 0 10px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    left: auto;
+    right: 12px;
+    width: auto;
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1px solid #33474f;
+    border-radius: 999px;
+    background: #15232b;
+    color: #c4d1d6;
+  }
+
+  .reopen span {
+    display: inline;
     font-size: 11px;
   }
 }
