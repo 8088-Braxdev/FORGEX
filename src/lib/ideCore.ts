@@ -187,15 +187,16 @@ export type PreviewDocument = { html: string; entry: string };
 
 /**
  * Explicit allowlist of public CDNs that imported projects may load scripts,
- * styles, fonts and images from inside the sandboxed preview. Everything
- * else in those categories stays blocked, keeping the injection surface small.
+ * styles and fonts from inside the sandboxed preview. Everything else in
+ * those categories stays blocked, keeping the injection surface small.
  *
- * Data requests are deliberately broader: an imported project may call any
- * public HTTPS/WSS API from the browser, exactly like a deployed website.
- * The sandbox keeps an opaque origin, no FORGEX credentials are attached,
- * and the preview fetch override additionally blocks requests aimed at the
- * FORGEX origin itself. Target APIs still enforce their own CORS policy and
- * no server-side proxy is involved.
+ * Images and data requests are deliberately broader, like a deployed
+ * website: real apps load avatars and media from arbitrary HTTPS hosts and
+ * call their own HTTPS/WSS APIs. Images cannot execute script, and the
+ * sandbox keeps an opaque origin with no FORGEX credentials attached. The
+ * preview fetch override additionally blocks requests aimed at the FORGEX
+ * origin itself. Target APIs still enforce their own CORS policy and no
+ * server-side proxy is involved.
  */
 const PREVIEW_SCRIPT_HOSTS =
   "https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://esm.sh";
@@ -203,8 +204,6 @@ const PREVIEW_STYLE_HOSTS =
   "https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://fonts.googleapis.com";
 const PREVIEW_FONT_HOSTS =
   "https://cdn.jsdelivr.net https://unpkg.com https://fonts.gstatic.com https://fonts.googleapis.com";
-const PREVIEW_IMAGE_HOSTS =
-  "https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com";
 
 /** FORGEX's own hostname; requests to it are always blocked from previews. */
 const APP_HOST =
@@ -594,6 +593,18 @@ window.fetch = function(input, init) {
     String(init.method || 'GET').toUpperCase() !== 'POST' ||
     typeof init.body !== 'string'
   ) {
+    // Relative URLs inside this sandbox resolve against the FORGEX origin
+    // and are blocked by design. Say so plainly instead of a generic error.
+    if (
+      typeof input === 'string' &&
+      input.charAt(0) === '/' &&
+      !isAI && !isHealth && !isGateway
+    ) {
+      return Promise.reject(
+        new TypeError('Blocked: relative URLs resolve to the FORGEX origin inside this sandbox. Call your API with its full https:// address.')
+      );
+    }
+
     return Promise.reject(
       new TypeError('This preview request is not supported.')
     );
@@ -715,7 +726,7 @@ window.fetch = function(input, init) {
     window.addEventListener('securitypolicyviolation',function(e){emit('warn',['Blocked by sandbox security policy:',e.blockedURI||e.violatedDirective],'Preview sandbox');});
     emit('info',['Preview initialized']);
   })();<\/script>`;
-  const csp = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' ${PREVIEW_SCRIPT_HOSTS}; style-src 'unsafe-inline' ${PREVIEW_STYLE_HOSTS}; img-src data: blob: ${PREVIEW_IMAGE_HOSTS}; font-src data: ${PREVIEW_FONT_HOSTS}; connect-src https: wss:; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">`;
+  const csp = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' ${PREVIEW_SCRIPT_HOSTS}; style-src 'unsafe-inline' ${PREVIEW_STYLE_HOSTS}; img-src data: blob: https:; font-src data: ${PREVIEW_FONT_HOSTS}; connect-src https: wss:; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">`;
   const setup = csp + instrument;
   html = /<head\b[^>]*>/i.test(html)
     ? html.replace(/<head\b[^>]*>/i, (match) => match + setup)
@@ -796,6 +807,11 @@ export function parseBackup(text: string): SourceFile[] {
 
 /** General next-step guidance, not a verified runtime root cause. */
 export function explainRuntimeError(message: string): string {
+  if (
+    /relative URLs resolve to the FORGEX origin/i.test(message)
+  ) {
+    return "Inside the sandbox, a relative URL points at FORGEX itself, which is blocked. Call your API with its full https:// address instead.";
+  }
   if (
     /backend\/network unavailable|Network\/API request unavailable|static preview|API.*unavailable/i.test(
       message,
