@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -13,9 +12,12 @@ type ApiResult = {
   contentType: string;
   body: string;
   truncated: boolean;
+  viaProxy: boolean;
 };
 
 const MAX_RESPONSE_BYTES = 120_000;
+const DIRECT_TIMEOUT_MS = 12_000;
+const PROXY_TIMEOUT_MS = 20_000;
 
 export default function ApiRequestTester({
   active,
@@ -41,6 +43,80 @@ export default function ApiRequestTester({
   useEffect(() => {
     return () => controllerRef.current?.abort();
   }, []);
+
+  /**
+   * Server-side fallback. A browser request to an API without CORS
+   * headers fails with no useful diagnostics ("connection issue"); the
+   * FORGEX preview proxy performs a real server-to-server request and
+   * returns {status, contentType, body}. Only content-type, accept and
+   * authorization headers are forwarded; cookies are never attached.
+   */
+  async function fetchViaProxy(
+    target: URL,
+    headers: Headers,
+    bodyText: string | null,
+    timeoutMs: number
+  ): Promise<{ ok: boolean; status: number; statusText: string; contentType: string; body: string }> {
+    const forwarded: Record<string, string> = {};
+    headers.forEach((value, name) => {
+      const lower = name.toLowerCase();
+      if (lower === "content-type" || lower === "accept" || lower === "authorization") {
+        forwarded[name] = value;
+      }
+    });
+
+    const response = await fetch("/api/preview/proxy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "omit",
+      cache: "no-store",
+      signal: AbortSignal.timeout(timeoutMs),
+      body: JSON.stringify({
+        target: target.toString(),
+        method,
+        headers: forwarded,
+        body: bodyText ?? undefined,
+      }),
+    });
+
+    if (!response.ok) {
+      let message = "Proxy request failed.";
+      try {
+        const info: unknown = await response.json();
+        if (
+          info &&
+          typeof info === "object" &&
+          "error" in info &&
+          typeof (info as { error: unknown }).error === "string"
+        ) {
+          message = (info as { error: string }).error;
+        }
+      } catch {
+        // Keep the generic message.
+      }
+      return { ok: false, status: response.status, statusText: message, contentType: "application/json", body: "" };
+    }
+
+    const envelope: unknown = await response.json();
+    if (
+      !envelope ||
+      typeof envelope !== "object" ||
+      !("status" in envelope) ||
+      !("body" in envelope)
+    ) {
+      return { ok: false, status: 502, statusText: "Proxy returned an invalid envelope.", contentType: "application/json", body: "" };
+    }
+
+    const data = envelope as { status: number; contentType?: string; body?: string };
+
+    return {
+      ok: true,
+      status: data.status,
+      statusText: data.status >= 200 && data.status < 300 ? "OK" : "",
+      contentType: data.contentType ?? "unknown",
+      body: typeof data.body === "string" ? data.body : "",
+    };
+  }
 
   async function sendRequest() {
     if (busy) return;
@@ -123,27 +199,16 @@ export default function ApiRequestTester({
     setResult(null);
 
     const started = performance.now();
-    const timeoutId = window.setTimeout(
-      () => controller.abort(),
-      15000
-    );
+    const bodyText =
+      method === "POST" && requestBody.trim() ? requestBody : null;
 
-    try {
-      const response = await fetch(target.toString(), {
-        method,
-        headers,
-        body:
-          method === "POST" && requestBody.trim()
-            ? requestBody
-            : undefined,
-        credentials: "omit",
-        redirect: "error",
-        referrerPolicy: "no-referrer",
-        cache: "no-store",
-        mode: "cors",
-        signal: controller.signal,
-      });
+    // Relative URLs stay on the FORGEX origin (same-origin, no proxy).
+    // Absolute external URLs try the browser first; if CORS or the
+    // network blocks the call, retry through the server proxy so the
+    // tester still shows the real response.
+    const isExternal = target.origin !== window.location.origin;
 
+    const finishDirect = async (response: Response): Promise<ApiResult> => {
       let responseText = "";
       let truncated = false;
 
@@ -199,25 +264,103 @@ export default function ApiRequestTester({
         }
       }
 
-      setResult({
+      return {
         status: response.status,
         statusText: response.statusText,
         durationMs: Math.round(performance.now() - started),
         contentType,
         body: responseText.slice(0, 160_000),
         truncated,
-      });
+        viaProxy: false,
+      };
+    };
+
+    try {
+      let apiResult: ApiResult;
+
+      if (isExternal) {
+        // Direct browser attempt, short timeout.
+        let directOk = false;
+        try {
+          const direct = await fetch(target.toString(), {
+            method,
+            headers,
+            body: bodyText ?? undefined,
+            credentials: "omit",
+            redirect: "error",
+            referrerPolicy: "no-referrer",
+            cache: "no-store",
+            mode: "cors",
+            signal: AbortSignal.timeout(DIRECT_TIMEOUT_MS),
+          });
+          directOk = true;
+          apiResult = await finishDirect(direct);
+        } catch (directError) {
+          directOk = false;
+          void directError;
+        }
+
+        if (!directOk) {
+          // CORS or network blocked the direct call; retry via proxy.
+          const proxied = await fetchViaProxy(
+            target,
+            headers,
+            bodyText,
+            PROXY_TIMEOUT_MS
+          );
+
+          if (!proxied.ok) {
+            throw new Error(proxied.statusText || "The request could not be completed.");
+          }
+
+          let responseText = proxied.body;
+          let truncated = responseText.length > MAX_RESPONSE_BYTES;
+          if (truncated) responseText = responseText.slice(0, MAX_RESPONSE_BYTES);
+
+          if (proxied.contentType.includes("json") && !truncated) {
+            try {
+              responseText = JSON.stringify(JSON.parse(responseText), null, 2);
+            } catch {
+              // Preserve as-is.
+            }
+          }
+
+          apiResult = {
+            status: proxied.status,
+            statusText: proxied.statusText,
+            durationMs: Math.round(performance.now() - started),
+            contentType: proxied.contentType,
+            body: responseText.slice(0, 160_000),
+            truncated,
+            viaProxy: true,
+          };
+        }
+      } else {
+        // Same-origin request: direct, no proxy involved.
+        const response = await fetch(target.toString(), {
+          method,
+          headers,
+          body: bodyText ?? undefined,
+          credentials: "omit",
+          redirect: "error",
+          referrerPolicy: "no-referrer",
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        apiResult = await finishDirect(response);
+      }
+
+      setResult(apiResult);
     } catch (cause) {
       if (controller.signal.aborted) {
         setError("Request timed out or was cancelled.");
       } else {
         setError(
-          "Request failed. Check the URL, connection, and browser CORS permissions. " +
+          "Request failed. Check the URL and connection. " +
           (cause instanceof Error ? cause.message : "")
         );
       }
     } finally {
-      window.clearTimeout(timeoutId);
       controllerRef.current = null;
       setBusy(false);
     }
@@ -234,9 +377,10 @@ export default function ApiRequestTester({
       </div>
 
       <p className={styles.description}>
-        Send HTTP requests and inspect responses. External
-        endpoints must allow browser CORS. Cookies are not sent.
-        Do not enter private API keys or secrets.
+        Send HTTP requests and inspect responses. External endpoints are
+        tried directly, then through the FORGEX server proxy when the
+        browser blocks them. Cookies are not sent. Do not enter private
+        API keys or secrets.
       </p>
 
       <form
@@ -339,6 +483,7 @@ export default function ApiRequestTester({
             </strong>
             <span>{result.durationMs} ms</span>
             <span>{result.contentType}</span>
+            {result.viaProxy && <span>via proxy</span>}
           </div>
 
           <pre>

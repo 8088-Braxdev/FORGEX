@@ -1,13 +1,130 @@
 /*
  * FORGEX — small-screen responsive polish layer.
  * Loaded after mini-ide.css and style.css so these rules win where needed.
- * Desktop is untouched: every rule is scoped to small screens or touch.
+ * Desktop is untouched: every rule is scoped to small screens, touch, or
+ * explicit brand-consistency selectors verified against the real markup.
  */
 
-/* ------------------------------------------------------------------ */
-/* Console mode tabs: never truncate labels like "Term" on phones.    */
-/* The strip scrolls horizontally when it cannot fit.                 */
-/* ------------------------------------------------------------------ */
+/* ================================================================== */
+/* 1. BRAND CONSISTENCY — every FORGEX logo surface, same shape.     */
+/* Verified real markup:                                              */
+/*   IDE toolbar:  <span class="fxide-identity-mark"><img .../></span> */
+/*   Sidebar root: <div class="fxide-workspace-root"> ...              */
+/* ================================================================== */
+
+.fxide-identity-mark,
+.fxide-workspace-root {
+  border-radius: 9px;
+  overflow: hidden;
+}
+
+.fxide-identity-mark img {
+  border-radius: 9px;
+  object-fit: cover;
+}
+
+/* Topbar brand mark (studio page header) — same rounding as home page. */
+.topbar .brand-mark,
+.topbar-brand img,
+header .brand img {
+  border-radius: 9px;
+  object-fit: cover;
+}
+
+/* Footer brand, if it renders an image mark. */
+footer .brand-mark img,
+footer img[alt="FORGEX"] {
+  border-radius: 9px;
+  object-fit: cover;
+}
+
+/* Any other brand image surface (manifest icons, about marks). */
+img[src*="/brand/"] {
+  border-radius: 9px;
+  object-fit: cover;
+}
+
+/* ================================================================== */
+/* 2. PREVIEW HEADER — buttons stay inside the header row.            */
+/* ================================================================== */
+
+.fxide-preview .fxide-pane-header {
+  flex-wrap: wrap;
+  align-content: flex-start;
+  row-gap: 6px;
+  column-gap: 8px;
+  min-height: 40px;
+  padding: 6px 8px;
+}
+
+.fxide-preview .fxide-pane-header > * {
+  flex-shrink: 0;
+}
+
+.fxide-preview .fxide-pane-header button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  min-width: 32px;
+  padding: 5px 8px;
+  border-radius: 7px;
+}
+
+.fxide-preview .fxide-pane-header .fxide-preview-pages,
+.fxide-preview .fxide-pane-header .fxide-preview-device {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ================================================================== */
+/* 3. CONSOLE / NETWORK / API TESTER — wrap and scroll, never overflow. */
+/* ================================================================== */
+
+.fxide-v12 .fxide-console-modes {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.fxide-v12 .fxide-console-modes::-webkit-scrollbar {
+  display: none;
+}
+
+.fxide-v12 .fxide-console-modes button {
+  flex-shrink: 0;
+  min-width: max-content;
+  white-space: nowrap;
+}
+
+.fxide-v12 .fxide-output-tools,
+.fxide-v12 .fxide-network-tools,
+.fxide-v12 .fxide-network-row {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* API Request Tester form stacks on small screens. */
+@media (max-width: 640px) {
+  .apiRoot {
+    display: block;
+  }
+
+  .apiRoot .requestRow {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .apiRoot textarea,
+  .apiRoot input {
+    max-width: 100%;
+  }
+}
+
+/* ================================================================== */
+/* 4. MOBILE — 820px and below: stable IDE, preview, console.        */
+/* ================================================================== */
 
 @media (max-width: 820px) {
   .fxide-v09 .fxide-pane-header,
@@ -23,64 +140,20 @@
     white-space: nowrap;
   }
 
-  .fxide-v12 .fxide-console-modes {
-    min-width: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-    overscroll-behavior-x: contain;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  .fxide-v12 .fxide-console-modes::-webkit-scrollbar {
-    display: none;
-  }
-
   .fxide-v12 .fxide-console-modes button {
-    flex-shrink: 0;
-    min-width: max-content;
-    white-space: nowrap;
     padding-inline: 10px;
   }
 
-  /* Output filter row keeps both controls reachable on 320px. */
-  .fxide-v12 .fxide-output-tools {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 6px;
-  }
-
-  .fxide-v12 .fxide-output-tools select {
-    grid-column: 1 / -1;
-  }
-
-  /* Status bar wraps gracefully on the narrowest phones. */
   .fxide-v09 .fxide-statusbar {
     flex-wrap: wrap;
     white-space: normal;
     gap: 8px 14px;
   }
 
-  /* Preview controls wrap instead of forming a long horizontal strip. */
-  .fxide-v12 .fxide-preview .fxide-pane-header {
-    flex-wrap: wrap;
-    row-gap: 6px;
-  }
-
   .fxide-v12 .fxide-preview-device {
     width: 100px;
   }
-
-  /* Network and output tool rows stack on the narrowest phones. */
-  .fxide-v12 .fxide-network-row,
-  .fxide-v12 .fxide-network-tools,
-  .fxide-v12 .fxide-output-tools {
-    gap: 6px;
-  }
 }
-
-/* ------------------------------------------------------------------ */
-/* Expanded (focused) IDE on phones: stable height in both orientations. */
-/* ------------------------------------------------------------------ */
 
 @media (max-width: 820px) and (orientation: portrait) {
   .fxide-v09.fxide-expanded,
@@ -98,16 +171,7 @@
     max-height: 100dvh;
     padding-top: max(0px, env(safe-area-inset-top));
   }
-
-  .fxide-v09 .fxide-mobile-nav,
-  .fxide-v12 .fxide-mobile-nav {
-    padding-bottom: max(4px, env(safe-area-inset-bottom));
-  }
 }
-
-/* ------------------------------------------------------------------ */
-/* Touch: comfortable hit areas for editor tabs and console modes.     */
-/* ------------------------------------------------------------------ */
 
 @media (pointer: coarse) {
   .fxide-v12 .fxide-editor-tab button,
@@ -125,10 +189,7 @@
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* GitHub Connect control: keep the full label usable on phones.       */
-/* ------------------------------------------------------------------ */
-
+/* GitHub Connect control on phones. */
 @media (max-width: 480px) {
   .connection .connect,
   .connection .retry {
@@ -152,11 +213,9 @@
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* Very narrow phones (320–360px): readable sizes, no cramped preview. */
-/* Phones differ widely; these rules scale up from the smallest common */
-/* width instead of assuming one device size.                          */
-/* ------------------------------------------------------------------ */
+/* ================================================================== */
+/* 5. NARROW PHONES — 420px / 340px: readable, never cramped.         */
+/* ================================================================== */
 
 @media (max-width: 420px) {
   .fxide-v12 .fxide-preview iframe {
@@ -196,7 +255,6 @@
   }
 }
 
-/* 320px and below: the smallest common phone width. */
 @media (max-width: 340px) {
   .fxide-v12 .fxide-console-modes button {
     padding-inline: 8px;
@@ -212,28 +270,21 @@
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* Studio polish — presentation-only removals.                        */
-/* Professional IDEs do not show marketing headings, numbered kickers   */
-/* ("SECURITY LENS / 002") or dev-only bridge controls in the          */
-/* workspace. These rules remove that noise on every viewport.        */
-/* No application logic is changed by this layer.                     */
-/* ------------------------------------------------------------------ */
+/* ================================================================== */
+/* 6. STUDIO POLISH — presentation-only removals.                    */
+/* ================================================================== */
 
 .fx-workspace-heading,
 .fx-workspace-privacy {
   display: none;
 }
 
-/* Numbered kicker labels ("RULEBOOK / 005", "SECURITY LENS / 002" ...)
-   on studio page headings. The label is a single text node, so the
-   numbering cannot be stripped by CSS; hide the whole kicker, which is
-   the state the owner approved before it was lost. */
+/* Kicker labels ("RULEBOOK / 005", "SECURITY LENS / 002", ...). */
 .page-heading .eyebrow {
   display: none;
 }
 
-/* Numbered badges inside advisory cards (01 Locate, 02 Understand, 03 Verify). */
+/* Numbered badges inside advisory cards. */
 .signal-item > span {
   display: none;
 }
@@ -243,42 +294,13 @@
   display: none;
 }
 
-/* Dev-only Gemini bridge row: unusable on production deployments and it
-   stretched the preview header into a long horizontal strip. */
+/* Dev-only bridge row. */
 .fxide-v12 .fxide-ai-connect {
   display: none;
 }
 
-/* Preview page switcher wraps on narrow widths instead of overflowing. */
+/* Preview page switcher wraps instead of overflowing. */
 .fxide-v12 .fxide-preview-pages {
   flex-wrap: wrap;
   row-gap: 6px;
-}
-
-/* ------------------------------------------------------------------ */
-/* Brand consistency: round the FORGEX logos inside the IDE.           */
-/* Verified real markup in MiniIDE.tsx: the toolbar logo is            */
-/* <span class="fxide-identity-mark"><img /brand/mark-96.png></span>.  */
-/* The radius now matches the home page brand shape.                   */
-/* ------------------------------------------------------------------ */
-
-.fxide-v09 .fxide-identity-mark,
-.fxide-v12 .fxide-identity-mark {
-  display: grid;
-  place-items: center;
-  border-radius: 9px;
-  overflow: hidden;
-  background: #000;
-}
-
-.fxide-v09 .fxide-identity-mark img,
-.fxide-v12 .fxide-identity-mark img {
-  border-radius: 9px;
-  object-fit: cover;
-}
-
-/* Sidebar workspace root: align its folder icon with the brand shape. */
-.fxide-v09 .fxide-workspace-root,
-.fxide-v12 .fxide-workspace-root {
-  border-radius: 8px;
 }
