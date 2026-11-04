@@ -186,24 +186,23 @@ function resolveLocal(path: string, relative: string): string | null {
 export type PreviewDocument = { html: string; entry: string };
 
 /**
- * Explicit allowlist of public CDNs that imported projects may load scripts,
- * styles and fonts from inside the sandboxed preview. Everything else in
- * those categories stays blocked, keeping the injection surface small.
+ * Explicit allowlist of public CDNs that imported projects may load scripts
+ * and styles from inside the sandboxed preview. Everything else in those
+ * categories stays blocked, keeping the injection surface small.
  *
- * Images and data requests are deliberately broader, like a deployed
- * website: real apps load avatars and media from arbitrary HTTPS hosts and
- * call their own HTTPS/WSS APIs. Images cannot execute script, and the
- * sandbox keeps an opaque origin with no FORGEX credentials attached. The
- * preview fetch override additionally blocks requests aimed at the FORGEX
- * origin itself. Target APIs still enforce their own CORS policy and no
- * server-side proxy is involved.
+ * Images, fonts and data requests are deliberately broader, like a
+ * deployed website: real apps load avatars and media from arbitrary HTTPS
+ * hosts, icon webfonts from their own hosts, and call their own HTTPS/WSS
+ * APIs. Images and fonts cannot execute script, and the sandbox keeps an
+ * opaque origin with no FORGEX credentials attached. The preview fetch
+ * override additionally blocks requests aimed at the FORGEX origin itself.
+ * Target APIs still enforce their own CORS policy; no server-side proxy
+ * is involved.
  */
 const PREVIEW_SCRIPT_HOSTS =
   "https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://esm.sh";
 const PREVIEW_STYLE_HOSTS =
   "https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://fonts.googleapis.com";
-const PREVIEW_FONT_HOSTS =
-  "https://cdn.jsdelivr.net https://unpkg.com https://fonts.gstatic.com https://fonts.googleapis.com";
 
 /** FORGEX's own hostname; requests to it are always blocked from previews. */
 const APP_HOST =
@@ -392,6 +391,46 @@ export function buildPreview(
   const instrument = `<script>(function(){
     var channel=${safeChannel};
     var previewAiRoute=${safeAiRoute};
+
+// Real-world apps (auth SDKs, Supabase, Firebase, settings caches) read
+// localStorage/sessionStorage during startup. A sandboxed iframe without
+// allow-same-origin throws on the first access, which used to crash those
+// apps before they could render. Probe both stores and install an
+// in-memory fallback when access throws. The fallback lives only for this
+// preview instance: data does not survive a preview reload, which is the
+// correct expectation inside an opaque sandbox.
+(function(){
+  function memoryStorage(){
+    var data = Object.create(null);
+    return {
+      getItem: function(key){ key = String(key); return key in data ? data[key] : null; },
+      setItem: function(key, value){ data[String(key)] = String(value); },
+      removeItem: function(key){ delete data[String(key)]; },
+      clear: function(){ data = Object.create(null); },
+      key: function(index){ var keys = Object.keys(data); return index >= 0 && index < keys.length ? keys[index] : null; },
+      get length(){ return Object.keys(data).length; }
+    };
+  }
+  ['localStorage','sessionStorage'].forEach(function(name){
+    var usable = false;
+    try {
+      var probe = window[name];
+      probe.setItem('__forgex_probe__','1');
+      probe.removeItem('__forgex_probe__');
+      usable = true;
+    } catch (error) {
+      usable = false;
+    }
+    if (!usable) {
+      try {
+        Object.defineProperty(window, name, { value: memoryStorage(), configurable: true });
+      } catch (defineError) {
+        // Leave the native accessor in place; apps must handle it.
+      }
+    }
+  });
+})();
+
 document.addEventListener('click', function(event) {
   if (
     event.defaultPrevented ||
@@ -726,7 +765,7 @@ window.fetch = function(input, init) {
     window.addEventListener('securitypolicyviolation',function(e){emit('warn',['Blocked by sandbox security policy:',e.blockedURI||e.violatedDirective],'Preview sandbox');});
     emit('info',['Preview initialized']);
   })();<\/script>`;
-  const csp = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' ${PREVIEW_SCRIPT_HOSTS}; style-src 'unsafe-inline' ${PREVIEW_STYLE_HOSTS}; img-src data: blob: https:; font-src data: ${PREVIEW_FONT_HOSTS}; connect-src https: wss:; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">`;
+  const csp = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' ${PREVIEW_SCRIPT_HOSTS}; style-src 'unsafe-inline' ${PREVIEW_STYLE_HOSTS}; img-src data: blob: https:; font-src data: https:; connect-src https: wss:; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">`;
   const setup = csp + instrument;
   html = /<head\b[^>]*>/i.test(html)
     ? html.replace(/<head\b[^>]*>/i, (match) => match + setup)
@@ -811,6 +850,13 @@ export function explainRuntimeError(message: string): string {
     /relative URLs resolve to the FORGEX origin/i.test(message)
   ) {
     return "Inside the sandbox, a relative URL points at FORGEX itself, which is blocked. Call your API with its full https:// address instead.";
+  }
+  if (
+    /is sandboxed|lacks the 'allow-same-origin'|Failed to read the '(?:local|session)Storage'/i.test(
+      message,
+    )
+  ) {
+    return "The sandbox cannot give previews a real browser storage, so FORGEX substitutes an in-memory one that lasts for this preview run. Data will not persist across preview reloads — use your own backend for anything that must survive.";
   }
   if (
     /backend\/network unavailable|Network\/API request unavailable|static preview|API.*unavailable/i.test(
