@@ -68,7 +68,6 @@ function isVisible(element: Element): boolean {
 export default function StudioTour() {
   const [index, setIndex] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [ideExpanded, setIdeExpanded] = useState(false);
   const [targetRect, setTargetRect] = useState<{
     top: number;
     left: number;
@@ -95,24 +94,6 @@ export default function StudioTour() {
       // Storage unavailable: offer the tour once for this session.
       setIndex(0);
     }
-  }, []);
-
-  // Track the expanded IDE so the Tour button can move to a slot beside
-  // the IDE's expand control instead of overlapping the toolbar. It stays
-  // visible in every mode; only the dialog-open state hides it.
-  useEffect(() => {
-    const check = () => {
-      setIdeExpanded(Boolean(document.querySelector(".fxide-expanded")));
-    };
-    check();
-    const observer = new MutationObserver(check);
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    return () => observer.disconnect();
   }, []);
 
   // Measure the element the current step highlights so the spotlight ring
@@ -259,13 +240,13 @@ export default function StudioTour() {
         </>
       )}
 
-      {/* Fixed at the top; never scrolls. Collapsed: below the studio
-          topbar. Expanded IDE: shifts to the slot beside the IDE's expand
-          control so it never covers toolbar buttons. Hidden only while
-          the tour dialog itself is open. */}
+      {/* Rendered as a topbar action: pinned inside the studio topbar band
+          (top-right, full band height). Fixed position — it never scrolls,
+          never enters the IDE toolbar band below it, and is visible in every
+          IDE mode. Hidden only while the tour dialog is open. */}
       <button
         type="button"
-        className={`${styles.reopen} ${ideExpanded ? styles.reopenExpanded : ""} ${index !== null ? styles.reopenHidden : ""}`}
+        className={`${styles.reopen} ${index !== null ? styles.reopenHidden : ""}`}
         onClick={reopen}
         aria-label="Open the FORGEX tour"
         title="Open the FORGEX tour"
