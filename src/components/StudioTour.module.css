@@ -23,8 +23,8 @@
   transition: top 160ms ease, left 160ms ease, width 160ms ease, height 160ms ease;
 }
 
-/* Dialog layer. Centered for welcome/done steps; anchored near the
-   spotlight for targeted steps. */
+/* Dialog layer: centered for every step; pointer-events stay off the
+   layer itself so the highlighted control remains clickable. */
 .backdrop {
   position: fixed;
   inset: 0;
@@ -36,16 +36,7 @@
   pointer-events: none;
 }
 
-/* Targeted steps position the dialog via the spotlight card wrapper so
-   the highlighted control stays visible and clickable behind the ring. */
-.anchored {
-  align-items: stretch;
-  justify-content: stretch;
-}
-
 .card {
-  align-self: center;
-  justify-self: center;
   width: min(420px, 100%);
   padding: 18px 18px 16px;
   border: 1px solid #3a5a49;
@@ -134,7 +125,9 @@
   background: #d0ff9e;
 }
 
-/* Persistent reopen button, bottom-right, above the mobile nav. */
+/* Persistent reopen button. Sits above the mobile nav but below the
+   footer content flow: bottom-right with breathing room so it never
+   covers the studio footer (email/support links) on any viewport. */
 .reopen {
   position: fixed;
   right: 14px;
@@ -158,6 +151,11 @@
   color: #e9f5ec;
   border-color: #568350;
   background: #16241c;
+}
+
+/* Hidden while the tour dialog is open so it cannot cover studio content. */
+.reopenHidden {
+  display: none;
 }
 
 @media (max-width: 820px) {
@@ -190,6 +188,17 @@
     bottom: calc(76px + env(safe-area-inset-bottom));
     right: 10px;
     padding: 8px 12px;
+  }
+}
+
+/* Very narrow phones: keep the Tour pill small and inside the viewport
+   so it never overlaps the footer email line. */
+@media (max-width: 360px) {
+  .reopen {
+    right: 10px;
+    padding: 7px 10px;
+    min-height: 36px;
+    font-size: 11px;
   }
 }
 
