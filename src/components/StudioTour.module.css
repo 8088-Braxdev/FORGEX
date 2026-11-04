@@ -1,5 +1,30 @@
 /* FORGEX studio product tour */
 
+/* Dim layer over the studio; the spotlight ring punches through visually
+   by sitting above this layer around the highlighted element. */
+.dim {
+  position: fixed;
+  inset: 0;
+  z-index: 9400;
+  background: #05090dbb;
+  pointer-events: none;
+}
+
+/* Bright ring around the element the current step explains. */
+.spotlight {
+  position: fixed;
+  z-index: 9410;
+  border: 2px solid #b9fa77;
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 4000px #05090dbb,
+    0 0 24px #b9fa7766;
+  pointer-events: none;
+  transition: top 160ms ease, left 160ms ease, width 160ms ease, height 160ms ease;
+}
+
+/* Dialog layer. Centered for welcome/done steps; anchored near the
+   spotlight for targeted steps. */
 .backdrop {
   position: fixed;
   inset: 0;
@@ -8,11 +33,19 @@
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: #05090dcc;
-  backdrop-filter: blur(2px);
+  pointer-events: none;
+}
+
+/* Targeted steps position the dialog via the spotlight card wrapper so
+   the highlighted control stays visible and clickable behind the ring. */
+.anchored {
+  align-items: stretch;
+  justify-content: stretch;
 }
 
 .card {
+  align-self: center;
+  justify-self: center;
   width: min(420px, 100%);
   padding: 18px 18px 16px;
   border: 1px solid #3a5a49;
@@ -20,6 +53,7 @@
   background: #101a21;
   color: #e6f0ea;
   box-shadow: 0 24px 60px #000a;
+  pointer-events: auto;
 }
 
 .cardHead {
@@ -130,16 +164,26 @@
   .backdrop {
     align-items: flex-end;
     padding: 0;
-    background: none;
-    backdrop-filter: none;
   }
 
+  /* On phones the dialog is a bottom sheet; the spotlight ring stays
+     visible above it so the user still sees what is highlighted. */
   .card {
     width: 100%;
     border-radius: 14px 14px 0 0;
     border-left: 0;
     border-right: 0;
     border-bottom: 0;
+  }
+
+  .dim {
+    background: none;
+  }
+
+  .spotlight {
+    box-shadow:
+      0 0 0 4000px #05090d99,
+      0 0 24px #b9fa7766;
   }
 
   .reopen {
@@ -150,7 +194,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .backdrop {
-    backdrop-filter: none;
+  .spotlight {
+    transition: none;
   }
 }
