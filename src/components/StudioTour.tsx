@@ -97,9 +97,9 @@ export default function StudioTour() {
     }
   }, []);
 
-  // While the IDE is in full-screen (expanded) mode its toolbar covers the
-  // top of the viewport; the Tour button must not float over it. Watch for
-  // the expanded state and hide the button for its duration.
+  // Track the expanded IDE so the Tour button can move to a slot beside
+  // the IDE's expand control instead of overlapping the toolbar. It stays
+  // visible in every mode; only the dialog-open state hides it.
   useEffect(() => {
     const check = () => {
       setIdeExpanded(Boolean(document.querySelector(".fxide-expanded")));
@@ -259,12 +259,13 @@ export default function StudioTour() {
         </>
       )}
 
-      {/* Parked top-right below the topbar; hidden while the tour dialog is
-          open and while the IDE is in full-screen mode, so it never covers
-          studio content, the footer, or the IDE toolbar. */}
+      {/* Fixed at the top; never scrolls. Collapsed: below the studio
+          topbar. Expanded IDE: shifts to the slot beside the IDE's expand
+          control so it never covers toolbar buttons. Hidden only while
+          the tour dialog itself is open. */}
       <button
         type="button"
-        className={`${styles.reopen} ${index !== null || ideExpanded ? styles.reopenHidden : ""}`}
+        className={`${styles.reopen} ${ideExpanded ? styles.reopenExpanded : ""} ${index !== null ? styles.reopenHidden : ""}`}
         onClick={reopen}
         aria-label="Open the FORGEX tour"
         title="Open the FORGEX tour"
