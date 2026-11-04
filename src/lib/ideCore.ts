@@ -467,7 +467,7 @@ document.addEventListener('click', function(event) {
   parent.postMessage({
     kind: 'forgex-preview-navigation',
     channel: channel,
-    href: hid.slice(0, 512)
+    href: href.slice(0, 512)
   }, '*');
 }, true);
 
@@ -717,7 +717,7 @@ window.fetch = function(input, init) {
     };
 
     var message = {
-      kind: ' forgex-preview-request',
+      kind: 'forgex-preview-request',
       channel: channel,
       id: id,
       path: isAI ? '/api/preview/ai' : input
