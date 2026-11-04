@@ -8,6 +8,8 @@ type TourStep = {
   id: string;
   title: string;
   body: string;
+  /** CSS selector for the element this step highlights; omitted for centered steps. */
+  target?: string;
 };
 
 const PROGRESS_KEY = "forgex-tour-progress-v1";
@@ -22,26 +24,31 @@ const TOUR_STEPS: TourStep[] = [
     id: "workspace",
     title: "Create or import",
     body: "Use New to start a project, Open folder to load files from your device, or Repository to import from GitHub. Nothing leaves your browser until you choose to publish.",
+    target: ".fxide-primary-actions",
   },
   {
     id: "run",
     title: "Run and preview",
     body: "Press Run to render your HTML, CSS and JavaScript in the preview pane. Live preview updates as you type. Static projects only — FORGEX does not run servers.",
+    target: "button[aria-label='Run preview']",
   },
   {
     id: "analyze",
     title: "Analyze your code",
-    body: "Analyze scans your files locally and lists findings below: Problems for issues in your code, Output for preview messages. Findings are advisory hints, not a security audit.",
+    body: "Analyze scans your files locally and lists findings in the panels below: Problems for issues in your code, Output for preview messages. Findings are advisory hints, not a security audit.",
+    target: "button[aria-label='Analyze project']",
   },
   {
     id: "preview-notes",
     title: "About the preview",
     body: "Your project can call public HTTPS APIs from the preview and show real responses. But sign-in flows like Google or password popups cannot complete inside the sandbox — they need a real browser window. Test those in a separate tab.",
+    target: ".fxide-preview",
   },
   {
     id: "publish",
     title: "Publish to GitHub",
     body: "Connect GitHub, import your repository, review your changes in Source Control, then publish a pull request. FORGEX never pushes to your main branch directly.",
+    target: "[aria-label='GitHub account']",
   },
   {
     id: "done",
@@ -53,6 +60,12 @@ const TOUR_STEPS: TourStep[] = [
 export default function StudioTour() {
   const [index, setIndex] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [targetRect, setTargetRect] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   // On mount: start the tour for first-time visitors and resume it for
   // anyone who left mid-way. Completed visitors only see the Tour button.
@@ -74,6 +87,50 @@ export default function StudioTour() {
       setIndex(0);
     }
   }, []);
+
+  // Measure the element the current step highlights so the spotlight ring
+  // follows it, and scroll it into view. Re-measures on resize/scroll so
+  // the ring stays on target while the layout moves.
+  useEffect(() => {
+    if (index === null) {
+      setTargetRect(null);
+      return;
+    }
+    const selector = TOUR_STEPS[index].target;
+    if (!selector) {
+      setTargetRect(null);
+      return;
+    }
+    let element: Element | null = null;
+    try {
+      element = document.querySelector(selector);
+    } catch {
+      element = null;
+    }
+    if (!element) {
+      setTargetRect(null);
+      return;
+    }
+    element.scrollIntoView({ behavior: "smooth", block: "center" });
+    const measure = () => {
+      const rect = element!.getBoundingClientRect();
+      setTargetRect({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+      });
+    };
+    measure();
+    const timer = window.setInterval(measure, 300);
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+    };
+  }, [index]);
 
   const save = useCallback((value: string) => {
     try {
@@ -116,45 +173,58 @@ export default function StudioTour() {
 
   const step = index === null ? null : TOUR_STEPS[index];
   const last = index === TOUR_STEPS.length - 1;
+  const hasTarget = Boolean(step?.target && targetRect);
 
   return (
     <>
       {step && (
-        <div
-          className={styles.backdrop}
-          role="dialog"
-          aria-modal="true"
-          aria-label={step.title}
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) finish();
-          }}
-        >
-          <div className={styles.card}>
-            <div className={styles.cardHead}>
-              <strong className={styles.title}>{step.title}</strong>
-              <button
-                type="button"
-                className={styles.iconButton}
-                onClick={finish}
-                aria-label="Close tour"
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <p className={styles.body}>{step.body}</p>
-            <div className={styles.actions}>
-              <button type="button" className={styles.skip} onClick={finish}>
-                Skip tour
-              </button>
-              <span className={styles.progress} aria-live="polite">
-                {(index ?? 0) + 1} / {TOUR_STEPS.length}
-              </span>
-              <button type="button" className={styles.next} onClick={next}>
-                {last ? "Finish" : "Next"}
-              </button>
+        <>
+          <div className={styles.dim} aria-hidden="true" />
+          {targetRect && (
+            <div
+              className={styles.spotlight}
+              style={{
+                top: targetRect.top - 4,
+                left: targetRect.left - 4,
+                width: targetRect.width + 8,
+                height: targetRect.height + 8,
+              }}
+              aria-hidden="true"
+            />
+          )}
+          <div
+            className={`${styles.backdrop} ${hasTarget ? styles.anchored : ""}`}
+            role="dialog"
+            aria-modal="true"
+            aria-label={step.title}
+          >
+            <div className={styles.card}>
+              <div className={styles.cardHead}>
+                <strong className={styles.title}>{step.title}</strong>
+                <button
+                  type="button"
+                  className={styles.iconButton}
+                  onClick={finish}
+                  aria-label="Close tour"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <p className={styles.body}>{step.body}</p>
+              <div className={styles.actions}>
+                <button type="button" className={styles.skip} onClick={finish}>
+                  Skip tour
+                </button>
+                <span className={styles.progress} aria-live="polite">
+                  {(index ?? 0) + 1} / {TOUR_STEPS.length}
+                </span>
+                <button type="button" className={styles.next} onClick={next}>
+                  {last ? "Finish" : "Next"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       <button
