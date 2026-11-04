@@ -127,12 +127,14 @@ export function starterProject(): SourceFile[] {
     },
     {
       path: "style.css",
-      content: `body { background: #101820; color: #e9f4f0; font-family: system-ui, sans-serif; padding: 2rem; }
+      content: `body { background: #101820; color: #e9f4f0; font-family: system-ui, sans-serif; padding: 1.25rem; }
 main { max-width: 560px; margin: auto; }
-h1 { color: #b9fa77; }
-button { background: #b9fa77; border: 0; border-radius: 8px; padding: 12px 20px; cursor: pointer; font-weight: 600; }
-button.secondary { background: #1c2b33; color: #d8e6df; border: 1px solid #3d5a49; margin-left: 8px; }
-#advice { min-height: 1.5em; color: #9fd8a8; }
+h1 { color: #b9fa77; font-size: 1.35rem; }
+p { font-size: 0.95rem; line-height: 1.6; }
+button { background: #b9fa77; border: 0; border-radius: 8px; padding: 12px 18px; cursor: pointer; font-weight: 600; font-size: 0.95rem; }
+button.secondary { background: #1c2b33; color: #d8e6df; border: 1px solid #3d5a49; margin: 8px 0 0; }
+#advice { min-height: 1.5em; color: #9fd8a8; word-wrap: break-word; }
+@media (max-width: 360px) { body { padding: 1rem; } button { width: 100%; padding: 14px 16px; } button.secondary { margin-top: 8px; } }
 `,
     },
     {
@@ -291,6 +293,81 @@ export function buildPreview(
   let html = entry.content;
   const escapeClose = (code: string, tag: string) =>
     code.replace(new RegExp(`</${tag}`, "gi"), `<\\/${tag}`);
+
+  // In a srcdoc iframe every relative resource URL resolves against the
+  // FORGEX page itself (/studio), so unresolvable references produce real
+  // network requests to the FORGEX origin that fail as confusing console
+  // errors ("Failed to load resource: .../studio"). Two build-stage rules
+  // prevent that: empty src/href/srcset attributes are stripped (they
+  // never carry a resource), and script/link/img/source references that
+  // do not resolve to a workspace file or an absolute/data URL are
+  // removed and reported once, instead of being left to hit FORGEX.
+
+  // 1. Strip empty resource attributes on media elements.
+  html = html.replace(
+    /<(img|script|source)\b([^>]*?)\ssrc\s*=\s*(["'])\s*\3/gi,
+    (_match, tag: string, before: string) => `<${tag}${before}`,
+  );
+  html = html.replace(
+    /<link\b([^>]*?)\shref\s*=\s*(["'])\s*\2/gi,
+    (_match, before: string) => `<link${before}`,
+  );
+  html = html.replace(
+    /<(img|source)\b([^>]*?)\ssrcset\s*=\s*(["'])\s*\3/gi,
+    (_match, tag: string, before: string) => `<${tag}${before}`,
+  );
+
+  // 2. Drop relative <script src> references that do not exist in the
+  //    workspace. (Absolute CDN URLs and data: URLs are preserved.)
+  const droppedResources: string[] = [];
+  html = html.replace(
+    /<script\b[^>]*\bsrc\s*=\s*(["'])(.*?)\1[^>]*>\s*<\/script>/gi,
+    (tag, _quote: string, ref: string) => {
+      if (/^(?:[a-z][a-z\d+.-]*:|\/\/|data:)/i.test(ref)) return tag;
+      const resolved = resolveLocal(entry.path, ref);
+      if (resolved && contents.has(resolved)) return tag;
+      droppedResources.push(ref);
+      return "";
+    },
+  );
+
+  // 3. Drop relative stylesheet/other links that do not exist in the
+  //    workspace, except icon links handled by the favicon rewriter.
+  html = html.replace(
+    /<link\b[^>]*>/gi,
+    (tag) => {
+      if (/\brel\s*=\s*["'][^"']*(?:icon)[^"']*["']/i.test(tag)) return tag;
+      if (/\bhref\s*=\s*(["'])(?:(?!\1)[\s\S])*\1/i.test(tag) === false) return tag;
+      const hrefMatch = /\bhref\s*=\s*(["'])(.*?)\1/i.exec(tag);
+      if (!hrefMatch) return tag;
+      const ref = hrefMatch[2];
+      if (/^(?:[a-z][a-z\d+.-]*:|\/\/|data:|#)/i.test(ref)) return tag;
+      const resolved = resolveLocal(entry.path, ref);
+      if (resolved && contents.has(resolved)) return tag;
+      droppedResources.push(ref);
+      return "";
+    },
+  );
+
+  // 4. Drop relative image sources that do not exist in the workspace.
+  html = html.replace(
+    /<img\b[^>]*>/gi,
+    (tag) => {
+      if (/\busemap\b|\bismap\b/i.test(tag)) return tag;
+      const srcMatch = /\bsrc\s*=\s*(["'])(.*?)\1/i.exec(tag);
+      if (!srcMatch) return tag;
+      const ref = srcMatch[2];
+      if (/^(?:[a-z][a-z\d+.-]*:|\/\/|data:)/i.test(ref)) return tag;
+      const dataUrl =
+        localSvgUrl(entry.path, ref) ?? localBinaryUrl(entry.path, ref);
+      if (dataUrl) return tag.replace(srcMatch[0], `src="${dataUrl}"`);
+      const resolved = resolveLocal(entry.path, ref);
+      if (resolved) return tag;
+      droppedResources.push(ref);
+      return "";
+    },
+  );
+
   html = html.replace(
     /<link\b[^>]*\bhref=["']([^"']+)["'][^>]*>/gi,
     (tag, ref: string) => {
@@ -388,10 +465,18 @@ export function buildPreview(
       : "",
   ).replace(/</g, "\\u003c");
 
+  const droppedNotice =
+    droppedResources.length === 0
+      ? ""
+      : `emit('warn', ['${droppedResources
+          .slice(0, 10)
+          .map((item) => item.replace(/'/g, ""))
+          .join(" | ")} not found in this workspace; relative references were removed so they do not hit the FORGEX origin.'], 'Preview sandbox');`;
+
   const instrument = `<script>(function(){
     var channel=${safeChannel};
     var previewAiRoute=${safeAiRoute};
-
+${droppedNotice}
 // Real-world apps (auth SDKs, Supabase, Firebase, settings caches) read
 // localStorage/sessionStorage during startup. A sandboxed iframe without
 // allow-same-origin throws on the first access, which used to crash those
