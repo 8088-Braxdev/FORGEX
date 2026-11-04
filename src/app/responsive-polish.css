@@ -37,7 +37,7 @@ img[src*="/brand/"] {
 }
 
 /* ------------------------------------------------------------------ */
-/* 2. PREVIEW HEADER — controls never clipped.                        */
+/* 2. PANE HEADERS — controls never clipped.                         */
 /* Root cause: .fxide-pane-header has a fixed height:38px; when the   */
 /* controls wrap on narrow widths the second row is clipped in half.  */
 /* ------------------------------------------------------------------ */
@@ -285,6 +285,42 @@ img[src*="/brand/"] {
 
 .fxide-v12 .fxide-ai-connect {
   display: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* 8. PREVIEW ROWS — both rows wrap and grow; controls stay inside.   */
+/* The base CSS pins .fxide-pane-header at a fixed height:38px. At    */
+/* the default 345px preview width the viewport controls (Fit panel,  */
+/* Tablet 768, Mobile 320, Live, Refresh) cannot fit on one line;     */
+/* with the row height locked they spill out and the row reads as     */
+/* too short — even with no project loaded. The preview navigation    */
+/* row (.fxide-preview-pages) never wraps either.                     */
+/* Scoped to the preview pane so console headers keep their compact   */
+/* look.                                                               */
+/* ------------------------------------------------------------------ */
+
+.fxide-v09 .fxide-preview .fxide-pane-header,
+.fxide-v12 .fxide-preview .fxide-pane-header {
+  height: auto;
+  min-height: 44px;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  row-gap: 6px;
+  column-gap: 8px;
+  padding: 5px 10px;
+  overflow: visible;
+}
+
+.fxide-v09 .fxide-preview .fxide-pane-header > *,
+.fxide-v12 .fxide-preview .fxide-pane-header > * {
+  flex-shrink: 0;
+}
+
+/* The status span between the title and the controls still shrinks. */
+.fxide-v09 .fxide-preview .fxide-pane-header > span,
+.fxide-v12 .fxide-preview .fxide-pane-header > span {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .fxide-v12 .fxide-preview-pages {
