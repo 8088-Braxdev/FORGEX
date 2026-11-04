@@ -65,8 +65,10 @@ function isPrivateIpv6(host: string): boolean {
   return false;
 }
 
-/** SSRF guard: only public HTTPS hosts reachable through the proxy. */
-export function isProxyTargetAllowed(rawTarget: string): { allowed: boolean; reason?: string } {
+/** SSRF guard: only public HTTPS hosts reachable through the proxy.
+ * Plain module-local function: Next.js route files may only export route
+ * handlers and route segment config. */
+function isProxyTargetAllowed(rawTarget: string): { allowed: boolean; reason?: string } {
   let url: URL;
   try {
     url = new URL(rawTarget);
