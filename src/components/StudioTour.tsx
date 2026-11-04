@@ -68,6 +68,7 @@ function isVisible(element: Element): boolean {
 export default function StudioTour() {
   const [index, setIndex] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [ideExpanded, setIdeExpanded] = useState(false);
   const [targetRect, setTargetRect] = useState<{
     top: number;
     left: number;
@@ -94,6 +95,24 @@ export default function StudioTour() {
       // Storage unavailable: offer the tour once for this session.
       setIndex(0);
     }
+  }, []);
+
+  // While the IDE is in full-screen (expanded) mode its toolbar covers the
+  // top of the viewport; the Tour button must not float over it. Watch for
+  // the expanded state and hide the button for its duration.
+  useEffect(() => {
+    const check = () => {
+      setIdeExpanded(Boolean(document.querySelector(".fxide-expanded")));
+    };
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
   }, []);
 
   // Measure the element the current step highlights so the spotlight ring
@@ -240,11 +259,12 @@ export default function StudioTour() {
         </>
       )}
 
-      {/* Hidden while the tour is open so it never covers footer content
-          (email, support links) during a walkthrough. */}
+      {/* Parked top-right below the topbar; hidden while the tour dialog is
+          open and while the IDE is in full-screen mode, so it never covers
+          studio content, the footer, or the IDE toolbar. */}
       <button
         type="button"
-        className={`${styles.reopen} ${index !== null ? styles.reopenHidden : ""}`}
+        className={`${styles.reopen} ${index !== null || ideExpanded ? styles.reopenHidden : ""}`}
         onClick={reopen}
         aria-label="Open the FORGEX tour"
         title="Open the FORGEX tour"
