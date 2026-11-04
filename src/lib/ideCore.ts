@@ -66,7 +66,6 @@ export function languageTotals(files: SourceFile[]) {
     .sort((a, b) => b.lines - a.lines || a.name.localeCompare(b.name));
 }
 
-
 export function validateWorkspace(files: SourceFile[]): SourceFile[] {
   if (
     !Array.isArray(files) ||
@@ -102,15 +101,37 @@ export function starterProject(): SourceFile[] {
   return [
     {
       path: "index.html",
-      content: `<!doctype html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1">\n  <title>New Website</title>\n  <link rel="stylesheet" href="./style.css">\n</head>\n<body>\n  <main>\n    <h1>Welcome</h1>\n    <button id="hello">Click me</button>\n  </main>\n  <script src="./app.js"></script>\n</body>\n</html>\n`,
+      content: `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New Website</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main>
+    <h1>Welcome</h1>
+    <button id="hello">Click me</button>
+  </main>
+  <script src="./app.js"></script>
+</body>
+</html>
+`,
     },
     {
       path: "style.css",
-      content: `body { background: #101820; color: #e9f4f0; font-family: system-ui, sans-serif; padding: 2rem; }\nbutton { background: #b9fa77; border: 0; border-radius: 8px; padding: 12px 20px; cursor: pointer; }\n`,
+      content: `body { background: #101820; color: #e9f4f0; font-family: system-ui, sans-serif; padding: 2rem; }
+button { background: #b9fa77; border: 0; border-radius: 8px; padding: 12px 20px; cursor: pointer; }
+`,
     },
     {
       path: "app.js",
-      content: `document.querySelector("#hello")?.addEventListener("click", () => {\n  console.log("Button clicked");\n  document.querySelector("h1").textContent = "It works!";\n});\n`,
+      content: `document.querySelector("#hello")?.addEventListener("click", () => {
+  console.log("Button clicked");
+  document.querySelector("h1").textContent = "It works!";
+});
+`,
     },
   ];
 }
@@ -134,8 +155,21 @@ function resolveLocal(path: string, relative: string): string | null {
 
 export type PreviewDocument = { html: string; entry: string };
 
-
-
+/**
+ * Explicit allowlist of public CDN and data endpoints that imported projects
+ * may load from inside the sandboxed preview. Everything else stays blocked.
+ * The preview fetch override enforces the same host list.
+ */
+const PREVIEW_SCRIPT_HOSTS =
+  "https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://esm.sh";
+const PREVIEW_STYLE_HOSTS =
+  "https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://fonts.googleapis.com";
+const PREVIEW_FONT_HOSTS =
+  "https://cdn.jsdelivr.net https://unpkg.com https://fonts.gstatic.com https://fonts.googleapis.com";
+const PREVIEW_IMAGE_HOSTS =
+  "https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com";
+const PREVIEW_CONNECT_HOSTS =
+  "https://*.supabase.co wss://*.supabase.co";
 
 export function buildPreview(
   files: SourceFile[],
@@ -144,83 +178,76 @@ export function buildPreview(
   binaryAssets: readonly PreviewBinaryAsset[] = [],
   aiRoute = "",
 ): PreviewDocument | null {
+  const requested = files.find(
+    (file) =>
+      file.path === requestedPage &&
+      /\.html?$/i.test(file.path),
+  );
 
-
-const requested = files.find(
-  (file) =>
-    file.path === requestedPage &&
-    /\.html?$/i.test(file.path),
-);
-
-
-const entry =
-  requested ??
-  files.find((file) => file.path === "index.html") ??
-
+  const entry =
+    requested ??
+    files.find((file) => file.path === "index.html") ??
     files.find((file) => /(^|\/)index\.html?$/i.test(file.path)) ??
     files.find((file) => /\.html?$/i.test(file.path));
   if (!entry) return null;
   const contents = new Map(files.map((file) => [file.path, file.content]));
-  
-const binaryAssetUrls = new Map(
-  binaryAssets.map((asset) => [asset.path, asset.dataUrl]),
-);
 
-const localBinaryUrl = (
-  ownerPath: string,
-  reference: string,
-): string | null => {
-  const resolved = resolveLocal(ownerPath, reference.trim());
-
-  return resolved
-    ? (binaryAssetUrls.get(resolved) ?? null)
-    : null;
-};
-
-const localSvgUrl = (
-  ownerPath: string,
-  reference: string,
-): string | null => {
-  const path = resolveLocal(ownerPath, reference.trim());
-
-  if (!path || !/\.svg$/i.test(path)) return null;
-
-  const svg = contents.get(path);
-
-  if (
-    !svg ||
-    svg.length > 100_000 ||
-    !/<svg(?:\s|>)/i.test(svg)
-  ) {
-    return null;
-  }
-
-  return svgPreviewUrl(svg);
-};
-
-const rewriteCssSvgUrls = (
-  css: string,
-  ownerPath: string,
-): string =>
-  css.replace(
-    /url\(\s*(?:"([^"]+)"|'([^']+)'|([^)]*))\s*\)/gi,
-    (original, doubleQuoted, singleQuoted, unquoted) => {
-      const reference = (
-        doubleQuoted ??
-        singleQuoted ??
-        unquoted ??
-        ""
-      ).trim();
-
-  
-const dataUrl =
-  localSvgUrl(ownerPath, reference) ??
-  localBinaryUrl(ownerPath, reference);
-
-
-      return dataUrl ? `url("${dataUrl}")` : original;
-    },
+  const binaryAssetUrls = new Map(
+    binaryAssets.map((asset) => [asset.path, asset.dataUrl]),
   );
+
+  const localBinaryUrl = (
+    ownerPath: string,
+    reference: string,
+  ): string | null => {
+    const resolved = resolveLocal(ownerPath, reference.trim());
+    return resolved
+      ? (binaryAssetUrls.get(resolved) ?? null)
+      : null;
+  };
+
+  const localSvgUrl = (
+    ownerPath: string,
+    reference: string,
+  ): string | null => {
+    const path = resolveLocal(ownerPath, reference.trim());
+
+    if (!path || !/\.svg$/i.test(path)) return null;
+
+    const svg = contents.get(path);
+
+    if (
+      !svg ||
+      svg.length > 100_000 ||
+      !/<svg(?:\s|>)/i.test(svg)
+    ) {
+      return null;
+    }
+
+    return svgPreviewUrl(svg);
+  };
+
+  const rewriteCssSvgUrls = (
+    css: string,
+    ownerPath: string,
+  ): string =>
+    css.replace(
+      /url\(\s*(?:"([^"]+)"|'([^']+)'|([^)]*))\s*\)/gi,
+      (original, doubleQuoted, singleQuoted, unquoted) => {
+        const reference = (
+          doubleQuoted ??
+          singleQuoted ??
+          unquoted ??
+          ""
+        ).trim();
+
+        const dataUrl =
+          localSvgUrl(ownerPath, reference) ??
+          localBinaryUrl(ownerPath, reference);
+
+        return dataUrl ? `url("${dataUrl}")` : original;
+      },
+    );
 
   let html = entry.content;
   const escapeClose = (code: string, tag: string) =>
@@ -231,12 +258,10 @@ const dataUrl =
       const resolved = resolveLocal(entry.path, ref);
       const code = resolved ? contents.get(resolved) : undefined;
       return code !== undefined && resolved && /\.css$/i.test(resolved)
-
-? `<style>${escapeClose(
-    rewriteCssSvgUrls(code, resolved),
-    "style"
-  )}</style>`
-
+        ? `<style>${escapeClose(
+            rewriteCssSvgUrls(code, resolved),
+            "style",
+          )}</style>`
         : tag;
     },
   );
@@ -267,64 +292,62 @@ const dataUrl =
     },
   );
 
-// Resolve responsive images and imported favicon references without opening the sandbox.
-html = html.replace(/<(?:img|source)\b[^>]*>/gi, tag => tag.replace(
-  /\bsrcset\s*=\s*(["'])(.*?)\1/i,
-  (attribute, quote: string, value: string) => {
-    if (/data:/i.test(value)) return attribute;
-    const rewritten = value.split(",").map(candidate => {
-      const match = candidate.trim().match(/^(\S+)(.*)$/);
-      if (!match) return candidate;
-      const dataUrl = localSvgUrl(entry.path, match[1]) ?? localBinaryUrl(entry.path, match[1]);
-      return dataUrl ? dataUrl + match[2] : candidate.trim();
-    }).join(", ");
-    return `srcset=${quote}${rewritten}${quote}`;
-  },
-));
-html = html.replace(/<link\b[^>]*>/gi, tag => {
-  if (!/\brel\s*=\s*["'][^"']*(?:icon)[^"']*["']/i.test(tag)) return tag;
-  return tag.replace(/\bhref\s*=\s*(["'])(.*?)\1/i, (attribute, quote: string, reference: string) => {
-    const dataUrl = localSvgUrl(entry.path, reference) ?? localBinaryUrl(entry.path, reference);
-    return dataUrl ? `href=${quote}${dataUrl}${quote}` : attribute;
-  });
-});
-
-// Resolve SVG images loaded from the local workspace.
-html = html.replace(/<img\b[^>]*>/gi, (tag) =>
-  tag.replace(
-    /\bsrc\s*=\s*(["'])(.*?)\1/i,
-    (attribute, _quote: string, reference: string) => {
-
-const dataUrl =
-  localSvgUrl(entry.path, reference) ??
-  localBinaryUrl(entry.path, reference);
-
-
-      return dataUrl
-        ? `src="${dataUrl}"`
-        : attribute;
+  // Resolve responsive images and imported favicon references without opening the sandbox.
+  html = html.replace(/<(?:img|source)\b[^>]*>/gi, tag => tag.replace(
+    /\bsrcset\s*=\s*(["'])(.*?)\1/i,
+    (attribute, quote: string, value: string) => {
+      if (/data:/i.test(value)) return attribute;
+      const rewritten = value.split(",").map(candidate => {
+        const match = candidate.trim().match(/^(\S+)(.*)$/);
+        if (!match) return candidate;
+        const dataUrl = localSvgUrl(entry.path, match[1]) ?? localBinaryUrl(entry.path, match[1]);
+        return dataUrl ? dataUrl + match[2] : candidate.trim();
+      }).join(", ");
+      return `srcset=${quote}${rewritten}${quote}`;
     },
-  ),
-);
+  ));
+  html = html.replace(/<link\b[^>]*>/gi, tag => {
+    if (!/\brel\s*=\s*["'][^"']*(?:icon)[^"']*["']/i.test(tag)) return tag;
+    return tag.replace(/\bhref\s*=\s*(["'])(.*?)\1/i, (attribute, quote: string, reference: string) => {
+      const dataUrl = localSvgUrl(entry.path, reference) ?? localBinaryUrl(entry.path, reference);
+      return dataUrl ? `href=${quote}${dataUrl}${quote}` : attribute;
+    });
+  });
 
-// Resolve SVG URLs inside inline HTML style blocks.
-html = html.replace(
-  /<style\b[^>]*>([\s\S]*?)<\/style>/gi,
-  (tag, css: string) =>
+  // Resolve SVG images loaded from the local workspace.
+  html = html.replace(/<img\b[^>]*>/gi, (tag) =>
     tag.replace(
-      css,
-      rewriteCssSvgUrls(css, entry.path),
+      /\bsrc\s*=\s*(["'])(.*?)\1/i,
+      (attribute, _quote: string, reference: string) => {
+        const dataUrl =
+          localSvgUrl(entry.path, reference) ??
+          localBinaryUrl(entry.path, reference);
+
+        return dataUrl
+          ? `src="${dataUrl}"`
+          : attribute;
+      },
     ),
-);
+  );
+
+  // Resolve SVG URLs inside inline HTML style blocks.
+  html = html.replace(
+    /<style\b[^>]*>([\s\S]*?)<\/style>/gi,
+    (tag, css: string) =>
+      tag.replace(
+        css,
+        rewriteCssSvgUrls(css, entry.path),
+      ),
+  );
 
   // Opaque-origin iframe; sends limited console entries only to this page.
   const safeChannel = JSON.stringify(channel).replace(/</g, "\\u003c");
-  
-const safeAiRoute = JSON.stringify(
-  /^\/api\/[a-z0-9/_-]{1,80}$/i.test(aiRoute)
-    ? aiRoute
-    : "",
-).replace(/</g, "\\u003c");
+
+  const safeAiRoute = JSON.stringify(
+    /^\/api\/[a-z0-9/_-]{1,80}$/i.test(aiRoute)
+      ? aiRoute
+      : "",
+  ).replace(/</g, "\\u003c");
 
   const instrument = `<script>(function(){
     var channel=${safeChannel};
@@ -355,10 +378,8 @@ document.addEventListener('click', function(event) {
   if (
     !href ||
     href.charAt(0) === '#' ||
-   
-href.startsWith("//") ||
-/^[a-z][a-z0-9+.-]*:/i.test(href)
-
+    href.startsWith("//") ||
+    /^[a-z][a-z0-9+.-]*:/i.test(href)
   ) return;
 
   // Stop the iframe from navigating to a Next.js route.
@@ -370,8 +391,6 @@ href.startsWith("//") ||
     href: href.slice(0, 512)
   }, '*');
 }, true);
-
-
 
 var sourceMaps = __FORGEX_SOURCE_MAPS__;
 
@@ -439,7 +458,8 @@ function locateSource(source, line, column) {
       catch(err){return;}
     }
     ['log','info','warn','error'].forEach(function(level){var original=console[level];console[level]=function(){emit(level,arguments);if(original)original.apply(console,arguments);};});
-    // Explicit diagnostics for requests that the intentionally offline sandbox cannot run.
+    // Explicit diagnostics for unsupported requests. The sandbox stays offline
+    // except for the approved public CDN/data hosts listed below.
     // Never fabricate a backend response or silently forward credentials.
 
 var previewRequests = Object.create(null);
@@ -480,17 +500,46 @@ window.addEventListener('message', function(event) {
   ));
 });
 
+// Only these public hosts pass through to the browser network stack.
+// FORGEX bridge routes are handled separately below; everything else fails.
+var originalFetch = window.fetch ? window.fetch.bind(window) : null;
+var previewExternalHosts = [
+  'cdn.jsdelivr.net',
+  'unpkg.com',
+  'cdnjs.cloudflare.com',
+  'esm.sh',
+  'fonts.googleapis.com',
+  'fonts.gstatic.com'
+];
 
+function isPreviewExternalUrl(input) {
+  var raw = '';
+  try {
+    if (typeof input === 'string') raw = input;
+    else if (input && typeof input.url === 'string') raw = input.url;
+  } catch (error) {
+    return false;
+  }
+  if (typeof raw !== 'string' || raw.indexOf('https://') !== 0) return false;
+  var hostMatch = /^https:\\/\\/([^\\/?#]+)/i.exec(raw);
+  var hostname = hostMatch ? hostMatch[1].toLowerCase() : '';
+  if (!hostname) return false;
+  if (previewExternalHosts.indexOf(hostname) !== -1) return true;
+  return /(^|\\.)supabase\\.co$/.test(hostname);
+}
 
 window.fetch = function(input, init) {
-  
-var isAI =
-  input === '/api/preview/ai' ||
-  (
-    typeof input === 'string' &&
-    previewAiRoute !== '' &&
-    input === previewAiRoute
-  );
+  if (isPreviewExternalUrl(input) && originalFetch) {
+    return originalFetch(input, init);
+  }
+
+  var isAI =
+    input === '/api/preview/ai' ||
+    (
+      typeof input === 'string' &&
+      previewAiRoute !== '' &&
+      input === previewAiRoute
+    );
 
   var isHealth = input === '/api/preview/health';
   var isGateway = input === '/api/preview/gateway';
@@ -535,15 +584,13 @@ var isAI =
       );
     }
   } else {
- 
-var maxLength = isAI ? 500 : 160;
+    var maxLength = isAI ? 500 : 160;
 
-var value = payload && (
-  isAI && typeof payload.prompt === 'string'
-    ? payload.prompt
-    : payload.message
-);
-
+    var value = payload && (
+      isAI && typeof payload.prompt === 'string'
+        ? payload.prompt
+        : payload.message
+    );
 
     if (
       typeof value !== 'string' ||
@@ -579,9 +626,7 @@ var value = payload && (
       kind: 'forgex-preview-request',
       channel: channel,
       id: id,
-      
-path: isAI ? '/api/preview/ai' : input
-
+      path: isAI ? '/api/preview/ai' : input
     };
 
     if (isGateway) {
@@ -597,7 +642,6 @@ path: isAI ? '/api/preview/ai' : input
   });
 };
 
-
     window.addEventListener('error',function(e){
       if(e.target&&e.target!==window){
         var resource=e.target.src||e.target.href||e.target.tagName||'unknown resource';
@@ -605,19 +649,19 @@ path: isAI ? '/api/preview/ai' : input
         return;
       }
 
-var location = locateSource(
-  e.filename || "",
-  e.lineno,
-  e.colno
-);
+      var location = locateSource(
+        e.filename || "",
+        e.lineno,
+        e.colno
+      );
 
-emit(
-  'error',
-  [e.message || 'Unknown JavaScript error'],
-  location.source,
-  location.line,
-  location.column
-);
+      emit(
+        'error',
+        [e.message || 'Unknown JavaScript error'],
+        location.source,
+        location.line,
+        location.column
+      );
 
     },true);
     window.addEventListener('unhandledrejection',function(e){
@@ -627,7 +671,7 @@ emit(
     window.addEventListener('securitypolicyviolation',function(e){emit('warn',['Blocked by sandbox security policy:',e.blockedURI||e.violatedDirective],'Preview sandbox');});
     emit('info',['Preview initialized']);
   })();<\/script>`;
-  const csp = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">`;
+  const csp = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' ${PREVIEW_SCRIPT_HOSTS}; style-src 'unsafe-inline' ${PREVIEW_STYLE_HOSTS}; img-src data: blob: ${PREVIEW_IMAGE_HOSTS}; font-src data: ${PREVIEW_FONT_HOSTS}; connect-src ${PREVIEW_CONNECT_HOSTS}; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">`;
   const setup = csp + instrument;
   html = /<head\b[^>]*>/i.test(html)
     ? html.replace(/<head\b[^>]*>/i, (match) => match + setup)
@@ -713,7 +757,7 @@ export function explainRuntimeError(message: string): string {
       message,
     )
   ) {
-    return "This static preview cannot call /api routes or remote services. Run and configure the backend separately; never put API keys in browser source.";
+    return "This static preview cannot call /api routes or arbitrary remote services. Configure the backend separately; never put API keys in browser source.";
   }
   if (/ReferenceError|is not defined/i.test(message))
     return "Check the variable or function name, its scope, and whether its script has loaded.";
@@ -722,7 +766,7 @@ export function explainRuntimeError(message: string): string {
   if (/TypeError|Cannot read properties|is not a function/i.test(message))
     return "Check for null/undefined values and verify the called method or object type.";
   if (/Failed to fetch|NetworkError|Content Security Policy|CSP/i.test(message))
-    return "The isolated preview blocks network access. Verify local assets or test networking in a trusted environment.";
+    return "The sandbox only allows approved public CDNs and the connected data endpoints. Other hosts are blocked by design.";
   return "Inspect the reported source location and the full error message; reproduce before changing code.";
 }
 

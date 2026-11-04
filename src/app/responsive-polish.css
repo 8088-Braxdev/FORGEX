@@ -1,0 +1,179 @@
+/*
+ * FORGEX — small-screen responsive polish layer.
+ * Loaded after mini-ide.css and style.css so these rules win where needed.
+ * Desktop is untouched: every rule is scoped to small screens or touch.
+ */
+
+/* ------------------------------------------------------------------ */
+/* Console mode tabs: never truncate labels like "Term" on phones.    */
+/* The strip scrolls horizontally when it cannot fit.                 */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 820px) {
+  .fxide-v09 .fxide-pane-header,
+  .fxide-v12 .fxide-console-header {
+    min-width: 0;
+  }
+
+  .fxide-v09 .fxide-pane-header strong,
+  .fxide-v12 .fxide-console-header strong {
+    max-width: 40vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .fxide-v12 .fxide-console-modes {
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .fxide-v12 .fxide-console-modes::-webkit-scrollbar {
+    display: none;
+  }
+
+  .fxide-v12 .fxide-console-modes button {
+    flex-shrink: 0;
+    min-width: max-content;
+    white-space: nowrap;
+    padding-inline: 10px;
+  }
+
+  /* Output filter row keeps both controls reachable on 320px. */
+  .fxide-v12 .fxide-output-tools {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
+  }
+
+  .fxide-v12 .fxide-output-tools select {
+    grid-column: 1 / -1;
+  }
+
+  /* Status bar wraps gracefully on the narrowest phones. */
+  .fxide-v09 .fxide-statusbar {
+    flex-wrap: wrap;
+    white-space: normal;
+    gap: 8px 14px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Expanded (focused) IDE on phones: stable height in both orientations. */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 820px) and (orientation: portrait) {
+  .fxide-v09.fxide-expanded,
+  .fxide-v12.fxide-expanded {
+    height: 100dvh;
+    max-height: 100dvh;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@media (max-width: 820px) and (orientation: landscape) {
+  .fxide-v09.fxide-expanded,
+  .fxide-v12.fxide-expanded {
+    height: 100dvh;
+    max-height: 100dvh;
+    padding-top: max(0px, env(safe-area-inset-top));
+  }
+
+  .fxide-v09 .fxide-mobile-nav,
+  .fxide-v12 .fxide-mobile-nav {
+    padding-bottom: max(4px, env(safe-area-inset-bottom));
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Touch: comfortable hit areas for editor tabs and pane buttons.      */
+/* ------------------------------------------------------------------ */
+
+@media (pointer: coarse) {
+  .fxide-v12 .fxide-editor-tab button,
+  .fxide-v09 .fxide-editor-tab button {
+    min-height: 38px;
+  }
+
+  .fxide-v12 .fxide-console-modes button {
+    min-height: 40px;
+  }
+
+  .fxide-v12 .fxide-tab-x {
+    min-width: 38px;
+    min-height: 38px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* GitHub Connect control: keep the full label usable on phones.       */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 480px) {
+  .connection .connect,
+  .connection .retry {
+    max-width: 46vw;
+  }
+
+  .connection .connect > svg,
+  .connection .retry > svg {
+    flex-shrink: 0;
+  }
+
+  .connection .account summary {
+    gap: 6px;
+  }
+
+  .connection .account .identity strong {
+    max-width: 34vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Studio polish — presentation-only removals.                        */
+/* Professional IDEs do not show marketing headings, numbered kickers   */
+/* ("SECURITY LENS / 002") or dev-only bridge controls in the          */
+/* workspace. These rules remove that noise on every viewport.        */
+/* No application logic is changed by this layer.                     */
+/* ------------------------------------------------------------------ */
+
+/* The studio starts at the workspace status, not a marketing paragraph.
+   This also removes the desktop/mobile inconsistency: the heading used
+   to render on desktop and be hidden on phones. */
+.fx-workspace-heading,
+.fx-workspace-privacy {
+  display: none;
+}
+
+/* Section kickers carried machine-style numbering (… / 002, … / 006). */
+.page-heading .eyebrow {
+  display: none;
+}
+
+/* Numbered badges inside advisory cards (01 Locate, 02 Understand, 03 Verify). */
+.signal-item > span {
+  display: none;
+}
+
+/* "CHECK 01"… labels in the Release Gate list. */
+.gate-item > small {
+  display: none;
+}
+
+/* Dev-only Gemini bridge row: unusable on production deployments and it
+   stretched the preview header into a long horizontal strip. */
+.fxide-v12 .fxide-ai-connect {
+  display: none;
+}
+
+/* Preview page switcher wraps on narrow widths instead of overflowing. */
+.fxide-v12 .fxide-preview-pages {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
