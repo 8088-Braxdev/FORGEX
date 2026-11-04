@@ -125,13 +125,14 @@
   background: #d0ff9e;
 }
 
-/* Persistent reopen button. Parked top-right just below the studio topbar
-   so it never covers the footer (email/support links) or the IDE. */
+/* Persistent reopen button.
+   Collapsed mode: fixed top-right, just below the studio topbar, clear of
+   the footer and the GitHub control. Never scrolls. */
 .reopen {
   position: fixed;
   top: calc(78px + env(safe-area-inset-top));
   right: 14px;
-  z-index: 9400;
+  z-index: 9999;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -152,7 +153,15 @@
   background: #16241c;
 }
 
-/* Hidden while the tour dialog is open or the IDE is full-screen. */
+/* Expanded IDE: shift left of the IDE's own expand control (top-right of
+   the IDE toolbar) so the button remains visible without covering the
+   toolbar. The IDE sets its own fixed top; this offset sits beside it. */
+.reopenExpanded {
+  top: calc(14px + env(safe-area-inset-top));
+  right: 64px;
+}
+
+/* Hidden while the tour dialog is open so it cannot cover content. */
 .reopenHidden {
   display: none;
 }
@@ -191,6 +200,11 @@
     min-height: 34px;
     font-size: 11px;
   }
+
+  .reopenExpanded {
+    top: calc(10px + env(safe-area-inset-top));
+    right: 56px;
+  }
 }
 
 /* Very narrow phones: keep the Tour pill small and inside the viewport. */
@@ -200,6 +214,10 @@
     padding: 6px 10px;
     min-height: 32px;
     font-size: 11px;
+  }
+
+  .reopenExpanded {
+    right: 52px;
   }
 }
 
