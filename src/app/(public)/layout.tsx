@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowUpRight } from "lucide-react";
@@ -30,9 +29,6 @@ export default function PublicLayout({
 
         <nav className={styles.nav} aria-label="Main navigation">
           <Link href="/#features">Features</Link>
-          <Link href="/privacy">Privacy</Link>
-          <Link href="/terms">Terms</Link>
-          <Link href="/help">Help</Link>
           <Link href="/studio" className={styles.navPrimary}>
             Open FORGEX <ArrowUpRight size={15} />
           </Link>

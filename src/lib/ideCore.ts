@@ -106,13 +106,19 @@ export function starterProject(): SourceFile[] {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>New Website</title>
+  <title>My FORGEX project</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
   <main>
-    <h1>Welcome</h1>
-    <button id="hello">Click me</button>
+    <h1>My project</h1>
+    <p>
+      Edit these files in the editor, then press Run to see the preview
+      update live. Open the Console tab to read its output.
+    </p>
+    <button id="ping" type="button">Test the console</button>
+    <button id="fetch-advice" type="button" class="secondary">Fetch a live API</button>
+    <p id="advice" role="status"></p>
   </main>
   <script src="./app.js"></script>
 </body>
@@ -122,14 +128,38 @@ export function starterProject(): SourceFile[] {
     {
       path: "style.css",
       content: `body { background: #101820; color: #e9f4f0; font-family: system-ui, sans-serif; padding: 2rem; }
-button { background: #b9fa77; border: 0; border-radius: 8px; padding: 12px 20px; cursor: pointer; }
+main { max-width: 560px; margin: auto; }
+h1 { color: #b9fa77; }
+button { background: #b9fa77; border: 0; border-radius: 8px; padding: 12px 20px; cursor: pointer; font-weight: 600; }
+button.secondary { background: #1c2b33; color: #d8e6df; border: 1px solid #3d5a49; margin-left: 8px; }
+#advice { min-height: 1.5em; color: #9fd8a8; }
 `,
     },
     {
       path: "app.js",
-      content: `document.querySelector("#hello")?.addEventListener("click", () => {
-  console.log("Button clicked");
-  document.querySelector("h1").textContent = "It works!";
+      content: `// This template runs inside the FORGEX preview sandbox.
+// Try each button, then inspect the Console and Network tabs below.
+
+document.querySelector("#ping").addEventListener("click", () => {
+  console.info("Button clicked. This message came from app.js.");
+});
+
+// Live API demo: the sandbox can call public HTTPS APIs and render the
+// response. Replace the URL with your own API endpoint.
+document.querySelector("#fetch-advice").addEventListener("click", () => {
+  const output = document.querySelector("#advice");
+  output.textContent = "Loading…";
+  fetch("https://api.github.com/zen")
+    .then((response) => {
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      return response.text();
+    })
+    .then((text) => {
+      output.textContent = text;
+    })
+    .catch((error) => {
+      output.textContent = "Request failed: " + error.message;
+    });
 });
 `,
     },
@@ -156,9 +186,16 @@ function resolveLocal(path: string, relative: string): string | null {
 export type PreviewDocument = { html: string; entry: string };
 
 /**
- * Explicit allowlist of public CDN and data endpoints that imported projects
- * may load from inside the sandboxed preview. Everything else stays blocked.
- * The preview fetch override enforces the same host list.
+ * Explicit allowlist of public CDNs that imported projects may load scripts,
+ * styles, fonts and images from inside the sandboxed preview. Everything
+ * else in those categories stays blocked, keeping the injection surface small.
+ *
+ * Data requests are deliberately broader: an imported project may call any
+ * public HTTPS/WSS API from the browser, exactly like a deployed website.
+ * The sandbox keeps an opaque origin, no FORGEX credentials are attached,
+ * and the preview fetch override additionally blocks requests aimed at the
+ * FORGEX origin itself. Target APIs still enforce their own CORS policy and
+ * no server-side proxy is involved.
  */
 const PREVIEW_SCRIPT_HOSTS =
   "https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://esm.sh";
@@ -168,8 +205,12 @@ const PREVIEW_FONT_HOSTS =
   "https://cdn.jsdelivr.net https://unpkg.com https://fonts.gstatic.com https://fonts.googleapis.com";
 const PREVIEW_IMAGE_HOSTS =
   "https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com";
-const PREVIEW_CONNECT_HOSTS =
-  "https://*.supabase.co wss://*.supabase.co";
+
+/** FORGEX's own hostname; requests to it are always blocked from previews. */
+const APP_HOST =
+  typeof window !== "undefined"
+    ? window.location.hostname.toLowerCase()
+    : "";
 
 export function buildPreview(
   files: SourceFile[],
@@ -458,8 +499,8 @@ function locateSource(source, line, column) {
       catch(err){return;}
     }
     ['log','info','warn','error'].forEach(function(level){var original=console[level];console[level]=function(){emit(level,arguments);if(original)original.apply(console,arguments);};});
-    // Explicit diagnostics for unsupported requests. The sandbox stays offline
-    // except for the approved public CDN/data hosts listed below.
+    // Explicit diagnostics for unsupported requests. Public HTTPS/WSS data
+    // requests pass through; FORGEX bridge routes are handled below.
     // Never fabricate a backend response or silently forward credentials.
 
 var previewRequests = Object.create(null);
@@ -500,32 +541,35 @@ window.addEventListener('message', function(event) {
   ));
 });
 
-// Only these public hosts pass through to the browser network stack.
-// FORGEX bridge routes are handled separately below; everything else fails.
+// Outbound data requests pass through to the browser network stack so an
+// imported project can call its own APIs and render real responses.
+// Only HTTPS/WSS is permitted, and requests aimed at the FORGEX origin
+// itself always fail. FORGEX bridge routes are handled separately below.
 var originalFetch = window.fetch ? window.fetch.bind(window) : null;
-var previewExternalHosts = [
-  'cdn.jsdelivr.net',
-  'unpkg.com',
-  'cdnjs.cloudflare.com',
-  'esm.sh',
-  'fonts.googleapis.com',
-  'fonts.gstatic.com'
-];
+var previewAppHost = ${JSON.stringify(APP_HOST).replace(/</g, "\\u003c")};
 
 function isPreviewExternalUrl(input) {
   var raw = '';
+
   try {
     if (typeof input === 'string') raw = input;
     else if (input && typeof input.url === 'string') raw = input.url;
   } catch (error) {
     return false;
   }
-  if (typeof raw !== 'string' || raw.indexOf('https://') !== 0) return false;
-  var hostMatch = /^https:\\/\\/([^\\/?#]+)/i.exec(raw);
+
+  if (typeof raw !== 'string') return false;
+  if (raw.indexOf('https://') !== 0 && raw.indexOf('wss://') !== 0) return false;
+
+  var hostMatch = /^(?:https|wss):\\/\\/([^\\/?#]+)/i.exec(raw);
   var hostname = hostMatch ? hostMatch[1].toLowerCase() : '';
+
   if (!hostname) return false;
-  if (previewExternalHosts.indexOf(hostname) !== -1) return true;
-  return /(^|\\.)supabase\\.co$/.test(hostname);
+
+  // An imported project must never call the FORGEX origin itself.
+  if (previewAppHost !== '' && hostname === previewAppHost) return false;
+
+  return true;
 }
 
 window.fetch = function(input, init) {
@@ -671,7 +715,7 @@ window.fetch = function(input, init) {
     window.addEventListener('securitypolicyviolation',function(e){emit('warn',['Blocked by sandbox security policy:',e.blockedURI||e.violatedDirective],'Preview sandbox');});
     emit('info',['Preview initialized']);
   })();<\/script>`;
-  const csp = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' ${PREVIEW_SCRIPT_HOSTS}; style-src 'unsafe-inline' ${PREVIEW_STYLE_HOSTS}; img-src data: blob: ${PREVIEW_IMAGE_HOSTS}; font-src data: ${PREVIEW_FONT_HOSTS}; connect-src ${PREVIEW_CONNECT_HOSTS}; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">`;
+  const csp = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' ${PREVIEW_SCRIPT_HOSTS}; style-src 'unsafe-inline' ${PREVIEW_STYLE_HOSTS}; img-src data: blob: ${PREVIEW_IMAGE_HOSTS}; font-src data: ${PREVIEW_FONT_HOSTS}; connect-src https: wss:; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">`;
   const setup = csp + instrument;
   html = /<head\b[^>]*>/i.test(html)
     ? html.replace(/<head\b[^>]*>/i, (match) => match + setup)
@@ -766,7 +810,7 @@ export function explainRuntimeError(message: string): string {
   if (/TypeError|Cannot read properties|is not a function/i.test(message))
     return "Check for null/undefined values and verify the called method or object type.";
   if (/Failed to fetch|NetworkError|Content Security Policy|CSP/i.test(message))
-    return "The sandbox only allows approved public CDNs and the connected data endpoints. Other hosts are blocked by design.";
+    return "The sandbox allows outbound HTTPS/WSS data requests. This failure usually means the target API blocked the request by CORS or the network dropped it; verify the URL and the provider's CORS policy.";
   return "Inspect the reported source location and the full error message; reproduce before changing code.";
 }
 
