@@ -72,6 +72,18 @@ export default function HelpPage() {
 
         <section className={styles.legalSection}>
           <h2>
+            <MonitorPlay size={18} /> Offline use
+          </h2>
+          <p>
+            After one online visit, the home, Help, and Studio pages can be
+            opened offline and local editing continues to work. GitHub import,
+            AI requests, other API features, and preview projects that load
+            scripts from a CDN still require an internet connection.
+          </p>
+        </section>
+
+        <section className={styles.legalSection}>
+          <h2>
             <Github size={18} /> GitHub workflow
           </h2>
           <p>

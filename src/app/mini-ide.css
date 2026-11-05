@@ -1103,6 +1103,19 @@
   outline-offset: 1px;
 }
 
+.fxide-v12 .fxide-offline-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 10px;
+  padding: 4px 9px;
+  border: 1px solid #877346;
+  border-radius: 999px;
+  background: #382f22;
+  color: #f4cf80;
+  font-size: 11px;
+  font-weight: 700;
+}
+
 /* FORGEX Expanded Mode Recommendation */
 
 .fxide-v12 .fxide-expand-tip {

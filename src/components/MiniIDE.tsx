@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import type { Monaco as MonacoApi } from "@monaco-editor/react";
+import { loader as monacoLoader } from "@monaco-editor/react";
 import {
   Activity,
   ArrowRight,
@@ -82,6 +83,10 @@ import {
 
 import SourceControlPanel from "./SourceControlPanel";
 import { useAppConfirm } from "./AppConfirmProvider";
+if (typeof window !== "undefined") {
+  monacoLoader.config({ paths: { vs: "/monaco/vs" } });
+}
+
 const Monaco = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 const DRAFT_KEY = "forgex-mini-ide-v1";
 
@@ -454,6 +459,21 @@ export default function MiniIDE({
   });
 
   const [notice, setNotice] = useState("");
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator !== "undefined" ? navigator.onLine : true,
+  );
+
+  useEffect(() => {
+    const update = () => setIsOnline(navigator.onLine);
+
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
   const [previewLimitsDismissed, setPreviewLimitsDismissed] = useState(false);
   const [previewLimitFiles, setPreviewLimitFiles] =
     useState<PreviewLimitSignals>({
@@ -2319,6 +2339,11 @@ export default function MiniIDE({
             </small>
           </div>
         </div>
+        {!isOnline && (
+          <span className="fxide-offline-badge" role="status">
+            Offline
+          </span>
+        )}
         <div className="fxide-primary-actions">
           <button
             type="button"

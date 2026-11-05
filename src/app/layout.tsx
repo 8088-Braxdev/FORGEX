@@ -6,6 +6,7 @@ import "./style.css";
 import "./mini-ide.css";
 import "./responsive-polish.css";
 import { AppConfirmProvider } from "@/components/AppConfirmProvider";
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 
 
 const sora = Sora({
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={`${sora.variable} ${mono.variable}`}>
       <body>
         <AppConfirmProvider>{children}</AppConfirmProvider>
+        <ServiceWorkerRegistration />
       </body>
     </html>
   );

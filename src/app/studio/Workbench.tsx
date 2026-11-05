@@ -1043,7 +1043,13 @@ return () => window.clearTimeout(timer);
           `${data.repository} (${data.branch}): ${data.files.length} real files scanned${data.partial ? `, ${data.skipped} eligible files skipped · PARTIAL SCAN` : ""}.`,
         );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to load repository");
+      setError(
+        typeof navigator !== "undefined" && !navigator.onLine
+          ? "You are offline. GitHub import requires an internet connection."
+          : e instanceof Error
+            ? e.message
+            : "Unable to load repository",
+      );
     } finally {
       setBusy(false);
     }

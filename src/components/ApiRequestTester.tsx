@@ -357,6 +357,8 @@ export default function ApiRequestTester({
     } catch (cause) {
       if (controller.signal.aborted) {
         setError("Request timed out or was cancelled.");
+      } else if (typeof navigator !== "undefined" && !navigator.onLine) {
+        setError("You are offline. The API tester requires an internet connection.");
       } else {
         setError(
           "Request failed. Check the URL and connection. " +
