@@ -455,6 +455,26 @@ export default function MiniIDE({
 
   const [notice, setNotice] = useState("");
   const [previewLimitsDismissed, setPreviewLimitsDismissed] = useState(false);
+  const [previewSandboxTipDismissed, setPreviewSandboxTipDismissed] = useState(() => {
+    try {
+      return (
+        localStorage.getItem("forgex-preview-sandbox-tip-dismissed-v1") === "1"
+      );
+    } catch {
+      return false;
+    }
+  });
+
+  function dismissPreviewSandboxTip() {
+    setPreviewSandboxTipDismissed(true);
+
+    try {
+      localStorage.setItem("forgex-preview-sandbox-tip-dismissed-v1", "1");
+    } catch {
+      // The tip remains dismissed for this session.
+    }
+  }
+
   const [previewLimitFiles, setPreviewLimitFiles] =
     useState<PreviewLimitSignals>({
       environmentSecrets: false,
@@ -2529,14 +2549,16 @@ export default function MiniIDE({
         </div>
       </header>
 
-      {!expanded && !smallScreen && showExpandTip && (
+      {!expanded && showExpandTip && (
         <div className="fxide-top-guidance" role="note">
           <div className="fxide-top-guidance-text">
             <Maximize2 size={17} />
 
             <span>
-              <strong>Get the best editing experience.</strong> Use Expanded
-              Mode for more space, smoother navigation, and easier debugging.
+              <strong>Get the best editing experience.</strong>{" "}
+              {smallScreen
+                ? "On a phone, rotate to landscape or use Expanded Mode for more space and easier debugging."
+                : "Use Expanded Mode for more space, smoother navigation, and easier debugging."}
             </span>
           </div>
 
@@ -3191,6 +3213,56 @@ export default function MiniIDE({
               setResizing("preview");
             }}
           />
+          {previewVisible && !previewSandboxTipDismissed && (
+            <div
+              className="fxide-preview-limits"
+              role="note"
+              aria-label="Preview sandbox notice"
+            >
+              <div>
+                <strong>Preview sandbox</strong>
+                <p>
+                  Preview runs in a browser sandbox: backend code and .env
+                  secrets are not available. Public HTTPS APIs work.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={dismissPreviewSandboxTip}
+                aria-label="Dismiss preview sandbox notice"
+                title="Dismiss"
+              >
+                <X size={15} />
+              </button>
+            </div>
+          )}
+
+          {showPreviewLimits && (
+            <div
+              className="fxide-preview-limits"
+              role="note"
+              aria-label="Preview limits"
+            >
+              <div>
+                <strong>Preview limits</strong>
+                <p>
+                  {PREVIEW_LIMITS_MESSAGE}
+                  {previewLimitFiles.environmentSecrets
+                    ? ` ${PREVIEW_LIMITS_ENV_MESSAGE}`
+                    : ""}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewLimitsDismissed(true)}
+                aria-label="Dismiss preview limits notice"
+                title="Dismiss"
+              >
+                <X size={15} />
+              </button>
+            </div>
+          )}
+
           <div className="fxide-pane-header">
             <strong>
               <MonitorPlay size={15} /> PREVIEW
@@ -3411,32 +3483,6 @@ export default function MiniIDE({
               setResizing("console");
             }}
           />
-
-          {showPreviewLimits && (
-            <div
-              className="fxide-preview-limits"
-              role="note"
-              aria-label="Preview limits"
-            >
-              <div>
-                <strong>Preview limits</strong>
-                <p>
-                  {PREVIEW_LIMITS_MESSAGE}
-                  {previewLimitFiles.environmentSecrets
-                    ? ` ${PREVIEW_LIMITS_ENV_MESSAGE}`
-                    : ""}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPreviewLimitsDismissed(true)}
-                aria-label="Dismiss preview limits notice"
-                title="Dismiss"
-              >
-                <X size={15} />
-              </button>
-            </div>
-          )}
 
           <div className="fxide-pane-header fxide-console-header">
             <div

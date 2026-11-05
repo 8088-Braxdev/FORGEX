@@ -1235,7 +1235,18 @@
 
 @media (max-width: 820px) {
   .fxide-v12 .fxide-top-guidance {
-    display: none;
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .fxide-v12 .fxide-top-guidance-text {
+    font-size: 11px;
+  }
+
+  .fxide-v12 .fxide-top-guidance button {
+    min-height: 28px;
+    padding: 4px 8px;
+    font-size: 11px;
   }
 }
 
