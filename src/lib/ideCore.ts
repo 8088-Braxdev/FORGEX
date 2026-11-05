@@ -737,58 +737,123 @@ function isExternalHttpsUrl(input) {
 }
 
 function proxyViaServer(target, method, init, resolve, reject) {
-  var bodyText = null;
+  var request = null;
   try {
-    if (init && typeof init.body === 'string') bodyText = init.body;
+    if (typeof Request !== 'undefined' && target instanceof Request) request = target;
   } catch (error) {
-    bodyText = null;
+    request = null;
+  }
+
+  var targetUrl = request ? request.url : target;
+  var initBodyProvided = !!(init && init.body !== undefined);
+  var bodyText = null;
+
+  if (initBodyProvided) {
+    try {
+      if (typeof init.body === 'string') {
+        bodyText = init.body;
+      } else if (
+        typeof URLSearchParams !== 'undefined' &&
+        init.body instanceof URLSearchParams
+      ) {
+        bodyText = init.body.toString();
+      } else if (init.body !== null) {
+        reject(new TypeError('This body type is not supported by the preview proxy'));
+        return;
+      }
+    } catch (error) {
+      reject(new TypeError('This body type is not supported by the preview proxy'));
+      return;
+    }
   }
 
   var headers = {};
   try {
     if (init && init.headers) {
-      if (typeof init.headers.forEach === 'function') {
+      if (Array.isArray(init.headers)) {
+        for (var i = 0; i < init.headers.length; i++) {
+          var pair = init.headers[i];
+          if (Array.isArray(pair) && pair.length >= 2) {
+            headers[String(pair[0])] = String(pair[1]);
+          }
+        }
+      } else if (typeof init.headers.forEach === 'function') {
         init.headers.forEach(function(value, name) { headers[name] = value; });
       } else if (typeof init.headers === 'object') {
         for (var name in init.headers) headers[name] = init.headers[name];
       }
+    } else if (request) {
+      request.headers.forEach(function(value, name) { headers[name] = value; });
     }
   } catch (error) {
     headers = {};
   }
 
-  originalFetch.call(window, PREVIEW_PROXY_ROUTE, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      target: target,
-      method: method,
-      headers: headers,
-      body: bodyText
-    })
-  }).then(function(proxyResponse) {
-    if (!proxyResponse.ok) {
-      proxyResponse.json().then(function(info) {
-        reject(new TypeError((info && info.error) || 'The preview proxy could not reach the target API.'));
+  var requestMethod = String(
+    (init && init.method) ||
+    (request && request.method) ||
+    method ||
+    'GET'
+  );
+
+  function send(body) {
+    originalFetch.call(window, PREVIEW_PROXY_ROUTE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        target: targetUrl,
+        method: requestMethod,
+        headers: headers,
+        body: body
+      })
+    }).then(function(proxyResponse) {
+      if (!proxyResponse.ok) {
+        proxyResponse.json().then(function(info) {
+          reject(new TypeError((info && info.error) || 'The preview proxy could not reach the target API.'));
+        }).catch(function() {
+          reject(new TypeError('The preview proxy could not reach the target API.'));
+        });
+        return;
+      }
+      proxyResponse.json().then(function(envelope) {
+        resolve(new Response(
+          typeof envelope.body === 'string' ? envelope.body : '',
+          {
+            status: envelope.status || 502,
+            headers: { 'Content-Type': envelope.contentType || 'text/plain' }
+          }
+        ));
       }).catch(function() {
-        reject(new TypeError('The preview proxy could not reach the target API.'));
+        reject(new TypeError('The preview proxy returned an unreadable response.'));
       });
+    }).catch(function() {
+      reject(new TypeError('The preview proxy is unavailable.'));
+    });
+  }
+
+  if (initBodyProvided) {
+    send(bodyText);
+    return;
+  }
+
+  if (request) {
+    if (request.body === null) {
+      send(null);
       return;
     }
-    proxyResponse.json().then(function(envelope) {
-      resolve(new Response(
-        typeof envelope.body === 'string' ? envelope.body : '',
-        {
-          status: envelope.status || 502,
-          headers: { 'Content-Type': envelope.contentType || 'text/plain' }
-        }
-      ));
-    }).catch(function() {
-      reject(new TypeError('The preview proxy returned an unreadable response.'));
-    });
-  }).catch(function() {
-    reject(new TypeError('The preview proxy is unavailable.'));
-  });
+    try {
+      request.text().then(function(text) {
+        send(text);
+      }).catch(function() {
+        reject(new TypeError('The preview proxy could not read the request body.'));
+      });
+    } catch (error) {
+      reject(new TypeError('The preview proxy could not read the request body.'));
+    }
+    return;
+  }
+
+  send(bodyText);
 }
 
 window.fetch = function(input, init) {
@@ -823,6 +888,14 @@ window.fetch = function(input, init) {
 
   if (isExternalHttpsUrl(input) && originalFetch) {
     var method = requestMethod;
+    var proxyInput = input;
+    try {
+      if (typeof Request !== 'undefined' && input instanceof Request) {
+        proxyInput = input.clone();
+      }
+    } catch (error) {
+      proxyInput = input;
+    }
     return originalFetch(input, init).then(function(response) {
       emitNetwork(requestMethod, requestUrl, response.status, startedAt, 'direct', response.ok);
       return response;
@@ -831,7 +904,7 @@ window.fetch = function(input, init) {
       // server proxy so the app still receives the real response.
       return new Promise(function(resolve, reject) {
         proxyViaServer(
-          input,
+          proxyInput,
           method,
           init,
           function(response) {
