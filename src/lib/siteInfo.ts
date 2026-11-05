@@ -1,6 +1,24 @@
 import type { Metadata } from "next";
 
-export const SITE_ORIGIN = "https://forgex-gamma.vercel.app";
+function resolveSiteOrigin(): string {
+  const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+
+  if (raw) {
+    try {
+      const url = new URL(raw);
+
+      if (url.protocol === "https:") {
+        return url.origin;
+      }
+    } catch {
+      // Fall back to the production origin for invalid values.
+    }
+  }
+
+  return "https://forgexdevstudio.braxcode.com";
+}
+
+export const SITE_ORIGIN = resolveSiteOrigin();
 export const SUPPORT_EMAIL = "braxtonbruzzzy@gmail.com";
 export const SUPPORT_WHATSAPP = "https://wa.me/255618811359";
 export const COMPANY_URL = "https://braxcode.com";

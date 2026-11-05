@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import styles from "./public.module.css";
 import { redirect } from "next/navigation";
-import { publicMetadata } from "@/lib/siteInfo";
+import { publicMetadata, SITE_ORIGIN } from "@/lib/siteInfo";
 
 export const metadata: Metadata = publicMetadata(
   "FORGEX DevStudio — Developer Intelligence",
@@ -76,7 +76,7 @@ const jsonLd = {
   operatingSystem: "Web",
   description:
     "Inspect real source code, investigate risks, and build with confidence.",
-  url: "https://forgex-gamma.vercel.app",
+  url: SITE_ORIGIN,
   publisher: {
     "@type": "Organization",
     name: "BraxCode Digitals Foundation",
