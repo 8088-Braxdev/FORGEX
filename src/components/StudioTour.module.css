@@ -231,9 +231,11 @@
     font: 500 13px var(--font-forgex-sans), sans-serif;
   }
 
-  /* Fallback control (rail missing): park bottom-right as a pill,
-     above the IDE mobile nav, clear of the preview pane. */
-  .reopen {
+  /* Fallback control (rail missing) — fallback pill only.
+     Scoped with :not(.reopenRail) so the in-drawer row keeps its plain
+     nav-item look and never inherits the pill background, border,
+     radius or auto width. */
+  .reopen:not(.reopenRail) {
     bottom: calc(76px + env(safe-area-inset-bottom));
     left: auto;
     right: 12px;
@@ -249,7 +251,7 @@
     color: #c4d1d6;
   }
 
-  .reopen span {
+  .reopen:not(.reopenRail) span {
     display: inline;
     font-size: 11px;
   }
