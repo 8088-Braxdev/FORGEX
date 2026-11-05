@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -135,7 +134,7 @@ export default function GitHubReleaseGate({
           flexWrap: "wrap",
         }}
       >
-        <strong>FORGEX Release Gate v3</strong>
+        <strong>FORGEX Release Gate</strong>
 
         <button
           type="button"

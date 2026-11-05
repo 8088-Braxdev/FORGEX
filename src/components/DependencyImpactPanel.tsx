@@ -71,7 +71,7 @@ export default function DependencyImpactPanel({
         gap: 9,
       }}
     >
-      <strong style={{ fontSize: 13 }}>Dependency Impact v3.2</strong>
+      <strong style={{ fontSize: 13 }}>Dependency Impact</strong>
 
       {error && (
         <p role="alert" style={{ color: "#ffb6a9" }}>

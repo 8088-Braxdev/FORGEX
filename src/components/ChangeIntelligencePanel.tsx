@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -209,7 +208,7 @@ export default function ChangeIntelligencePanel({
       >
         <div>
           <strong style={{ fontSize: 14 }}>
-            Change Intelligence v3.1
+            Change Intelligence
           </strong>
 
           <div
