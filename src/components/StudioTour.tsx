@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { HelpCircle, X } from "lucide-react";
 import styles from "./StudioTour.module.css";
 
@@ -68,6 +69,7 @@ function isVisible(element: Element): boolean {
 export default function StudioTour() {
   const [index, setIndex] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [railHost, setRailHost] = useState<HTMLElement | null>(null);
   const [targetRect, setTargetRect] = useState<{
     top: number;
     left: number;
@@ -95,6 +97,27 @@ export default function StudioTour() {
       setIndex(0);
     }
   }, []);
+
+  // The studio rail (WorkspaceShell .navigation) hosts the Tour control.
+  // On desktop the rail is a fixed left band, so the control parks at its
+  // bottom like a VS Code rail item. On mobile the rail becomes the
+  // off-canvas drawer (History, Security, Health, Release Gate, Rulebook),
+  // so the control rides inside the drawer as its last row and moves with
+  // it. Fallback: when the rail cannot be found, render the fixed control
+  // in place so the entry point is never lost.
+  useEffect(() => {
+    if (!mounted) return;
+    const findRail = () => {
+      const rail = document.querySelector<HTMLElement>(
+        "nav[aria-label='Studio navigation'], nav[aria-label='Main navigation']"
+      );
+      setRailHost(rail && rail.isConnected ? rail : null);
+    };
+    findRail();
+    const observer = new MutationObserver(findRail);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [mounted]);
 
   // Measure the element the current step highlights so the spotlight ring
   // follows it, and scroll it into view. Invisible or missing targets
@@ -188,6 +211,19 @@ export default function StudioTour() {
   const step = index === null ? null : TOUR_STEPS[index];
   const last = index === TOUR_STEPS.length - 1;
 
+  const reopenControl = (
+    <button
+      type="button"
+      className={`${styles.reopen} ${index !== null ? styles.reopenHidden : ""}`}
+      onClick={reopen}
+      aria-label="Open the FORGEX tour"
+      title="Open the FORGEX tour"
+    >
+      <HelpCircle size={15} />
+      <span>Tour</span>
+    </button>
+  );
+
   return (
     <>
       {step && (
@@ -240,20 +276,13 @@ export default function StudioTour() {
         </>
       )}
 
-      {/* Rendered as a topbar action: pinned inside the studio topbar band
-          (top-right, full band height). Fixed position — it never scrolls,
-          never enters the IDE toolbar band below it, and is visible in every
-          IDE mode. Hidden only while the tour dialog is open. */}
-      <button
-        type="button"
-        className={`${styles.reopen} ${index !== null ? styles.reopenHidden : ""}`}
-        onClick={reopen}
-        aria-label="Open the FORGEX tour"
-        title="Open the FORGEX tour"
-      >
-        <HelpCircle size={15} />
-        <span>Tour</span>
-      </button>
+      {/* Tour control. Portaled into the studio navigation rail when it
+          exists: bottom of the fixed left rail on desktop (VS Code rail
+          pattern), and the last row of the mobile drawer on phones so it
+          lives with the other nav items instead of floating over content.
+          Falls back to a fixed control when the rail is missing so the
+          tour is always reachable. */}
+      {railHost ? createPortal(reopenControl, railHost) : reopenControl}
     </>
   );
 }
