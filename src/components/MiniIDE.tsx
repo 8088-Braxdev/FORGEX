@@ -49,6 +49,10 @@ import {
   Ellipsis,
 } from "lucide-react";
 import { analyzeProject, type Finding, type SourceFile } from "@/lib/analyzer";
+import {
+  detectPreviewLimits,
+  type PreviewLimitSignals,
+} from "@/lib/previewLimits";
 import type { WorkspaceDraft, RepoIdentity } from "../lib/workspaceDraft";
 import AppNotice from "./AppNotice";
 import ImageViewer from "./ImageViewer";
@@ -145,6 +149,26 @@ function sanitizeNetworkUrl(raw: string): string {
       : part;
   });
   return `${base}?${parts.join("&")}${hash}`;
+}
+
+const PREVIEW_LIMITS_MESSAGE =
+  "This preview runs in a browser sandbox. It cannot run backend code (API routes, servers) or read .env secrets, so calls to /api/... fail. Calls to public HTTPS APIs work (CORS handled by our proxy). To test backend features, run the project locally or deploy it.";
+
+const PREVIEW_LIMITS_ENV_MESSAGE =
+  "Environment variables are not available in the preview. Do not paste real secret keys into project files; they would be visible in the browser.";
+
+const PREVIEW_BRIDGE_PATHS = new Set([
+  "/api/preview/ai",
+  "/api/preview/health",
+  "/api/preview/gateway",
+]);
+
+function isBlockedRelativeApiRequest(url: string): boolean {
+  if (!url.startsWith("/api/")) return false;
+
+  const path = url.split(/[?#]/, 1)[0];
+
+  return !PREVIEW_BRIDGE_PATHS.has(path);
 }
 
 type IdeDiagnostic = {
@@ -430,6 +454,23 @@ export default function MiniIDE({
   });
 
   const [notice, setNotice] = useState("");
+  const [previewLimitsDismissed, setPreviewLimitsDismissed] = useState(false);
+  const [previewLimitFiles, setPreviewLimitFiles] =
+    useState<PreviewLimitSignals>({
+      environmentSecrets: false,
+      serverCode: false,
+    });
+
+  const blockedRelativeApi = networkRecords.some((record) =>
+    isBlockedRelativeApiRequest(record.url ?? record.path),
+  );
+
+  const showPreviewLimits =
+    !previewLimitsDismissed &&
+    (blockedRelativeApi ||
+      previewLimitFiles.environmentSecrets ||
+      previewLimitFiles.serverCode);
+
   const [jumpLine, setJumpLine] = useState<number | null>(null);
   const [touched, setTouched] = useState<string[]>([]);
   const [saveMenuOpen, setSaveMenuOpen] = useState(false);
@@ -868,6 +909,17 @@ export default function MiniIDE({
     }, 800);
     return () => window.clearTimeout(timer);
   }, [files, disabledRules]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        setPreviewLimitFiles(detectPreviewLimits(files));
+      } catch {
+        setPreviewLimitFiles({ environmentSecrets: false, serverCode: false });
+      }
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [files]);
 
   useEffect(() => {
     function onMessage(event: MessageEvent) {
@@ -3359,6 +3411,32 @@ export default function MiniIDE({
               setResizing("console");
             }}
           />
+
+          {showPreviewLimits && (
+            <div
+              className="fxide-preview-limits"
+              role="note"
+              aria-label="Preview limits"
+            >
+              <div>
+                <strong>Preview limits</strong>
+                <p>
+                  {PREVIEW_LIMITS_MESSAGE}
+                  {previewLimitFiles.environmentSecrets
+                    ? ` ${PREVIEW_LIMITS_ENV_MESSAGE}`
+                    : ""}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewLimitsDismissed(true)}
+                aria-label="Dismiss preview limits notice"
+                title="Dismiss"
+              >
+                <X size={15} />
+              </button>
+            </div>
+          )}
 
           <div className="fxide-pane-header fxide-console-header">
             <div
