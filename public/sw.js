@@ -1,6 +1,6 @@
 const CACHE_VERSION = "v2";
 const CACHE_NAME = `forgex-${CACHE_VERSION}`;
-const PRECACHE_URLS = ["/", "/help", "/studio"];
+const PRECACHE_URLS = ["/", "/help", "/studio", "/offline.html"];
 const MONACO_PRECACHE_URLS = [
   "/monaco/vs/loader.js",
   "/monaco/vs/editor/editor.main.js",
@@ -67,9 +67,12 @@ function offlineFallback(request, error) {
     .match(request)
     .then((cached) => {
       if (cached) return cached;
-      return caches.match("/studio").then((fallback) => {
-        if (fallback) return fallback;
-        throw error;
+      return caches.match("/studio").then((studio) => {
+        if (studio) return studio;
+        return caches.match("/offline.html").then((offlinePage) => {
+          if (offlinePage) return offlinePage;
+          throw error;
+        });
       });
     });
 }
