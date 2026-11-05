@@ -20,7 +20,7 @@ export default function IntelligencePanel({ report, onOpenSource }: Props) {
     <section className={styles.root} aria-labelledby="forgex-intelligence-title">
       <div className={styles.heading}>
         <div>
-          <p className={styles.kicker}>FORGEX INTELLIGENCE / V2</p>
+          <p className={styles.kicker}>FORGEX INTELLIGENCE</p>
           <h2 id="forgex-intelligence-title">Understand the findings.</h2>
           <p>Advisory code analysis — not a security certification or test execution.</p>
         </div>
