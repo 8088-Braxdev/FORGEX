@@ -9,7 +9,9 @@
     "typecheck": "tsc --noEmit",
     "audit:deps": "npm audit",
     "test:engine": "node tests/engine.test.cjs",
-    "test:http": "node scripts/test-http.cjs"
+    "test:http": "node scripts/test-http.cjs",
+    "postinstall": "node scripts/copy-monaco.cjs",
+    "prebuild": "node scripts/copy-monaco.cjs"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.8.0-rc.3",

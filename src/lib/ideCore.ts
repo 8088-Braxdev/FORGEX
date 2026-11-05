@@ -827,7 +827,10 @@ function proxyViaServer(target, method, init, resolve, reject) {
         reject(new TypeError('The preview proxy returned an unreadable response.'));
       });
     }).catch(function() {
-      reject(new TypeError('The preview proxy is unavailable.'));
+      var message = (typeof navigator !== 'undefined' && !navigator.onLine)
+        ? 'You are offline. The preview proxy requires an internet connection.'
+        : 'The preview proxy is unavailable.';
+      reject(new TypeError(message));
     });
   }
 
