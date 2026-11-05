@@ -5,6 +5,7 @@ import { publicMetadata, SITE_ORIGIN } from "@/lib/siteInfo";
 import "./style.css";
 import "./mini-ide.css";
 import "./responsive-polish.css";
+import "./preview-toolbar-fix.css";
 import { AppConfirmProvider } from "@/components/AppConfirmProvider";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import OfflineBanner from "@/components/OfflineBanner";
