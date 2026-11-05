@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { HelpCircle, X } from "lucide-react";
 import styles from "./StudioTour.module.css";
 
@@ -65,9 +66,31 @@ function isVisible(element: Element): boolean {
   return rect.width > 1 && rect.height > 1;
 }
 
+/**
+ * The studio rail: WorkspaceShell renders it as a fixed-position div whose
+ * CSS-module class contains "navigation" (WorkspaceShell_navigation__*),
+ * holding the nav with Workbench, Security, Health, Release Gate, Rulebook
+ * and History. On phones that same block becomes the off-canvas drawer, so
+ * hosting the Tour control inside its nav keeps the control in the drawer
+ * on mobile and parked over the fixed rail on desktop. Returns null while
+ * the rail is missing so a fixed fallback keeps the tour reachable.
+ */
+function findRailNav(): HTMLElement | null {
+  const candidates = Array.from(
+    document.querySelectorAll<HTMLElement>("div[class*='navigation']")
+  );
+  const rail = candidates.find((element) => {
+    const style = window.getComputedStyle(element);
+    return style.position === "fixed" && element.querySelector("nav") !== null;
+  });
+  const nav = rail ? rail.querySelector("nav") : null;
+  return nav instanceof HTMLElement && nav.isConnected ? nav : null;
+}
+
 export default function StudioTour() {
   const [index, setIndex] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [navHost, setNavHost] = useState<HTMLElement | null>(null);
   const [targetRect, setTargetRect] = useState<{
     top: number;
     left: number;
@@ -95,6 +118,17 @@ export default function StudioTour() {
       setIndex(0);
     }
   }, []);
+
+  // Track the rail nav so the Tour control can be portaled into it. The
+  // observer covers late-mounted studio surfaces and route changes.
+  useEffect(() => {
+    if (!mounted) return;
+    const sync = () => setNavHost(findRailNav());
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [mounted]);
 
   // Measure the element the current step highlights so the spotlight ring
   // follows it, and scroll it into view. Invisible or missing targets
@@ -188,6 +222,25 @@ export default function StudioTour() {
   const step = index === null ? null : TOUR_STEPS[index];
   const last = index === TOUR_STEPS.length - 1;
 
+  const reopenControl = (inRail: boolean) => (
+    <button
+      type="button"
+      className={[
+        styles.reopen,
+        inRail ? styles.reopenRail : "",
+        index !== null ? styles.reopenHidden : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      onClick={reopen}
+      aria-label="Open the FORGEX tour"
+      title="Open the FORGEX tour"
+    >
+      <HelpCircle size={15} />
+      <span>Tour</span>
+    </button>
+  );
+
   return (
     <>
       {step && (
@@ -240,20 +293,16 @@ export default function StudioTour() {
         </>
       )}
 
-      {/* Rendered as a topbar action: pinned inside the studio topbar band
-          (top-right, full band height). Fixed position — it never scrolls,
-          never enters the IDE toolbar band below it, and is visible in every
-          IDE mode. Hidden only while the tour dialog is open. */}
-      <button
-        type="button"
-        className={`${styles.reopen} ${index !== null ? styles.reopenHidden : ""}`}
-        onClick={reopen}
-        aria-label="Open the FORGEX tour"
-        title="Open the FORGEX tour"
-      >
-        <HelpCircle size={15} />
-        <span>Tour</span>
-      </button>
+      {/* Tour control. Portaled into the studio rail nav when present:
+          on desktop the rail is a fixed left band so the control stays
+          parked at its bottom (VS Code rail pattern); on phones the rail
+          becomes the off-canvas drawer, so the control rides inside it as
+          the last row next to History, Security, Health, Release Gate and
+          Rulebook instead of floating over the preview. When the rail is
+          missing, a fixed fallback keeps the tour reachable. */}
+      {navHost
+        ? createPortal(reopenControl(true), navHost)
+        : reopenControl(false)}
     </>
   );
 }

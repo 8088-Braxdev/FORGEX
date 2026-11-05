@@ -122,12 +122,10 @@
   background: #d0ff9e;
 }
 
-/* Tour control.
-   Parked at the very bottom of the left studio rail, the VS Code
-   pattern (like the account/settings controls). Rail facts read from
-   WorkspaceShell.module.css: fixed, left:0, width:64px, z-index:100,
-   background #0e171d. Fixed position — it never scrolls. Visible in
-   every IDE mode; never over any toolbar or content row. */
+/* Tour control — fallback only.
+   Rendered fixed when the studio rail nav cannot be found, so the tour
+   entry point is never lost. When the rail is present the control is
+   portaled inside its nav and takes the .reopenRail rules below. */
 .reopen {
   position: fixed;
   bottom: calc(12px + env(safe-area-inset-bottom));
@@ -165,6 +163,38 @@
   display: none;
 }
 
+/* Tour control inside the rail nav (ported).
+   Desktop: the rail is a fixed 64px left band; the control fills the
+   rail width as the last rail item, matching the other rail rows.
+   Mobile: the same nav becomes the off-canvas drawer, so the control
+   flows as a normal full-width row after History — it slides in and out
+   with the drawer and never floats over the preview pane. */
+.reopenRail {
+  position: static;
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #95aab5;
+  z-index: auto;
+}
+
+.reopenRail:hover {
+  color: #e5ecef;
+  background: #18262e;
+}
+
+.reopenRail:focus-visible {
+  outline: 2px solid #b9fa77;
+  outline-offset: 3px;
+}
+
 @media (max-width: 820px) {
   .backdrop {
     align-items: flex-end;
@@ -189,15 +219,29 @@
       0 0 24px #b9fa7766;
   }
 
-  /* On phones the left rail is hidden (nav becomes a drawer), so the
-     tour control parks bottom-right, above the IDE mobile nav and
-     clear of the preview pane. */
+  /* Drawer rows show their label; match the navItem look. */
+  .reopenRail {
+    justify-content: flex-start;
+    min-height: 48px;
+    padding: 12px;
+  }
+
+  .reopenRail span {
+    display: inline;
+    font: 500 13px var(--font-forgex-sans), sans-serif;
+  }
+
+  /* Fallback control (rail missing): park bottom-right as a pill,
+     above the IDE mobile nav, clear of the preview pane. */
   .reopen {
     bottom: calc(76px + env(safe-area-inset-bottom));
     left: auto;
     right: 12px;
     width: auto;
     min-height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     padding: 8px 12px;
     border: 1px solid #33474f;
     border-radius: 999px;
