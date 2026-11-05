@@ -2,11 +2,21 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-/** Forwarded request headers the proxy allows from a preview. */
+/**
+ * Forwarded request headers the proxy allows from a preview.
+ * Provider auth headers are included so real AI/API calls work through
+ * the proxy when the browser blocks the direct request (sandboxed
+ * origins send Origin: null): Google uses x-goog-api-key (Gemini) and
+ * x-goog-user-project, Anthropic uses x-api-key, and standard clients
+ * use authorization.
+ */
 const ALLOWED_REQUEST_HEADERS = new Set([
   "content-type",
   "accept",
   "authorization",
+  "x-goog-api-key",
+  "x-goog-user-project",
+  "x-api-key",
 ]);
 
 const MAX_REQUEST_BYTES = 100 * 1024;
@@ -65,9 +75,11 @@ function isPrivateIpv6(host: string): boolean {
   return false;
 }
 
-/** SSRF guard: only public HTTPS hosts reachable through the proxy.
+/**
+ * SSRF guard: only public HTTPS hosts reachable through the proxy.
  * Plain module-local function: Next.js route files may only export route
- * handlers and route segment config. */
+ * handlers and route segment config.
+ */
 function isProxyTargetAllowed(rawTarget: string): { allowed: boolean; reason?: string } {
   let url: URL;
   try {
@@ -104,7 +116,8 @@ function corsHeaders(): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers":
+      "Content-Type, Authorization, X-Goog-Api-Key, X-Goog-User-Project, X-Api-Key",
     "Access-Control-Max-Age": "86400",
   };
 }
@@ -237,6 +250,28 @@ export async function POST(request: Request) {
       cache: "no-store",
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
+
+    // Some providers issue a same-host http->https or path redirect on
+    // their API endpoints. Follow one https redirect so proxied AI calls
+    // do not surface an opaque 30x as the final response.
+    if (
+      response.status >= 300 &&
+      response.status < 400 &&
+      response.headers.has("location")
+    ) {
+      const redirectTarget = response.headers.get("location") ?? "";
+      const absolute = new URL(redirectTarget, target).toString();
+      if (isProxyTargetAllowed(absolute).allowed) {
+        response = await fetch(absolute, {
+          method,
+          headers: forwardedHeaders,
+          body,
+          redirect: "manual",
+          cache: "no-store",
+          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        });
+      }
+    }
   } catch (error) {
     const timedOut =
       error instanceof Error &&
