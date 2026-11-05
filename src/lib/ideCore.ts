@@ -620,6 +620,57 @@ function locateSource(source, line, column) {
 
 var previewRequests = Object.create(null);
 var previewRequestId = 0;
+var previewNetworkId = 0;
+var sensitiveNetworkParam = /(^|[-_])(key|token|secret|auth|api[-_]?key|password)$/i;
+
+function sanitizeNetworkUrl(raw) {
+  try {
+    var value = String(raw || '');
+    var queryIndex = value.indexOf('?');
+    if (queryIndex === -1) return value;
+    var hashIndex = value.indexOf('#', queryIndex);
+    var base = value.slice(0, queryIndex);
+    var query = value.slice(queryIndex + 1, hashIndex === -1 ? value.length : hashIndex);
+    var hash = hashIndex === -1 ? '' : value.slice(hashIndex);
+    var parts = query.split('&');
+    for (var i = 0; i < parts.length; i++) {
+      var equals = parts[i].indexOf('=');
+      if (equals === -1) continue;
+      var name = parts[i].slice(0, equals);
+      try { name = decodeURIComponent(name); } catch (error) { /* keep encoded name */ }
+      if (sensitiveNetworkParam.test(name)) {
+        parts[i] = parts[i].slice(0, equals + 1) + '***';
+      }
+    }
+    return base + '?' + parts.join('&') + hash;
+  } catch (error) {
+    return String(raw || '');
+  }
+}
+
+function emitNetwork(method, url, status, startedAt, via, ok, error) {
+  try {
+    var message = {
+      kind: 'forgex-preview-network',
+      channel: channel,
+      id: ++previewNetworkId,
+      method: String(method || 'GET').toUpperCase().slice(0, 16),
+      url: sanitizeNetworkUrl(url).slice(0, 512),
+      status: Number.isInteger(status) && status >= 0 ? status : 0,
+      durationMs: Math.max(0, Math.round(
+        ((window.performance && window.performance.now)
+          ? window.performance.now()
+          : Date.now()) - startedAt
+      )),
+      via: via === 'proxy' ? 'proxy' : 'direct',
+      ok: ok === true
+    };
+    if (error) message.error = sanitizeNetworkUrl(String(error)).slice(0, 180);
+    parent.postMessage(message, '*');
+  } catch (error) {
+    return;
+  }
+}
 
 window.addEventListener('message', function(event) {
   if (event.source !== parent) return;
@@ -755,20 +806,50 @@ window.fetch = function(input, init) {
     return bridgeFetch(input, init);
   }
 
+  var startedAt =
+    window.performance && window.performance.now
+      ? window.performance.now()
+      : Date.now();
+  var requestMethod = 'GET';
+  var requestUrl = '';
+  try {
+    if (init && init.method) requestMethod = String(init.method);
+    else if (input && typeof input === 'object' && input.method) requestMethod = String(input.method);
+    if (typeof input === 'string') requestUrl = input;
+    else if (input && typeof input.url === 'string') requestUrl = input.url;
+  } catch (error) {
+    requestUrl = '';
+  }
+
   if (isExternalHttpsUrl(input) && originalFetch) {
-    var method = (init && init.method) || 'GET';
-    return originalFetch(input, init).catch(function(directError) {
+    var method = requestMethod;
+    return originalFetch(input, init).then(function(response) {
+      emitNetwork(requestMethod, requestUrl, response.status, startedAt, 'direct', response.ok);
+      return response;
+    }).catch(function(directError) {
       // CORS or network block on the direct call: retry through the
       // server proxy so the app still receives the real response.
       return new Promise(function(resolve, reject) {
-        proxyViaServer(input, method, init, resolve, reject);
+        proxyViaServer(
+          input,
+          method,
+          init,
+          function(response) {
+            emitNetwork(requestMethod, requestUrl, response.status, startedAt, 'proxy', response.ok);
+            resolve(response);
+          },
+          function(error) {
+            emitNetwork(requestMethod, requestUrl, 0, startedAt, 'proxy', false, error && error.message);
+            reject(error);
+          }
+        );
       });
     });
   }
 
-  return Promise.reject(
-    new TypeError('Blocked: relative URLs resolve to the FORGEX origin inside this sandbox. Call your API with its full https:// address.')
-  );
+  var blocked = new TypeError('Blocked: relative URLs resolve to the FORGEX origin inside this sandbox. Call your API with its full https:// address.');
+  emitNetwork(requestMethod, requestUrl, 0, startedAt, 'direct', false, blocked.message);
+  return Promise.reject(blocked);
 };
 
 // XHR uses the same strategy: direct https first, proxy fallback on
@@ -778,7 +859,32 @@ window.fetch = function(input, init) {
   XMLHttpRequest.prototype.open = function(method, url) {
     if (typeof url === 'string') {
       if (isExternalHttpsUrl(url)) {
+        var xhr = this;
+        var requestMethod = String(method || 'GET').toUpperCase();
+        var requestUrl = url;
+        var startedAt =
+          window.performance && window.performance.now
+            ? window.performance.now()
+            : Date.now();
+        var finished = false;
+        var finish = function(errorMessage) {
+          if (finished) return;
+          finished = true;
+          var status = 0;
+          try { status = Number(xhr.status) || 0; } catch (statusError) { status = 0; }
+          emitNetwork(
+            requestMethod,
+            requestUrl,
+            status,
+            startedAt,
+            'direct',
+            status >= 200 && status < 300,
+            status === 0 ? (errorMessage || 'Request failed') : ''
+          );
+        };
+        this.addEventListener('loadend', function() { finish(''); });
         this.addEventListener('error', function() {
+          finish('Network request failed');
           emit('warn', ['Direct request failed; the target API may not allow browser origins. Use fetch for automatic proxy fallback: ' + url], 'Preview sandbox');
         });
         return originalOpen.apply(this, arguments);
