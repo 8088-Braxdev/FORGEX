@@ -19,6 +19,12 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: "/__qa/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      },
+      {
         source: "/sw.js",
         headers: [
           { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
