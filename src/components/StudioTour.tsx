@@ -66,10 +66,31 @@ function isVisible(element: Element): boolean {
   return rect.width > 1 && rect.height > 1;
 }
 
+/**
+ * The studio rail: WorkspaceShell renders it as a fixed-position div whose
+ * CSS-module class contains "navigation" (WorkspaceShell_navigation__*),
+ * holding the nav with Workbench, Security, Health, Release Gate, Rulebook
+ * and History. On phones that same block becomes the off-canvas drawer, so
+ * hosting the Tour control inside its nav keeps the control in the drawer
+ * on mobile and parked over the fixed rail on desktop. Returns null while
+ * the rail is missing so a fixed fallback keeps the tour reachable.
+ */
+function findRailNav(): HTMLElement | null {
+  const candidates = Array.from(
+    document.querySelectorAll<HTMLElement>("div[class*='navigation']")
+  );
+  const rail = candidates.find((element) => {
+    const style = window.getComputedStyle(element);
+    return style.position === "fixed" && element.querySelector("nav") !== null;
+  });
+  const nav = rail ? rail.querySelector("nav") : null;
+  return nav instanceof HTMLElement && nav.isConnected ? nav : null;
+}
+
 export default function StudioTour() {
   const [index, setIndex] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [railHost, setRailHost] = useState<HTMLElement | null>(null);
+  const [navHost, setNavHost] = useState<HTMLElement | null>(null);
   const [targetRect, setTargetRect] = useState<{
     top: number;
     left: number;
@@ -98,23 +119,13 @@ export default function StudioTour() {
     }
   }, []);
 
-  // The studio rail (WorkspaceShell .navigation) hosts the Tour control.
-  // On desktop the rail is a fixed left band, so the control parks at its
-  // bottom like a VS Code rail item. On mobile the rail becomes the
-  // off-canvas drawer (History, Security, Health, Release Gate, Rulebook),
-  // so the control rides inside the drawer as its last row and moves with
-  // it. Fallback: when the rail cannot be found, render the fixed control
-  // in place so the entry point is never lost.
+  // Track the rail nav so the Tour control can be portaled into it. The
+  // observer covers late-mounted studio surfaces and route changes.
   useEffect(() => {
     if (!mounted) return;
-    const findRail = () => {
-      const rail = document.querySelector<HTMLElement>(
-        "nav[aria-label='Studio navigation'], nav[aria-label='Main navigation']"
-      );
-      setRailHost(rail && rail.isConnected ? rail : null);
-    };
-    findRail();
-    const observer = new MutationObserver(findRail);
+    const sync = () => setNavHost(findRailNav());
+    sync();
+    const observer = new MutationObserver(sync);
     observer.observe(document.body, { childList: true, subtree: true });
     return () => observer.disconnect();
   }, [mounted]);
@@ -211,10 +222,16 @@ export default function StudioTour() {
   const step = index === null ? null : TOUR_STEPS[index];
   const last = index === TOUR_STEPS.length - 1;
 
-  const reopenControl = (
+  const reopenControl = (inRail: boolean) => (
     <button
       type="button"
-      className={`${styles.reopen} ${index !== null ? styles.reopenHidden : ""}`}
+      className={[
+        styles.reopen,
+        inRail ? styles.reopenRail : "",
+        index !== null ? styles.reopenHidden : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       onClick={reopen}
       aria-label="Open the FORGEX tour"
       title="Open the FORGEX tour"
@@ -276,13 +293,16 @@ export default function StudioTour() {
         </>
       )}
 
-      {/* Tour control. Portaled into the studio navigation rail when it
-          exists: bottom of the fixed left rail on desktop (VS Code rail
-          pattern), and the last row of the mobile drawer on phones so it
-          lives with the other nav items instead of floating over content.
-          Falls back to a fixed control when the rail is missing so the
-          tour is always reachable. */}
-      {railHost ? createPortal(reopenControl, railHost) : reopenControl}
+      {/* Tour control. Portaled into the studio rail nav when present:
+          on desktop the rail is a fixed left band so the control stays
+          parked at its bottom (VS Code rail pattern); on phones the rail
+          becomes the off-canvas drawer, so the control rides inside it as
+          the last row next to History, Security, Health, Release Gate and
+          Rulebook instead of floating over the preview. When the rail is
+          missing, a fixed fallback keeps the tour reachable. */}
+      {navHost
+        ? createPortal(reopenControl(true), navHost)
+        : reopenControl(false)}
     </>
   );
 }
