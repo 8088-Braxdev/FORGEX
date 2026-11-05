@@ -1,0 +1,57 @@
+/* Keep the preview toolbar's controls together above the preview divider. */
+.fxide-v12 .fxide-preview .fxide-pane-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "title status status"
+    "device device device"
+    "live refresh focus";
+  align-items: center;
+  gap: 6px;
+  height: auto;
+  min-height: 0;
+  padding: 8px 10px;
+}
+
+.fxide-v12 .fxide-preview .fxide-pane-header > strong {
+  grid-area: title;
+}
+
+.fxide-v12 .fxide-preview .fxide-pane-header > span {
+  grid-area: status;
+  min-width: 0;
+  text-align: right;
+}
+
+.fxide-v12 .fxide-preview .fxide-pane-header > .fxide-preview-device {
+  grid-area: device;
+  width: min(112px, 100%);
+}
+
+.fxide-v12 .fxide-preview .fxide-pane-header > button:nth-of-type(1) {
+  grid-area: live;
+}
+
+.fxide-v12 .fxide-preview .fxide-pane-header > button:nth-of-type(2) {
+  grid-area: refresh;
+}
+
+.fxide-v12 .fxide-preview .fxide-pane-header > button:nth-of-type(3) {
+  grid-area: focus;
+}
+
+.fxide-v12 .fxide-preview .fxide-pane-header > button {
+  justify-self: stretch;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.fxide-v12 .fxide-preview .fxide-pane-header > button:nth-of-type(3) {
+  justify-self: end;
+}
+
+@media (max-width: 820px) {
+  .fxide-v12 .fxide-preview .fxide-pane-header {
+    padding: 8px;
+  }
+}
