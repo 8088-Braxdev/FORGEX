@@ -7,6 +7,7 @@ import "./mini-ide.css";
 import "./responsive-polish.css";
 import { AppConfirmProvider } from "@/components/AppConfirmProvider";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import OfflineBanner from "@/components/OfflineBanner";
 
 
 const sora = Sora({
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <AppConfirmProvider>{children}</AppConfirmProvider>
         <ServiceWorkerRegistration />
+        <OfflineBanner />
       </body>
     </html>
   );
