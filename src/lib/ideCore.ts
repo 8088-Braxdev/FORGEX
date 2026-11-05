@@ -893,7 +893,13 @@ window.fetch = function(input, init) {
         url.charAt(0) === '/' &&
         PROXYABLE_BRIDGES.indexOf(url) === -1
       ) {
-        throw new Error('Blocked: relative URL "' + url + '" resolves to the FORGEX origin. Call your API with its full https:// address.');
+        var blockedMessage = 'Blocked: relative URL "' + url + '" resolves to the FORGEX origin. Call your API with its full https:// address.';
+        var blockedStartedAt =
+          window.performance && window.performance.now
+            ? window.performance.now()
+            : Date.now();
+        emitNetwork(String(method || 'GET').toUpperCase(), url, 0, blockedStartedAt, 'direct', false, blockedMessage);
+        throw new Error(blockedMessage);
       }
     }
     return originalOpen.apply(this, arguments);

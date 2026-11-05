@@ -54,6 +54,24 @@ export default function HelpPage() {
 
         <section className={styles.legalSection}>
           <h2>
+            <MonitorPlay size={18} /> Preview limits
+          </h2>
+          <p>
+            Preview runs in a browser sandbox. It cannot run backend code such
+            as API routes or servers, and it cannot read .env secrets, so calls
+            to /api/... fail. Calls to public HTTPS APIs work; CORS is handled
+            by our proxy. To test backend features, run the project locally or
+            deploy it.
+          </p>
+          <p>
+            Environment variables are not available in the preview. Do not
+            paste real secret keys into project files; they would be visible in
+            the browser.
+          </p>
+        </section>
+
+        <section className={styles.legalSection}>
+          <h2>
             <Github size={18} /> GitHub workflow
           </h2>
           <p>

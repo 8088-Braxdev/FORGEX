@@ -1048,6 +1048,61 @@
   }
 }
 
+/* FORGEX Preview Limits Notice */
+
+.fxide-v12 .fxide-preview-limits {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-shrink: 0;
+  padding: 10px 12px;
+  border-bottom: 1px solid #877346;
+  background: #382f22;
+  color: #f4cf80;
+}
+
+.fxide-v12 .fxide-preview-limits > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.fxide-v12 .fxide-preview-limits strong {
+  display: block;
+  margin-bottom: 3px;
+  color: #ffe6af;
+  font-size: 11px;
+}
+
+.fxide-v12 .fxide-preview-limits p {
+  margin: 0;
+  color: #e6d6ae;
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.fxide-v12 .fxide-preview-limits button {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #877346;
+  border-radius: 6px;
+  background: transparent;
+  color: #f4cf80;
+  cursor: pointer;
+}
+
+.fxide-v12 .fxide-preview-limits button:hover {
+  background: #4a3d2a;
+}
+
+.fxide-v12 .fxide-preview-limits button:focus-visible {
+  outline: 2px solid #f4cf80;
+  outline-offset: 1px;
+}
+
 /* FORGEX Expanded Mode Recommendation */
 
 .fxide-v12 .fxide-expand-tip {
