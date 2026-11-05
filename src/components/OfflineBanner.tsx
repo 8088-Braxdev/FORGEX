@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const HEARTBEAT_URL = "/manifest.webmanifest";
+const HEARTBEAT_URL = "/manifest.webmanifest?sw=bypass";
 const HEARTBEAT_INTERVAL_MS = 30000;
 
 /**
@@ -29,7 +29,6 @@ export default function OfflineBanner() {
         const response = await fetch(HEARTBEAT_URL, {
           method: "GET",
           cache: "no-store",
-          headers: { "cache-control": "no-cache" },
         });
 
         reachable = response.ok || response.type === "opaque";
