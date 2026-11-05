@@ -1,11 +1,26 @@
-const CACHE_NAME = "forgex-v1";
+const CACHE_VERSION = "v2";
+const CACHE_NAME = `forgex-${CACHE_VERSION}`;
 const PRECACHE_URLS = ["/", "/help", "/studio"];
+const MONACO_PRECACHE_URLS = [
+  "/monaco/vs/loader.js",
+  "/monaco/vs/editor/editor.main.js",
+  "/monaco/vs/editor/editor.main.css",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then((cache) =>
+        Promise.allSettled([
+          ...PRECACHE_URLS.map((url) =>
+            cache.add(url).catch(() => undefined),
+          ),
+          ...MONACO_PRECACHE_URLS.map((url) =>
+            cache.add(url).catch(() => undefined),
+          ),
+        ]),
+      )
       .then(() => self.skipWaiting()),
   );
 });
@@ -47,6 +62,18 @@ function isStaticAsset(pathname) {
   );
 }
 
+function offlineFallback(request, error) {
+  return caches
+    .match(request)
+    .then((cached) => {
+      if (cached) return cached;
+      return caches.match("/studio").then((fallback) => {
+        if (fallback) return fallback;
+        throw error;
+      });
+    });
+}
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
 
@@ -68,11 +95,7 @@ self.addEventListener("fetch", (event) => {
           }
           return response;
         } catch (error) {
-          const cached = await caches.match(request);
-          if (cached) return cached;
-          const fallback = await caches.match("/studio");
-          if (fallback) return fallback;
-          throw error;
+          return offlineFallback(request, error);
         }
       })(),
     );
