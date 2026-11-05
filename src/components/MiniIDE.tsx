@@ -112,7 +112,40 @@ type NetworkRecord = {
   path: string;
   status: number;
   durationMs: number;
+  method?: string;
+  url?: string;
+  via?: "direct" | "proxy";
+  error?: string;
 };
+
+const SENSITIVE_NETWORK_PARAM =
+  /(^|[-_])(key|token|secret|auth|api[-_]?key|password)$/i;
+
+function sanitizeNetworkUrl(raw: string): string {
+  const queryIndex = raw.indexOf("?");
+  if (queryIndex === -1) return raw;
+  const hashIndex = raw.indexOf("#", queryIndex);
+  const base = raw.slice(0, queryIndex);
+  const query = raw.slice(
+    queryIndex + 1,
+    hashIndex === -1 ? undefined : hashIndex,
+  );
+  const hash = hashIndex === -1 ? "" : raw.slice(hashIndex);
+  const parts = query.split("&").map((part) => {
+    const equals = part.indexOf("=");
+    if (equals === -1) return part;
+    let name = part.slice(0, equals);
+    try {
+      name = decodeURIComponent(name);
+    } catch {
+      // Keep the encoded parameter name.
+    }
+    return SENSITIVE_NETWORK_PARAM.test(name)
+      ? `${part.slice(0, equals)}=***`
+      : part;
+  });
+  return `${base}?${parts.join("&")}${hash}`;
+}
 
 type IdeDiagnostic = {
   id: string;
@@ -360,11 +393,21 @@ export default function MiniIDE({
         (networkFilter === "success" &&
           record.status >= 200 &&
           record.status < 300) ||
-        (networkFilter === "error" && record.status >= 400);
+        (networkFilter === "error" &&
+          (record.status === 0 || record.status >= 400));
 
-      const matchesSearch = record.path
-        .toLowerCase()
-        .includes(networkSearch.trim().toLowerCase());
+      const searchableText = [
+        record.method ?? "",
+        record.url ?? record.path,
+        record.path,
+        record.error ?? "",
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      const matchesSearch = searchableText.includes(
+        networkSearch.trim().toLowerCase(),
+      );
 
       return matchesStatus && matchesSearch;
     })
@@ -869,6 +912,66 @@ export default function MiniIDE({
   }, []);
 
   useEffect(() => {
+    function onNetworkMessage(event: MessageEvent) {
+      if (event.source !== iframeRef.current?.contentWindow) return;
+      if (event.origin !== "null") return;
+      const data: unknown = event.data;
+      if (!data || typeof data !== "object") return;
+      if (!("kind" in data) || data.kind !== "forgex-preview-network") return;
+      if (!("channel" in data) || data.channel !== previewChannel.current)
+        return;
+      if (
+        !("id" in data) ||
+        typeof data.id !== "number" ||
+        !Number.isSafeInteger(data.id) ||
+        data.id < 1
+      )
+        return;
+      if (!("method" in data) || typeof data.method !== "string") return;
+      if (!("url" in data) || typeof data.url !== "string") return;
+      if (
+        !("status" in data) ||
+        typeof data.status !== "number" ||
+        !Number.isFinite(data.status)
+      )
+        return;
+      if (
+        !("durationMs" in data) ||
+        typeof data.durationMs !== "number" ||
+        !Number.isFinite(data.durationMs)
+      )
+        return;
+      if (!("via" in data) || (data.via !== "direct" && data.via !== "proxy"))
+        return;
+      if (
+        "error" in data &&
+        data.error !== undefined &&
+        typeof data.error !== "string"
+      )
+        return;
+      if ("ok" in data && typeof data.ok !== "boolean") return;
+
+      const url = sanitizeNetworkUrl(data.url).slice(0, 300);
+      const entry: NetworkRecord = {
+        key: `${previewChannel.current}:net:${data.id}`,
+        path: url,
+        status: Math.max(0, Math.min(599, Math.trunc(data.status))),
+        durationMs: Math.max(0, Math.round(data.durationMs)),
+        method: data.method.slice(0, 16).toUpperCase(),
+        url,
+        via: data.via,
+        error:
+          "error" in data && typeof data.error === "string"
+            ? data.error.slice(0, 180)
+            : undefined,
+      };
+      setNetworkRecords((previous) => [...previous, entry].slice(-50));
+    }
+    window.addEventListener("message", onNetworkMessage);
+    return () => window.removeEventListener("message", onNetworkMessage);
+  }, []);
+
+  useEffect(() => {
     let requestCount = 0;
     let activeChannel = "";
     let aiApprovalOpen = false;
@@ -901,7 +1004,7 @@ export default function MiniIDE({
 
       const requestPath =
         "path" in data && typeof data.path === "string"
-          ? data.path.slice(0, 120)
+          ? sanitizeNetworkUrl(data.path).slice(0, 120)
           : "(unknown endpoint)";
 
       function reply(status: number, body: unknown) {
@@ -3357,7 +3460,7 @@ export default function MiniIDE({
                     >
                       <option value="all">All requests</option>
                       <option value="success">Success (2xx)</option>
-                      <option value="error">Errors (4xx/5xx)</option>
+                      <option value="error">Errors (0/4xx/5xx)</option>
                     </select>
 
                     <input
@@ -3374,18 +3477,45 @@ export default function MiniIDE({
                   </div>
 
                   <p className="fxide-muted">
-                    Preview API bridge requests only. Duration includes
-                    permission approval time.
+                    Preview fetch/XHR requests plus bridge calls. Credential-like
+                    query values are redacted.
                   </p>
 
                   {visibleNetworkRecords.map((record) => (
                     <details key={record.key} className="fxide-network-item">
                       <summary className="fxide-network-row">
-                        <code>{record.path}</code>
+                        <code>
+                          <span
+                            style={{
+                              color: "#9fd8e6",
+                              fontWeight: 700,
+                              marginRight: 6,
+                            }}
+                          >
+                            {record.method ?? "POST"}
+                          </span>
+                          {record.url ?? record.path}
+                          {record.via === "proxy" && (
+                            <span
+                              style={{
+                                marginLeft: 6,
+                                padding: "1px 5px",
+                                border: "1px solid #4f7d8b",
+                                borderRadius: 4,
+                                color: "#9fd8e6",
+                                fontSize: 10,
+                                fontWeight: 600,
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              proxy
+                            </span>
+                          )}
+                        </code>
 
                         <span
                           className={
-                            record.status >= 400
+                            record.status === 0 || record.status >= 400
                               ? "fxide-network-error"
                               : "fxide-network-ok"
                           }
@@ -3397,13 +3527,21 @@ export default function MiniIDE({
                       </summary>
 
                       <div className="fxide-network-details">
-                        <p>Method: POST</p>
-                        <p>Endpoint: {record.path}</p>
-                        <p>Status: {record.status}</p>
-                        <p>Elapsed: {record.durationMs} ms</p>
+                        <p>Method: {record.method ?? "POST"}</p>
                         <p>
-                          Duration includes time spent awaiting user permission.
+                          {record.url ? "URL" : "Endpoint"}:{" "}
+                          {record.url ?? record.path}
                         </p>
+                        <p>Status: {record.status}</p>
+                        {record.via && <p>Transport: {record.via}</p>}
+                        {record.error && <p>Error: {record.error}</p>}
+                        <p>Elapsed: {record.durationMs} ms</p>
+                        {!record.via && (
+                          <p>
+                            Duration includes time spent awaiting user
+                            permission.
+                          </p>
+                        )}
                       </div>
                     </details>
                   ))}
