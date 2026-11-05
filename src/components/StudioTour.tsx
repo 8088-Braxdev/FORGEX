@@ -67,17 +67,20 @@ function isVisible(element: Element): boolean {
 }
 
 /**
- * The studio rail: WorkspaceShell renders it as a fixed-position div whose
- * CSS-module class contains "navigation" (WorkspaceShell_navigation__*),
- * holding the nav with Workbench, Security, Health, Release Gate, Rulebook
- * and History. On phones that same block becomes the off-canvas drawer, so
- * hosting the Tour control inside its nav keeps the control in the drawer
- * on mobile and parked over the fixed rail on desktop. Returns null while
- * the rail is missing so a fixed fallback keeps the tour reachable.
+ * Find the studio navigation rail, whatever tag it was rendered with.
+ * The rail is the fixed-position element whose CSS-module class contains
+ * "navigation" (WorkspaceShell_navigation__*) holding the nav with
+ * Workbench, Security, Health, Release Gate, Rulebook and History. On
+ * phones that same block becomes the off-canvas drawer, so hosting the
+ * Tour control inside its nav keeps the control in the drawer on mobile
+ * and parked over the fixed rail on desktop. The fixed-position check
+ * also excludes the footer's .navigation nav, which is not fixed.
+ * Returns null while the rail is missing so a fixed fallback keeps the
+ * tour reachable.
  */
 function findRailNav(): HTMLElement | null {
   const candidates = Array.from(
-    document.querySelectorAll<HTMLElement>("div[class*='navigation']")
+    document.querySelectorAll<HTMLElement>("[class*='navigation']")
   );
   const rail = candidates.find((element) => {
     const style = window.getComputedStyle(element);
