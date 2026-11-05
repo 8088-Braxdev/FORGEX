@@ -580,6 +580,36 @@ export default function Home() {
     repoUrl,
     repoIdentity,
   ]);
+    // Background health scan: populate the score once files exist so the
+  // Insights panel is alive on first load instead of "Not scanned".
+  // Advisory only — no history snapshot is recorded for this scan.
+  const backgroundScanDone = useRef(false);
+
+useEffect(() => {
+    if (backgroundScanDone.current) return;
+    if (!workspaceDraftLoaded) return;
+    if (files.length === 0) return;
+    if (result !== null) { backgroundScanDone.current = true; return; }
+
+const totalChars = files.reduce(
+      (sum, file) => sum + file.content.length,
+      0,
+    );
+    if (totalChars > 1_500_000) { backgroundScanDone.current = true; return; }
+
+const timer = window.setTimeout(() => {
+      backgroundScanDone.current = true;
+      try {
+        setResult(analyzeProject(files, disabled));
+      } catch {
+        // Score stays unavailable; the user can run Analyze manually.
+      }
+    }, 600);
+
+return () => window.clearTimeout(timer);
+  }, [workspaceDraftLoaded, files, disabled, result]);
+
+
 
   // Section switches always reveal the selected destination. Source links
   // reveal the IDE; Analyze waits for its report before scrolling.
