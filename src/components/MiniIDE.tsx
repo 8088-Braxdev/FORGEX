@@ -3300,6 +3300,7 @@ export default function MiniIDE({
                   : previewEntry || "HTML / CSS / JS"}
             </span>
 
+            <div className="fxide-pane-actions">
             <select
               className="fxide-preview-device"
               aria-label="Preview viewport"
@@ -3315,8 +3316,6 @@ export default function MiniIDE({
               <option value="tablet">Tablet · 768</option>
               <option value="mobile">Mobile · 320</option>
             </select>
-
-            <div className="fxide-pane-actions">
             <button
               type="button"
               aria-pressed={livePreview}
@@ -3331,7 +3330,6 @@ export default function MiniIDE({
               title="Refresh preview"
             >
               <RefreshCw size={15} />
-              <span>Refresh</span>
             </button>
 
             <button

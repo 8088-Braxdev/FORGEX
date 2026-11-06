@@ -789,12 +789,6 @@
   outline-offset: 2px;
 }
 
-@media (max-width: 820px) {
-  .fxide-v12 .fxide-preview .fxide-pane-actions button span {
-    display: none;
-  }
-}
-
 /* FORGEX PREVIEW V2 — FOCUS MODE */
 
 .fxide-v12.fxide-preview-focused {
