@@ -789,13 +789,16 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 8px;
-  padding: 8px 10px 10px;
+  justify-content: flex-start;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 12px 14px;
   border-bottom: 1px solid #2c4049;
   overflow: visible;
 }
 
 .fxide-v12 .fxide-preview .fxide-preview-toolbar > * {
+  flex: 0 0 auto;
   flex-shrink: 0;
   height: 32px;
   min-height: 32px;
@@ -824,20 +827,13 @@
 }
 
 @media (max-width: 820px) {
-  .fxide-v12 .fxide-preview .fxide-preview-toolbar > button:nth-of-type(2) span {
-    display: none;
-  }
   .fxide-v12 .fxide-preview .fxide-preview-toolbar {
-    padding: 6px 8px 8px;
-    gap: 4px 6px;
+    padding: 6px 8px 10px;
+    gap: 6px;
   }
 }
 
-@media (min-width: 821px) {
-  .fxide-v12 .fxide-preview .fxide-preview-toolbar {
-    gap: 6px 8px;
-  }
-}
+
 
 .fxide-v12 .fxide-preview-device {
   flex: 0 0 auto;
