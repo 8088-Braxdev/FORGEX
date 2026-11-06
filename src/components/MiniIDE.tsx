@@ -516,7 +516,7 @@ export default function MiniIDE({
   const [saveMenuOpen, setSaveMenuOpen] = useState(false);
   const [explorerWidth, setExplorerWidth] = useState(218);
   const [explorerVisible, setExplorerVisible] = useState(false);
-  const [previewWidth, setPreviewWidth] = useState(345);
+  const [previewWidth, setPreviewWidth] = useState(500);
 
   const [previewViewport, setPreviewViewport] = useState<
     "fit" | "tablet" | "mobile"
