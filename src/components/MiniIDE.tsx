@@ -3316,6 +3316,7 @@ export default function MiniIDE({
               <option value="mobile">Mobile · 320</option>
             </select>
 
+            <div className="fxide-pane-actions">
             <button
               type="button"
               aria-pressed={livePreview}
@@ -3359,6 +3360,7 @@ export default function MiniIDE({
                 <Maximize2 size={16} />
               )}
             </button>
+            </div>
           </div>
 
 <div className="fxide-ai-connect">

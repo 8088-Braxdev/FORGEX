@@ -762,6 +762,14 @@
   padding-block: 5px;
 }
 
+.fxide-v12 .fxide-preview .fxide-pane-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .fxide-v12 .fxide-preview-device {
   flex: 0 0 auto;
   width: 112px;
@@ -779,6 +787,12 @@
 .fxide-v12 .fxide-preview-device:focus-visible {
   outline: 2px solid #b9fa77;
   outline-offset: 2px;
+}
+
+@media (max-width: 820px) {
+  .fxide-v12 .fxide-preview .fxide-pane-actions button span {
+    display: none;
+  }
 }
 
 /* FORGEX PREVIEW V2 — FOCUS MODE */
