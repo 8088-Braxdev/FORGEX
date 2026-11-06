@@ -3329,6 +3329,7 @@ export default function MiniIDE({
               title="Refresh preview"
             >
               <RefreshCw size={15} />
+              <span>Refresh</span>
             </button>
 
             <button
