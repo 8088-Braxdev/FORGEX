@@ -3300,7 +3300,6 @@ export default function MiniIDE({
                   : previewEntry || "HTML / CSS / JS"}
             </span>
 
-            <div className="fxide-pane-actions">
             <select
               className="fxide-preview-device"
               aria-label="Preview viewport"
@@ -3358,7 +3357,6 @@ export default function MiniIDE({
                 <Maximize2 size={16} />
               )}
             </button>
-            </div>
           </div>
 
 <div className="fxide-ai-connect">
