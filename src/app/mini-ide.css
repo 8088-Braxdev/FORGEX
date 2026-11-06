@@ -719,6 +719,7 @@
 .fxide-v12.fxide-compact-toolbar.fxide-expanded .fxide-toolbar { padding-top: max(10px, env(safe-area-inset-top)); }
 .fxide-v12.fxide-narrow-toolbar .fxide-mobile-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .fxide-v12.fxide-narrow-toolbar .fxide-mobile-nav button { min-height: 44px; padding: 4px 2px; gap: 2px; }
+.fxide-v12 { --fx-notice-bottom: calc(45px + env(safe-area-inset-bottom)); }
 @media (max-width: 820px) { .fxide-v12 { --fx-notice-bottom: calc(102px + env(safe-area-inset-bottom)); } .fxide-v12.fxide-narrow-toolbar { --fx-notice-bottom: calc(132px + env(safe-area-inset-bottom)); } }
 
 /* FORGEX DAY 4 — VISIBLE WORKSPACE NOTIFICATIONS */
@@ -1199,44 +1200,41 @@
 }
 
 .fxide-v12 .fxide-preview-limits--compact {
-  align-items: center;
-  gap: 6px;
-  padding: 2px 10px;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 10px;
   min-height: 0;
 }
 
 .fxide-v12 .fxide-preview-limits--compact > div {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  display: block;
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
 }
 
 .fxide-v12 .fxide-preview-limits--compact strong {
-  display: inline;
-  margin-bottom: 0;
-  font-size: 10px;
-  flex-shrink: 0;
+  display: block;
+  margin-bottom: 2px;
+  font-size: 11px;
 }
 
 .fxide-v12 .fxide-preview-limits--compact p {
-  display: inline;
-  font-size: 10px;
-  line-height: 1.2;
+  display: block;
   margin: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  font-size: 11px;
+  line-height: 1.4;
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
 }
 
 .fxide-v12 .fxide-preview-limits--compact button {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 4px;
 }
 
@@ -1631,3 +1629,9 @@
 
 .fxide-v12 .fxide-identity-mark { background: #000; }
 .fxide-identity-mark img { display: block; object-fit: contain; }
+.fxide-v09 .fxide-blank .fxide-blank-hint {
+  max-width: 260px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #7f95a1;
+}

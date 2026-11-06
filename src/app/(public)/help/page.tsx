@@ -14,7 +14,8 @@ export default function HelpPage() {
       <p className={styles.legalLead}>
         FORGEX is a browser-based developer intelligence workspace. You can
         inspect and edit source code, run static previews, analyze risks, and
-        prepare GitHub pull requests. Contact support using the details below.
+        prepare GitHub pull requests. Contact support through our official
+        WhatsApp channel.
       </p>
 
       <div className={styles.legalBody}>
@@ -48,7 +49,9 @@ export default function HelpPage() {
             Preview supports static HTML, CSS, and JavaScript. It does not run
             npm, Node servers, or framework build steps. Local images and pages
             resolve relative to the project. Browser security limits apply to
-            network requests. AI and weather connections are disabled on production deployments until an approved authentication and quota policy is configured. API Tester is separate and remains subject to browser CORS rules.
+            network requests. AI and weather connections are available only
+            when enabled for the deployment. API Tester is separate and remains
+            subject to browser CORS rules.
           </p>
         </section>
 
@@ -59,9 +62,9 @@ export default function HelpPage() {
           <p>
             Preview runs in a browser sandbox. It cannot run backend code such
             as API routes or servers, and it cannot read .env secrets, so calls
-            to /api/... fail. Calls to public HTTPS APIs work; CORS is handled
-            by our proxy. To test backend features, run the project locally or
-            deploy it.
+            to /api/... fail. Calls to public HTTPS APIs may work depending on
+            browser CORS restrictions and supported integrations. To test
+            backend features, run the project locally or deploy it.
           </p>
           <p>
             Environment variables are not available in the preview. Do not
@@ -88,17 +91,37 @@ export default function HelpPage() {
           </h2>
           <p>
             Connect GitHub (optional), import a repository, review changes, and
-            create a pull request on a new branch. FORGEX never pushes directly
-            to your default branch. Publishing requires explicit confirmation.
+            create a pull request on a new branch. FORGEX is designed not to
+            push directly to your default branch. Publishing requires explicit
+            confirmation.
           </p>
         </section>
 
         <section className={styles.legalSection}>
           <h2>Images, backups and folders</h2>
-          <p>Click an imported image in Explorer to view it, fit it to the panel, zoom or download it. PNG, JPEG, WebP, GIF and ICO are stored separately from editable source. Safe SVGs can be viewed as images or opened as source.</p>
-          <p>Export project backup saves source, images, comparison baselines and repository identity. Older text backups can still be restored. Browser recovery uses storage on this device; keep an exported copy before clearing site data.</p>
-          <p>Open Folder imports a copy. Save folder writes changed files and images to a folder you select after confirmation, and checks for external changes before writing. It does not automatically synchronize or delete disk files. Persistent linked-folder Save/Reload is not yet available.</p>
-          <p>Binary images imported from GitHub are read-only for publishing. Adding new binary images locally blocks publishing until reimport; they remain available in your backup. Workflow files can be read but changes to them cannot be published through FORGEX.</p>
+          <p>
+            Click an imported image in Explorer to view it, fit it to the panel,
+            zoom or download it. PNG, JPEG, WebP, GIF and ICO are stored separately
+            from editable source. Safe SVGs can be viewed as images or opened as source.
+          </p>
+          <p>
+            Export project backup saves source, images, comparison baselines and
+            repository identity. Older text backups can still be restored. Browser
+            recovery uses storage on this device; keep an exported copy before
+            clearing site data.
+          </p>
+          <p>
+            Open Folder imports a copy. Save folder writes changed files and images
+            to a folder you select after confirmation, and checks for external
+            changes before writing. It does not automatically synchronize or delete
+            disk files. Persistent linked-folder Save/Reload is not yet available.
+          </p>
+          <p>
+            Binary images imported from GitHub are read-only for publishing. Adding
+            new binary images locally blocks publishing until reimport; they remain
+            available in your backup. Workflow files can be read but changes to
+            them cannot be published through FORGEX.
+          </p>
         </section>
 
         <section className={styles.legalSection}>
@@ -121,17 +144,9 @@ export default function HelpPage() {
               href="https://wa.me/255618811359"
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="Contact FORGEX support on WhatsApp at +255 618 811 359"
             >
-              0618811359
-            </a>
-          </p>
-          <p>
-            Email:{" "}
-            <a
-              className={styles.inlineLink}
-              href="mailto:braxtonbruzzzy@gmail.com"
-            >
-              braxtonbruzzzy@gmail.com
+              +255 618 811 359
             </a>
           </p>
           <p>

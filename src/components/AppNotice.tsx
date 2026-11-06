@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -57,7 +56,9 @@ export default function AppNotice({
 }: Props) {
   const dismissRef = useRef(onDismiss);
   const [paused, setPaused] = useState(false);
-  useEffect(() => { dismissRef.current = onDismiss; }, [onDismiss]);
+  useEffect(() => {
+    dismissRef.current = onDismiss;
+  }, [onDismiss]);
   useEffect(() => {
     if (!message || paused || tone === "error" || tone === "warning") return;
     const timer = window.setTimeout(() => dismissRef.current(), 8000);
@@ -70,20 +71,20 @@ export default function AppNotice({
 
   return (
     <div
+      className="fx-notice"
       role={tone === "error" ? "alert" : "status"}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
-      onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setPaused(false); }}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null))
+          setPaused(false);
+      }}
       style={{
-        position: "fixed",
-        left: 16,
-        bottom: "var(--fx-notice-bottom, calc(16px + env(safe-area-inset-bottom)))",
-        zIndex: 9000,
         display: "flex",
         alignItems: "flex-start",
         gap: 12,
-        width: "min(420px, calc(100vw - 32px))",
+
         padding: "10px 12px",
         border: `1px solid ${theme.border}`,
         borderRadius: 11,

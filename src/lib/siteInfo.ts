@@ -19,7 +19,7 @@ function resolveSiteOrigin(): string {
 }
 
 export const SITE_ORIGIN = resolveSiteOrigin();
-export const SUPPORT_EMAIL = "braxtonbruzzzy@gmail.com";
+
 export const SUPPORT_WHATSAPP = "https://wa.me/255618811359";
 export const COMPANY_URL = "https://braxcode.com";
 export const isPreviewDeployment = process.env.VERCEL_ENV === "preview";
