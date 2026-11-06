@@ -3240,7 +3240,7 @@ export default function MiniIDE({
           />
           {previewVisible && !previewSandboxTipDismissed && (
             <div
-              className="fxide-preview-limits"
+              className="fxide-preview-limits fxide-preview-limits--compact"
               role="note"
               aria-label="Preview sandbox notice"
             >
@@ -3299,7 +3299,9 @@ export default function MiniIDE({
                   ? "Manual preview"
                   : previewEntry || "HTML / CSS / JS"}
             </span>
+          </div>
 
+          <div className="fxide-preview-toolbar">
             <select
               className="fxide-preview-device"
               aria-label="Preview viewport"

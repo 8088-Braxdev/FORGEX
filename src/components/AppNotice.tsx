@@ -77,7 +77,7 @@ export default function AppNotice({
       onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setPaused(false); }}
       style={{
         position: "fixed",
-        right: 16,
+        left: 16,
         bottom: "var(--fx-notice-bottom, calc(16px + env(safe-area-inset-bottom)))",
         zIndex: 9000,
         display: "flex",
