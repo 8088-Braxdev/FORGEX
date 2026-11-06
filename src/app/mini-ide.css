@@ -755,12 +755,26 @@
 /* FORGEX PREVIEW V2 — VIEWPORT SELECTOR */
 
 .fxide-v12 .fxide-preview .fxide-pane-header {
-  height: auto;
-  min-height: 38px;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding-block: 5px;
+  display: grid !important;
+  grid-template-columns: auto auto auto auto;
+  grid-template-areas:
+    "title status status status"
+    "device live refresh focus";
+  align-items: center;
+  gap: 6px 8px;
+  height: auto !important;
+  min-height: 44px !important;
+  padding: 6px 10px;
+  overflow: visible;
+  border-bottom: 1px solid #2c4049;
 }
+
+.fxide-v12 .fxide-preview .fxide-pane-header > strong { grid-area: title; }
+.fxide-v12 .fxide-preview .fxide-pane-header > span { grid-area: status; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fxide-v12 .fxide-preview .fxide-pane-header > .fxide-preview-device { grid-area: device; width: 100%; max-width: 112px; justify-self: start; }
+.fxide-v12 .fxide-preview .fxide-pane-header > button:nth-of-type(1) { grid-area: live; justify-self: start; }
+.fxide-v12 .fxide-preview .fxide-pane-header > button:nth-of-type(2) { grid-area: refresh; justify-self: start; }
+.fxide-v12 .fxide-preview .fxide-pane-header > button:nth-of-type(3) { grid-area: focus; justify-self: start; }
 
 .fxide-v12 .fxide-preview-device {
   flex: 0 0 auto;

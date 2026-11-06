@@ -303,8 +303,6 @@ img[src*="/brand/"] {
 .fxide-v12 .fxide-preview .fxide-pane-header {
   height: auto;
   min-height: 44px;
-  flex-wrap: wrap;
-  align-content: flex-start;
   row-gap: 6px;
   column-gap: 8px;
   padding: 5px 10px;

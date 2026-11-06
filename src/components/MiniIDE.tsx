@@ -3315,7 +3315,6 @@ export default function MiniIDE({
               <option value="tablet">Tablet · 768</option>
               <option value="mobile">Mobile · 320</option>
             </select>
-
             <button
               type="button"
               aria-pressed={livePreview}
@@ -3330,7 +3329,6 @@ export default function MiniIDE({
               title="Refresh preview"
             >
               <RefreshCw size={15} />
-              <span>Refresh</span>
             </button>
 
             <button
