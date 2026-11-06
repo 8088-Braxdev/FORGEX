@@ -1,5 +1,5 @@
-.shell { display: flex; flex-direction: column; height: 100svh; min-height: 0; min-width: 0; overflow: hidden; }
-.content { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; min-width: 0; margin-left: 64px; padding: 0 clamp(20px, 3vw, 48px); }
+.shell { min-height: 100svh; min-width: 0; }
+.content { min-width: 0; margin-left: 64px; padding: 0 clamp(20px, 3vw, 48px); }
 .navigation { position: fixed; inset: 0 auto 0 0; z-index: 100; width: 64px; display: flex; flex-direction: column; align-items: center; gap: 24px; padding: 16px 8px; border-right: 1px solid #28373f; background: #0e171d; }
 .brand { display: flex; align-items: center; justify-content: center; min-height: 44px; color: #edf4ef; background: transparent; text-decoration: none; gap: 12px; padding: 0; }
 .brand img { display: block; object-fit: contain; }

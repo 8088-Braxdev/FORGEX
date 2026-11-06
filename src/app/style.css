@@ -290,29 +290,6 @@ button {
   max-width: 1400px;
   margin: 0 auto;
 }
-.shell .page-body {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  max-width: none;
-  margin: 0;
-}
-.shell .page-body .fx-workbench-screen {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.shell .page-body .fx-workbench-screen > .fxide-v09,
-.shell .page-body .fxide-v09 {
-  flex: 1;
-  min-height: 0;
-  height: 100%;
-  max-height: none;
-}
 .hero {
   padding: 55px 0 32px;
 }

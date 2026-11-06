@@ -516,7 +516,7 @@ export default function MiniIDE({
   const [saveMenuOpen, setSaveMenuOpen] = useState(false);
   const [explorerWidth, setExplorerWidth] = useState(218);
   const [explorerVisible, setExplorerVisible] = useState(false);
-  const [previewWidth, setPreviewWidth] = useState(500);
+  const [previewWidth, setPreviewWidth] = useState(345);
 
   const [previewViewport, setPreviewViewport] = useState<
     "fit" | "tablet" | "mobile"
@@ -782,18 +782,21 @@ export default function MiniIDE({
     const root = rootRef.current;
     if (!root) return;
     const sync = () => {
-      const width = root.clientWidth;
+      const width = window.innerWidth;
       const compact = width < 1100; const narrow = width < 330;
       setToolbarSize(previous => previous.compact === compact && previous.narrow === narrow ? previous : { compact, narrow });
     };
     sync();
-    if (typeof ResizeObserver === "undefined") {
-      window.addEventListener("resize", sync);
-      return () => window.removeEventListener("resize", sync);
+    window.addEventListener("resize", sync);
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(sync);
+      observer.observe(root);
+      return () => {
+        window.removeEventListener("resize", sync);
+        observer.disconnect();
+      };
     }
-    const observer = new ResizeObserver(sync);
-    observer.observe(root);
-    return () => observer.disconnect();
+    return () => window.removeEventListener("resize", sync);
   }, []);
 
   useEffect(() => {
@@ -3243,6 +3246,7 @@ export default function MiniIDE({
               className="fxide-preview-limits fxide-preview-limits--compact"
               role="note"
               aria-label="Preview sandbox notice"
+              title="Preview runs in a browser sandbox: backend code and .env secrets are not available. Public HTTPS APIs work."
             >
               <div>
                 <strong>Preview sandbox</strong>

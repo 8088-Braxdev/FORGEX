@@ -413,7 +413,7 @@
   }
   .fxide-v12:not(.fxide-hide-preview) .fxide-body,
   .fxide-v12:not(.fxide-hide-preview).fxide-no-explorer .fxide-body {
-    grid-template-columns: 44px minmax(0, 1fr) minmax(360px, var(--fxide-preview-width, 500px));
+    grid-template-columns: 44px minmax(0, 1fr) minmax(240px, var(--fxide-preview-width, 345px));
   }
 }
 
@@ -764,6 +764,7 @@
   min-height: 32px;
   padding: 8px 12px;
   overflow: visible;
+  flex-shrink: 0;
 }
 
 .fxide-v12 .fxide-preview .fxide-pane-header > strong {
@@ -795,6 +796,7 @@
   padding: 8px 12px 14px;
   border-bottom: 1px solid #2c4049;
   overflow: visible;
+  flex-shrink: 0;
 }
 
 .fxide-v12 .fxide-preview .fxide-preview-toolbar > * {
@@ -811,6 +813,27 @@
   height: 32px;
   min-height: 32px;
   border-radius: 6px;
+  border: 1px solid #3b4c55;
+  background: #1b2932;
+  color: #d9e8ea;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 8px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.fxide-v12 .fxide-preview .fxide-preview-toolbar button[aria-pressed="true"] {
+  border-color: #45694b;
+  color: #b9fa77;
+  background: #1e3027;
+}
+
+.fxide-v12 .fxide-preview .fxide-preview-toolbar button[aria-pressed="false"] {
+  color: #aabec9;
+  background: transparent;
+  border-color: #384f55;
 }
 
 .fxide-v12 .fxide-preview .fxide-preview-device {
@@ -1178,33 +1201,44 @@
 
 .fxide-v12 .fxide-preview-limits--compact {
   align-items: center;
-  gap: 8px;
-  padding: 4px 10px;
+  gap: 6px;
+  padding: 2px 10px;
+  min-height: 0;
 }
 
 .fxide-v12 .fxide-preview-limits--compact > div {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .fxide-v12 .fxide-preview-limits--compact strong {
   display: inline;
   margin-bottom: 0;
   font-size: 10px;
+  flex-shrink: 0;
 }
 
 .fxide-v12 .fxide-preview-limits--compact p {
   display: inline;
   font-size: 10px;
-  line-height: 1.4;
+  line-height: 1.2;
   margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .fxide-v12 .fxide-preview-limits--compact button {
-  width: 24px;
-  height: 24px;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
 }
 
 .fxide-v12 .fxide-offline-badge {
