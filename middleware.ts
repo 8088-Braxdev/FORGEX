@@ -10,7 +10,7 @@ const FRAMED_MESSAGE = `<!doctype html>
   <title>This page can't be shown inside the preview</title>
 </head>
 <body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#101820;color:#e9f4f0;font-family:system-ui,sans-serif;">
-  <p>This page can't be shown inside the preview</p>
+  <p>The previewed page tried to navigate away. Use links to project files, or open the page from the file list.</p>
 </body>
 </html>`;
 

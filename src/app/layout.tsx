@@ -48,7 +48,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <style
           dangerouslySetInnerHTML={{
             __html:
-              "html[data-framed] body{visibility:hidden;}html[data-framed]::after{content:'This page can\\'t be shown inside the preview';position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#101820;color:#e9f4f0;font-family:system-ui,sans-serif;z-index:2147483647;}",
+              "html[data-framed] body{visibility:hidden;}html[data-framed]::after{content:'The previewed page tried to navigate away. Use links to project files, or open the page from the file list.';position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#101820;color:#e9f4f0;font-family:system-ui,sans-serif;z-index:2147483647;}",
           }}
         />
       </head>

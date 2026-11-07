@@ -28,7 +28,7 @@ export default function FrameGuard({ children }: { children: ReactNode }) {
           textAlign: "center",
         }}
       >
-        <p>This page can't be shown inside the preview</p>
+        <p>The previewed page tried to navigate away. Use links to project files, or open the page from the file list.</p>
       </main>
     );
   }
