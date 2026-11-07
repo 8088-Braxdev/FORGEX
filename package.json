@@ -21,6 +21,9 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
+  "overrides": {
+    "dompurify": "3.4.17"
+  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
