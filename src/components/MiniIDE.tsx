@@ -11,7 +11,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-type MonacoApi = any;
+import type { Monaco as MonacoApi } from "@monaco-editor/react";
 import { loader as monacoLoader } from "@monaco-editor/react";
 import {
   Activity,
@@ -57,8 +57,16 @@ import {
 import type { WorkspaceDraft, RepoIdentity } from "../lib/workspaceDraft";
 import AppNotice from "./AppNotice";
 import ImageViewer from "./ImageViewer";
-import { prepareFolderWrites, writeFolderChanges, type WorkspaceDirectoryHandle as DirectoryHandle } from "@/lib/folderWrites";
-import { exportWorkspaceBackup, parseWorkspaceBackup, MAX_BACKUP_BYTES } from "@/lib/workspaceBackup";
+import {
+  prepareFolderWrites,
+  writeFolderChanges,
+  type WorkspaceDirectoryHandle as DirectoryHandle,
+} from "@/lib/folderWrites";
+import {
+  exportWorkspaceBackup,
+  parseWorkspaceBackup,
+  MAX_BACKUP_BYTES,
+} from "@/lib/workspaceBackup";
 import ApiRequestTester from "./ApiRequestTester";
 import {
   buildPreview,
@@ -88,7 +96,7 @@ if (typeof window !== "undefined") {
   monacoLoader.config({ paths: { vs: "/monaco/vs" } });
 }
 
-const Monaco = dynamic(() => import("@monaco-editor/react"), { ssr: false }) as any;
+const Monaco = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 const DRAFT_KEY = "forgex-mini-ide-v1";
 
 const FOLDER_NAME_KEY = "forgex:folder-name:v1";
@@ -342,7 +350,10 @@ export default function MiniIDE({
   const [sideView, setSideView] = useState<SideView>("files");
   const [mobileView, setMobileView] = useState<MobileView>("editor");
   const [smallScreen, setSmallScreen] = useState(false);
-  const [toolbarSize, setToolbarSize] = useState({ compact: false, narrow: false });
+  const [toolbarSize, setToolbarSize] = useState({
+    compact: false,
+    narrow: false,
+  });
   const compactToolbar = smallScreen || toolbarSize.compact;
   const [previewVisible, setPreviewVisible] = useState(false);
   const [consoleVisible, setConsoleVisible] = useState(true);
@@ -476,15 +487,18 @@ export default function MiniIDE({
     };
   }, []);
   const [previewLimitsDismissed, setPreviewLimitsDismissed] = useState(false);
-  const [previewSandboxTipDismissed, setPreviewSandboxTipDismissed] = useState(() => {
+  const [previewSandboxTipDismissed, setPreviewSandboxTipDismissed] =
+    useState(false);
+
+  useEffect(() => {
     try {
-      return (
-        localStorage.getItem("forgex-preview-sandbox-tip-dismissed-v1") === "1"
+      setPreviewSandboxTipDismissed(
+        localStorage.getItem("forgex-preview-sandbox-tip-dismissed-v1") === "1",
       );
     } catch {
-      return false;
+      setPreviewSandboxTipDismissed(false);
     }
-  });
+  }, []);
 
   function dismissPreviewSandboxTip() {
     setPreviewSandboxTipDismissed(true);
@@ -548,18 +562,35 @@ export default function MiniIDE({
 
   function positionMenu(button: HTMLButtonElement) {
     const rect = button.getBoundingClientRect();
-    setMenuPosition({ top: Math.max(12, Math.min(rect.bottom + 8, window.innerHeight - 220)), left: Math.max(12, Math.min(rect.left, window.innerWidth - 297)) });
+    setMenuPosition({
+      top: Math.max(12, Math.min(rect.bottom + 8, window.innerHeight - 220)),
+      left: Math.max(12, Math.min(rect.left, window.innerWidth - 297)),
+    });
   }
 
   function menuKeys(event: KeyboardEvent<HTMLDivElement>) {
-    const items = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button[role="menuitem"]:not(:disabled)'));
+    const items = Array.from(
+      event.currentTarget.querySelectorAll<HTMLButtonElement>(
+        'button[role="menuitem"]:not(:disabled)',
+      ),
+    );
     const current = items.indexOf(document.activeElement as HTMLButtonElement);
     if (event.key === "Escape") {
-      event.preventDefault(); setNewMenuOpen(false); setSaveMenuOpen(false);
-      (event.currentTarget.previousElementSibling as HTMLButtonElement | null)?.focus();
+      event.preventDefault();
+      setNewMenuOpen(false);
+      setSaveMenuOpen(false);
+      (
+        event.currentTarget.previousElementSibling as HTMLButtonElement | null
+      )?.focus();
     } else if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
       event.preventDefault();
-      const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (current + (event.key === "ArrowUp" ? -1 : 1) + items.length) % items.length;
+      const next =
+        event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? items.length - 1
+            : (current + (event.key === "ArrowUp" ? -1 : 1) + items.length) %
+              items.length;
       items[next]?.focus();
     }
   }
@@ -705,13 +736,23 @@ export default function MiniIDE({
   const monacoRef = useRef<MonacoApi | null>(null);
   const monacoDiagnosticsDisposable = useRef<{ dispose(): void } | null>(null);
 
-  const activeAsset = editorClosed ? undefined : previewBinaryAssets.find(asset => asset.path === selectedPath);
+  const activeAsset = editorClosed
+    ? undefined
+    : previewBinaryAssets.find((asset) => asset.path === selectedPath);
   const active = editorClosed
     ? undefined
-    : (files.find((file) => file.path === selectedPath) ?? (activeAsset ? undefined : files[0]));
+    : (files.find((file) => file.path === selectedPath) ??
+      (activeAsset ? undefined : files[0]));
   const activePath = activeAsset?.path ?? active?.path;
-  const svgUrl = active && /\.svg$/i.test(active.path) ? svgPreviewUrl(active.content) : null;
-  const imageAsset = activeAsset ?? (active && svgUrl && svgSourcePath !== active.path ? { path: active.path, dataUrl: svgUrl } : undefined);
+  const svgUrl =
+    active && /\.svg$/i.test(active.path)
+      ? svgPreviewUrl(active.content)
+      : null;
+  const imageAsset =
+    activeAsset ??
+    (active && svgUrl && svgSourcePath !== active.path
+      ? { path: active.path, dataUrl: svgUrl }
+      : undefined);
   const lang = ideLanguage(active?.path ?? "");
   const stats = useMemo(() => languageTotals(files), [files]);
 
@@ -723,8 +764,13 @@ export default function MiniIDE({
     [files],
   );
 
-  const tree = useMemo(() => makeTree([...files, ...previewBinaryAssets]), [files, previewBinaryAssets]);
-  const filePathSignature = [...files, ...previewBinaryAssets].map((file) => file.path).join("\u0000");
+  const tree = useMemo(
+    () => makeTree([...files, ...previewBinaryAssets]),
+    [files, previewBinaryAssets],
+  );
+  const filePathSignature = [...files, ...previewBinaryAssets]
+    .map((file) => file.path)
+    .join("\u0000");
 
   useEffect(() => {
     previewTrailRef.current = {
@@ -785,8 +831,13 @@ export default function MiniIDE({
     if (!root) return;
     const sync = () => {
       const width = window.innerWidth;
-      const compact = width < 1100; const narrow = width < 330;
-      setToolbarSize(previous => previous.compact === compact && previous.narrow === narrow ? previous : { compact, narrow });
+      const compact = width < 1100;
+      const narrow = width < 330;
+      setToolbarSize((previous) =>
+        previous.compact === compact && previous.narrow === narrow
+          ? previous
+          : { compact, narrow },
+      );
     };
     sync();
     window.addEventListener("resize", sync);
@@ -1504,7 +1555,8 @@ export default function MiniIDE({
     setOpenTabs((previous) => previous.filter((item) => item !== path));
     setTouched((previous) => previous.filter((item) => item !== path));
     if (!remaining.length && !previewBinaryAssets.length) setEditorClosed(true);
-    else if (active?.path === path) onSelectFile(remaining[0]?.path ?? previewBinaryAssets[0].path);
+    else if (active?.path === path)
+      onSelectFile(remaining[0]?.path ?? previewBinaryAssets[0].path);
     onDeleteFile(path);
     setPreviewDirty(true);
     setNotice(
@@ -1653,7 +1705,7 @@ export default function MiniIDE({
       // Parent resets repository identity and establishes a new baseline.
       onNewProject(valid, nextBinaryAssets);
       setPreviewAiEnabled(false);
-        const rootName = selected[0]?.webkitRelativePath.split("/")[0]?.trim();
+      const rootName = selected[0]?.webkitRelativePath.split("/")[0]?.trim();
 
       rememberFolderName(rootName || null);
       setOpenTabs([valid[0]?.path ?? nextBinaryAssets[0].path]);
@@ -1997,7 +2049,16 @@ navigatePreview(page.path);
   }
 
   function workspaceSnapshot(): WorkspaceDraft {
-    return { savedAt: Date.now(), files, assets: previewBinaryAssets, baselineFiles, githubBaselineFiles, selectedPath, repoUrl, repoIdentity };
+    return {
+      savedAt: Date.now(),
+      files,
+      assets: previewBinaryAssets,
+      baselineFiles,
+      githubBaselineFiles,
+      selectedPath,
+      repoUrl,
+      repoIdentity,
+    };
   }
 
   function downloadBackup() {
@@ -2052,7 +2113,9 @@ navigatePreview(page.path);
       setLivePreview(false);
       setTouched([]);
       setMobileView("editor");
-      setNotice(`Restored ${restored.length + (draft.assets?.length ?? 0)} files, including ${draft.assets?.length ?? 0} images, from backup.`);
+      setNotice(
+        `Restored ${restored.length + (draft.assets?.length ?? 0)} files, including ${draft.assets?.length ?? 0} images, from backup.`,
+      );
     } catch (error) {
       setNotice(
         error instanceof Error ? error.message : "Could not import backup.",
@@ -2063,7 +2126,10 @@ navigatePreview(page.path);
   function saveBrowserDraft() {
     if (!files.length && !previewBinaryAssets.length) return;
     try {
-      localStorage.setItem(DRAFT_KEY, exportWorkspaceBackup(workspaceSnapshot()));
+      localStorage.setItem(
+        DRAFT_KEY,
+        exportWorkspaceBackup(workspaceSnapshot()),
+      );
       setNotice(
         "Saved explicitly to this browser. Clear browser data to remove it.",
       );
@@ -2110,7 +2176,9 @@ navigatePreview(page.path);
       setEditorClosed(false);
       setLivePreview(false);
       setMobileView("editor");
-      setNotice(`Restored ${restored.length + (draft.assets?.length ?? 0)} locally saved files, including ${draft.assets?.length ?? 0} images.`);
+      setNotice(
+        `Restored ${restored.length + (draft.assets?.length ?? 0)} locally saved files, including ${draft.assets?.length ?? 0} images.`,
+      );
     } catch {
       setNotice("Saved browser draft is invalid or inaccessible.");
     }
@@ -2121,31 +2189,59 @@ navigatePreview(page.path);
     setSaveMenuOpen(false);
     if (!files.length && !previewBinaryAssets.length) return;
     const picker = (window as DirectoryPicker).showDirectoryPicker;
-    if (!picker) { setNotice("Folder save is unavailable here. Export a project backup instead."); return; }
+    if (!picker) {
+      setNotice(
+        "Folder save is unavailable here. Export a project backup instead.",
+      );
+      return;
+    }
     let written = 0;
     try {
       const root = await picker.call(window, { mode: "readwrite" });
       const valid = files.length ? validateWorkspace(files) : [];
       const entries = [
-        ...valid.map(file => ({ path: file.path, bytes: new TextEncoder().encode(file.content) })),
-        ...previewBinaryAssets.map(asset => ({ path: asset.path, bytes: Uint8Array.from(atob(asset.dataUrl.split(",")[1]), char => char.charCodeAt(0)) })),
+        ...valid.map((file) => ({
+          path: file.path,
+          bytes: new TextEncoder().encode(file.content),
+        })),
+        ...previewBinaryAssets.map((asset) => ({
+          path: asset.path,
+          bytes: Uint8Array.from(atob(asset.dataUrl.split(",")[1]), (char) =>
+            char.charCodeAt(0),
+          ),
+        })),
       ];
       const changes = await prepareFolderWrites(root, entries);
-      if (!changes.length) { setNotice("The selected folder already contains these files."); return; }
+      if (!changes.length) {
+        setNotice("The selected folder already contains these files.");
+        return;
+      }
       const approved = await confirmAction({
         title: "Save changed files to selected folder?",
-        message: `FORGEX will write ${changes.length} changed or new file(s), including images.\n\n` +
-          changes.slice(0, 20).map(file => file.path).join("\n") +
+        message:
+          `FORGEX will write ${changes.length} changed or new file(s), including images.\n\n` +
+          changes
+            .slice(0, 20)
+            .map((file) => file.path)
+            .join("\n") +
           (changes.length > 20 ? `\n… and ${changes.length - 20} more.` : "") +
           "\n\nMatching files will be replaced. Other files are preserved; files removed in FORGEX are not deleted from disk. If a target changes while you review, saving stops.",
-        confirmText: "Save Files", cancelText: "Cancel", destructive: true,
+        confirmText: "Save Files",
+        cancelText: "Cancel",
+        destructive: true,
       });
       if (!approved) return;
       written = await writeFolderChanges(root, changes);
-      setTouched([]); setNotice(`${written} changed file(s), including images, saved to the selected folder.`);
+      setTouched([]);
+      setNotice(
+        `${written} changed file(s), including images, saved to the selected folder.`,
+      );
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") return;
-      setNotice((error instanceof Error ? error.message : "Folder save failed.") + (written ? ` ${written} file(s) were saved before stopping.` : ""));
+      setNotice(
+        (error instanceof Error ? error.message : "Folder save failed.") +
+          (written ? ` ${written} file(s) were saved before stopping.` : ""),
+      );
     }
   }
 
@@ -2289,7 +2385,20 @@ navigatePreview(page.path);
             title={path}
             onClick={() => selectFile(path)}
           >
-            {previewBinaryAssets.some(asset => asset.path === path) ? <img src={previewBinaryAssets.find(asset => asset.path === path)!.dataUrl} alt="" width={18} height={18} style={{ objectFit: "contain" }} /> : <FileCode2 size={14} style={{ color: languageColor(path) }} />}
+            {previewBinaryAssets.some((asset) => asset.path === path) ? (
+              <img
+                src={
+                  previewBinaryAssets.find((asset) => asset.path === path)!
+                    .dataUrl
+                }
+                alt=""
+                width={18}
+                height={18}
+                style={{ objectFit: "contain" }}
+              />
+            ) : (
+              <FileCode2 size={14} style={{ color: languageColor(path) }} />
+            )}
             <span>{path.split("/").pop()}</span>
             {touched.includes(path) && <i title="Modified in this session" />}
           </button>
@@ -2540,8 +2649,16 @@ navigatePreview(page.path);
               }}
               aria-haspopup="menu"
               aria-expanded={saveMenuOpen}
-              title={compactToolbar ? "More workspace actions" : "Save and import options"}
-              aria-label={compactToolbar ? "More workspace actions" : "Save and import options"}
+              title={
+                compactToolbar
+                  ? "More workspace actions"
+                  : "Save and import options"
+              }
+              aria-label={
+                compactToolbar
+                  ? "More workspace actions"
+                  : "Save and import options"
+              }
             >
               {compactToolbar ? <Ellipsis size={16} /> : <Save size={16} />}
               <span>{compactToolbar ? "More" : "Save"}</span>
@@ -2551,10 +2668,52 @@ navigatePreview(page.path);
               <div className="fxide-save-menu" role="menu" onKeyDown={menuKeys}>
                 {compactToolbar && (
                   <>
-                    {onImportFiles && <button type="button" role="menuitem" onClick={() => { setSaveMenuOpen(false); onImportFiles(); }}><Upload size={15} /> Add files</button>}
-                    <button type="button" role="menuitem" onClick={() => { setSaveMenuOpen(false); folderInputRef.current?.click(); }}><FolderDown size={15} /> Open folder</button>
-                    {onImportRepository && <button type="button" role="menuitem" onClick={() => { setSaveMenuOpen(false); onImportRepository(); }}><GitBranch size={15} /> Import repository</button>}
-                    <button type="button" role="menuitem" onClick={() => { setSaveMenuOpen(false); setPaletteMode("commands"); setPaletteQuery(""); setPaletteOpen(true); }}><Command size={15} /> Command palette</button>
+                    {onImportFiles && (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setSaveMenuOpen(false);
+                          onImportFiles();
+                        }}
+                      >
+                        <Upload size={15} /> Add files
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setSaveMenuOpen(false);
+                        folderInputRef.current?.click();
+                      }}
+                    >
+                      <FolderDown size={15} /> Open folder
+                    </button>
+                    {onImportRepository && (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setSaveMenuOpen(false);
+                          onImportRepository();
+                        }}
+                      >
+                        <GitBranch size={15} /> Import repository
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setSaveMenuOpen(false);
+                        setPaletteMode("commands");
+                        setPaletteQuery("");
+                        setPaletteOpen(true);
+                      }}
+                    >
+                      <Command size={15} /> Command palette
+                    </button>
                     <div role="separator" className="fxide-menu-separator" />
                   </>
                 )}
@@ -2966,7 +3125,8 @@ navigatePreview(page.path);
                 </>
               )}
               <p className="fxide-muted">
-                Review changes in Source Control before publishing a pull request.
+                Review changes in Source Control before publishing a pull
+                request.
               </p>
             </div>
           )}
@@ -2993,7 +3153,11 @@ navigatePreview(page.path);
             aria-label="Open editor tabs"
           >
             {openTabs
-              .filter((path) => [...files, ...previewBinaryAssets].some((file) => file.path === path))
+              .filter((path) =>
+                [...files, ...previewBinaryAssets].some(
+                  (file) => file.path === path,
+                ),
+              )
               .map((path) => (
                 <div
                   className={`fxide-editor-tab ${activePath === path ? "current" : ""}`}
@@ -3032,7 +3196,11 @@ navigatePreview(page.path);
             <span className="fxide-tab-language">
               {activeAsset ? "Image" : active ? lang.name : "Text"}
             </span>
-            {active && svgUrl && svgSourcePath === active.path ? <button type="button" onClick={() => setSvgSourcePath("")}>View image</button> : null}
+            {active && svgUrl && svgSourcePath === active.path ? (
+              <button type="button" onClick={() => setSvgSourcePath("")}>
+                View image
+              </button>
+            ) : null}
             {active && onDeleteFile && (
               <button
                 type="button"
@@ -3046,7 +3214,17 @@ navigatePreview(page.path);
             )}
           </div>
           <div className="fxide-edit-area">
-            {imageAsset ? <ImageViewer key={imageAsset.path} asset={imageAsset} onViewSource={svgUrl && active ? () => setSvgSourcePath(active.path) : undefined} /> : active ? (
+            {imageAsset ? (
+              <ImageViewer
+                key={imageAsset.path}
+                asset={imageAsset}
+                onViewSource={
+                  svgUrl && active
+                    ? () => setSvgSourcePath(active.path)
+                    : undefined
+                }
+              />
+            ) : active ? (
               smallScreen ? (
                 <div className="fxide-mobile-editor">
                   <div
@@ -3342,11 +3520,13 @@ navigatePreview(page.path);
               <MonitorPlay size={15} /> PREVIEW
             </strong>
             <span>
-              {livePreview
-                ? "Live · 650ms"
-                : previewDirty
-                  ? "Manual preview"
-                  : previewEntry || "HTML / CSS / JS"}
+              {!previewHtml
+                ? "Idle"
+                : livePreview
+                  ? "Live"
+                  : previewDirty
+                    ? "Manual preview"
+                    : previewEntry || "HTML / CSS / JS"}
             </span>
           </div>
 
@@ -3411,56 +3591,57 @@ navigatePreview(page.path);
             </button>
           </div>
 
-<div className="fxide-ai-connect">
-  <label htmlFor="fxide-ai-route">Preview AI endpoint</label>
+          <div className="fxide-ai-connect">
+            <label htmlFor="fxide-ai-route">Preview AI endpoint</label>
 
-  <input
-    id="fxide-ai-route"
-    type="text"
-    value={previewAiRoute}
-    placeholder="/api/chat"
-    spellCheck={false}
-    maxLength={85}
-    onChange={(event) => {
-      setPreviewAiRoute(event.target.value);
-      setPreviewAiEnabled(false);
-    }}
-  />
+            <input
+              id="fxide-ai-route"
+              type="text"
+              value={previewAiRoute}
+              placeholder="/api/chat"
+              spellCheck={false}
+              maxLength={85}
+              onChange={(event) => {
+                setPreviewAiRoute(event.target.value);
+                setPreviewAiEnabled(false);
+              }}
+            />
 
-  <button
-    type="button"
-    aria-pressed={previewAiEnabled}
-    disabled={process.env.NODE_ENV !== "development"}
-    aria-describedby="fxide-ai-policy"
-    onClick={() => {
-      if (previewAiEnabled) {
-        setPreviewAiEnabled(false);
-        setNotice("Preview AI connection disabled.");
-        return;
-      }
+            <button
+              type="button"
+              aria-pressed={previewAiEnabled}
+              disabled={process.env.NODE_ENV !== "development"}
+              aria-describedby="fxide-ai-policy"
+              onClick={() => {
+                if (previewAiEnabled) {
+                  setPreviewAiEnabled(false);
+                  setNotice("Preview AI connection disabled.");
+                  return;
+                }
 
-      const route = previewAiRoute.trim();
+                const route = previewAiRoute.trim();
 
-      if (!/^\/api\/[a-z0-9/_-]{1,80}$/i.test(route)) {
-        setNotice("Enter a valid local /api/... endpoint.");
-        return;
-      }
+                if (!/^\/api\/[a-z0-9/_-]{1,80}$/i.test(route)) {
+                  setNotice("Enter a valid local /api/... endpoint.");
+                  return;
+                }
 
-      setPreviewAiEnabled(true);
-      setNotice(
-        `Gemini bridge mapped to ${route}. Refresh Preview to apply.`
-      );
-    }}
-  >
-    {previewAiEnabled ? "Disconnect" : "Connect Gemini"}
-  </button>
-  <p id="fxide-ai-policy" className="fxide-muted">
-    {process.env.NODE_ENV === "development" ? "Each AI request requires your approval and configured server credentials." : "AI connections are unavailable on this deployment. Static Preview remains available."}
-  </p>
-</div>
+                setPreviewAiEnabled(true);
+                setNotice(
+                  `Gemini bridge mapped to ${route}. Refresh Preview to apply.`,
+                );
+              }}
+            >
+              {previewAiEnabled ? "Disconnect" : "Connect Gemini"}
+            </button>
+            <p id="fxide-ai-policy" className="fxide-muted">
+              {process.env.NODE_ENV === "development"
+                ? "Each AI request requires your approval and configured server credentials."
+                : "AI connections are unavailable on this deployment. Static Preview remains available."}
+            </p>
+          </div>
 
           {previewPages.length > 1 && (
-
             <div className="fxide-preview-pages">
               <button
                 type="button"
@@ -3539,6 +3720,9 @@ navigatePreview(page.path);
               <button type="button" onClick={runPreview}>
                 Run HTML preview
               </button>
+              <small className="fxide-blank-hint">
+                Static HTML/CSS/JS only; no build server or network.
+              </small>
             </div>
           )}
         </section>
@@ -3677,8 +3861,8 @@ navigatePreview(page.path);
                   </div>
 
                   <p className="fxide-muted">
-                    Preview fetch/XHR requests plus bridge calls. Credential-like
-                    query values are redacted.
+                    Preview fetch/XHR requests plus bridge calls.
+                    Credential-like query values are redacted.
                   </p>
 
                   {visibleNetworkRecords.map((record) => (
@@ -3960,10 +4144,7 @@ navigatePreview(page.path);
         </section>
       </div>
 
-      <nav
-        className="fxide-mobile-nav"
-        aria-label="Mini IDE mobile navigation"
-      >
+      <nav className="fxide-mobile-nav" aria-label="Mini IDE mobile navigation">
         {(
           [
             "files",
@@ -4022,7 +4203,8 @@ navigatePreview(page.path);
           {active ? ` · ${active.content.split(/\r?\n/).length} lines` : ""}
         </span>
         <span>
-          {files.length + previewBinaryAssets.length} files · {totalLines.toLocaleString()} lines
+          {files.length + previewBinaryAssets.length} files ·{" "}
+          {totalLines.toLocaleString()} lines
         </span>
         {previewDirty && (
           <span className="fxide-status-note">Preview may be outdated</span>

@@ -1,4 +1,3 @@
-
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
@@ -26,37 +25,37 @@ const features = [
     icon: Code2,
     title: "Integrated Code Editor",
     description:
-      "Work with source files in a browser-based editor with syntax highlighting, file navigation, and editing tools.",
+      "Work with source files in an integrated browser-based editor with syntax highlighting, file navigation, and editing tools.",
   },
   {
     icon: ScanSearch,
     title: "Code Intelligence",
     description:
-      "Inspect source code for potential risks and receive actionable findings. Results are advisory, not a full security audit.",
+      "Analyze source code for potential risks, identify suspicious patterns, and review actionable findings to support better development decisions.",
   },
   {
     icon: FileCode2,
     title: "Dependency Impact",
     description:
-      "Explore how changes to one file may affect other loaded files through static dependency analysis.",
+      "Explore file relationships and understand how changes to one file may affect connected parts of your project.",
   },
   {
     icon: MonitorPlay,
     title: "Web Preview & Diagnostics",
     description:
-      "Preview supported static HTML, CSS, and JavaScript projects with console and network inspection tools.",
+      "Preview supported web projects, inspect console output, investigate network activity, and troubleshoot development issues.",
   },
   {
     icon: GitPullRequest,
     title: "GitHub Workflow",
     description:
-      "Import supported repositories, review changes, and prepare pull requests through a confirmation-based workflow.",
+      "Connect GitHub, import supported repositories, review changes, and prepare pull requests through a confirmation-based workflow.",
   },
   {
     icon: FolderOpen,
     title: "Flexible Project Import",
     description:
-      "Bring in source files, local folders, or supported GitHub repositories and work with them directly in FORGEX.",
+      "Import source files, local folders, or supported GitHub repositories and manage your project directly inside FORGEX.",
   },
 ];
 
@@ -75,7 +74,7 @@ const jsonLd = {
   applicationCategory: "DeveloperApplication",
   operatingSystem: "Web",
   description:
-    "Inspect real source code, investigate risks, and build with confidence.",
+    "Inspect source code, investigate potential risks, understand change impact, and build with confidence.",
   url: SITE_ORIGIN,
   publisher: {
     "@type": "Organization",
@@ -84,17 +83,25 @@ const jsonLd = {
   },
 };
 
-export default async function WelcomePage({ searchParams }: {
+export default async function WelcomePage({
+  searchParams,
+}: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const query = await searchParams;
+
   // Preserve callbacks issued before the studio route was introduced.
   if (query.github === "connected" || query.github === "failed") {
     redirect(`/studio?github=${query.github}`);
   }
+
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       <section className={styles.hero}>
         <div>
           <p className={styles.eyebrow}>
@@ -112,10 +119,12 @@ export default async function WelcomePage({ searchParams }: {
           </h1>
 
           <p className={styles.heroDescription}>
-            FORGEX brings code inspection, change intelligence,
-            project editing, and GitHub workflows into one
-            focused workspace. Explore your source code and
-            make better-informed development decisions.
+            FORGEX brings code inspection, dependency
+            intelligence, project editing, and GitHub
+            workflows into one focused workspace.
+            Understand your source code, investigate
+            potential issues, and make more informed
+            development decisions.
           </p>
 
           <div className={styles.heroActions}>
@@ -176,8 +185,8 @@ export default async function WelcomePage({ searchParams }: {
         <p className={styles.sectionDescription}>
           Move from source inspection to change review
           without switching between disconnected tools.
-          FORGEX combines practical editing tools with
-          advisory development intelligence.
+          FORGEX combines practical editing capabilities
+          with development intelligence in one workspace.
         </p>
 
         <div className={styles.featureGrid}>
@@ -198,8 +207,9 @@ export default async function WelcomePage({ searchParams }: {
         <div>
           <h2>Ready to inspect your next project?</h2>
           <p>
-            Open the workspace and start with a file,
-            local folder, or supported GitHub repository.
+            Open your workspace and start with source
+            files, a local folder, or a supported
+            GitHub repository.
           </p>
         </div>
 
