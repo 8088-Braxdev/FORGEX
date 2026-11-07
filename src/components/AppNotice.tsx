@@ -17,6 +17,7 @@ type Props = {
   message: string;
   tone?: NoticeTone;
   onDismiss: () => void;
+  duration?: number;
 };
 
 const themes = {
@@ -54,30 +55,48 @@ export default function AppNotice({
   message,
   tone = "info",
   onDismiss,
+  duration = 8000,
 }: Props) {
   const dismissRef = useRef(onDismiss);
   const [paused, setPaused] = useState(false);
   useEffect(() => { dismissRef.current = onDismiss; }, [onDismiss]);
   useEffect(() => {
-    if (!message || paused || tone === "error" || tone === "warning") return;
-    const timer = window.setTimeout(() => dismissRef.current(), 8000);
+    if (!message || paused || tone === "error" || duration <= 0) return;
+    const timer = window.setTimeout(() => dismissRef.current(), duration);
     return () => window.clearTimeout(timer);
-  }, [message, tone, paused]);
+  }, [message, tone, paused, duration]);
   if (!message) return null;
 
   const theme = themes[tone];
   const Icon = theme.Icon;
 
   return (
-    <div
-      role={tone === "error" ? "alert" : "status"}
+    <>
+      <style>{`
+        .fx-app-notice {
+          position: fixed;
+          right: 16px;
+          bottom: var(--fx-notice-bottom, calc(16px + env(safe-area-inset-bottom)));
+          z-index: 9000;
+        }
+        @media (max-width: 820px) {
+          .fx-app-notice {
+            right: auto;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: var(--fx-notice-bottom, calc(16px + env(safe-area-inset-bottom)));
+          }
+        }
+      `}</style>
+      <div
+        className="fx-app-notice"
+        role={tone === "error" ? "alert" : "status"}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
       onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setPaused(false); }}
       style={{
         position: "fixed",
-        left: 16,
         bottom: "var(--fx-notice-bottom, calc(16px + env(safe-area-inset-bottom)))",
         zIndex: 9000,
         display: "flex",
@@ -143,5 +162,6 @@ export default function AppNotice({
         <X size={17} />
       </button>
     </div>
+    </>
   );
 }

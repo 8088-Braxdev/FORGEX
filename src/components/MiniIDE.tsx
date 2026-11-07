@@ -460,12 +460,12 @@ export default function MiniIDE({
   });
 
   const [notice, setNotice] = useState("");
-  const [isOnline, setIsOnline] = useState(() =>
-    typeof navigator !== "undefined" ? navigator.onLine : true,
-  );
+  const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
     const update = () => setIsOnline(navigator.onLine);
+
+    update();
 
     window.addEventListener("online", update);
     window.addEventListener("offline", update);
