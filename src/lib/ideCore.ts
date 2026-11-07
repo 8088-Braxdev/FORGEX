@@ -185,6 +185,21 @@ function resolveLocal(path: string, relative: string): string | null {
   return stack.join("/");
 }
 
+export const PREVIEW_NOT_FOUND_HTML = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>404 – Page not found</title>
+</head>
+<body>
+  <main>
+    <h1>404 – Page not found</h1>
+    <p>The page you requested does not exist in this project.</p>
+  </main>
+</body>
+</html>`;
+
 export type PreviewDocument = { html: string; entry: string };
 
 /**
@@ -227,13 +242,28 @@ export function buildPreview(
       /\.html?$/i.test(file.path),
   );
 
-  const entry =
-    requested ??
-    files.find((file) => file.path === "index.html") ??
-    files.find((file) => /(^|\/)index\.html?$/i.test(file.path)) ??
-    files.find((file) => /\.html?$/i.test(file.path));
+  let entry:
+    | SourceFile
+    | { path: string; content: string }
+    | undefined;
+
+  if (requestedPage && !requested) {
+    const notFoundFile = files.find(
+      (file) =>
+        file.path.toLowerCase() === "404.html" && /\.html?$/i.test(file.path),
+    );
+    entry = notFoundFile ?? { path: "__forgex_404__.html", content: PREVIEW_NOT_FOUND_HTML };
+  } else {
+    entry =
+      requested ??
+      files.find((file) => file.path === "index.html") ??
+      files.find((file) => /(^|\/)index\.html?$/i.test(file.path)) ??
+      files.find((file) => /\.html?$/i.test(file.path));
+  }
+
   if (!entry) return null;
   const contents = new Map(files.map((file) => [file.path, file.content]));
+  if (!contents.has(entry.path)) contents.set(entry.path, entry.content);
 
   const binaryAssetUrls = new Map(
     binaryAssets.map((asset) => [asset.path, asset.dataUrl]),

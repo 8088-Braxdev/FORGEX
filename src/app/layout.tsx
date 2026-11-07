@@ -6,6 +6,7 @@ import "./style.css";
 import "./mini-ide.css";
 import "./responsive-polish.css";
 import { AppConfirmProvider } from "@/components/AppConfirmProvider";
+import FrameGuard from "@/components/FrameGuard";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import OfflineBanner from "@/components/OfflineBanner";
 
@@ -38,7 +39,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${sora.variable} ${mono.variable}`}>
       <body>
-        <AppConfirmProvider>{children}</AppConfirmProvider>
+        <AppConfirmProvider>
+          <FrameGuard>{children}</FrameGuard>
+        </AppConfirmProvider>
         <ServiceWorkerRegistration />
         <OfflineBanner />
       </body>

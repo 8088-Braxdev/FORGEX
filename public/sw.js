@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 const CACHE_NAME = `forgex-${CACHE_VERSION}`;
 const PRECACHE_URLS = ["/", "/help", "/studio", "/offline.html"];
 const MONACO_PRECACHE_URLS = [
@@ -67,6 +67,14 @@ function offlineFallback(request, error) {
     .match(request)
     .then((cached) => {
       if (cached) return cached;
+      // Never serve the Studio shell as a fallback for iframe navigations:
+      // doing so nests the whole IDE inside the preview frame.
+      if (request.destination === "iframe") {
+        return caches.match("/offline.html").then((offlinePage) => {
+          if (offlinePage) return offlinePage;
+          throw error;
+        });
+      }
       return caches.match("/studio").then((studio) => {
         if (studio) return studio;
         return caches.match("/offline.html").then((offlinePage) => {
