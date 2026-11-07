@@ -538,6 +538,23 @@ ${droppedNotice}
   });
 })();
 
+function sendPreviewNavigation(href) {
+  if (!href) return;
+  parent.postMessage({
+    kind: 'forgex-preview-navigation',
+    channel: channel,
+    href: String(href).slice(0, 512)
+  }, '*');
+}
+
+function isRelativeNavigation(value) {
+  if (!value) return false;
+  var href = String(value).trim();
+  if (!href || href.charAt(0) === '#' || href.startsWith('//')) return false;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(href)) return false;
+  return true;
+}
+
 document.addEventListener('click', function(event) {
   if (
     event.defaultPrevented ||
@@ -555,28 +572,67 @@ document.addEventListener('click', function(event) {
 
   if (!link || link.hasAttribute('download')) return;
 
-  var target = (link.getAttribute('target') || '').toLowerCase();
-
-  if (target && target !== '_self') return;
-
   var href = link.getAttribute('href') || '';
 
-  if (
-    !href ||
-    href.charAt(0) === '#' ||
-    href.startsWith("//") ||
-    /^[a-z][a-z0-9+.-]*:/i.test(href)
-  ) return;
+  if (!isRelativeNavigation(href)) return;
 
-  // Stop the iframe from navigating to a Next.js route.
+  // Stop the iframe from navigating to a Next.js route, including target="_blank".
   event.preventDefault();
+  event.stopPropagation();
 
-  parent.postMessage({
-    kind: 'forgex-preview-navigation',
-    channel: channel,
-    href: href.slice(0, 512)
-  }, '*');
+  sendPreviewNavigation(href);
 }, true);
+
+document.addEventListener('submit', function(event) {
+  var form = event.target;
+  if (!form || form.nodeName !== 'FORM') return;
+  var action = form.getAttribute('action') || '';
+  if (!isRelativeNavigation(action)) {
+    // Block any submission that would leave the sandbox for FORGEX.
+    event.preventDefault();
+    return;
+  }
+  event.preventDefault();
+  sendPreviewNavigation(action);
+}, true);
+
+// Close script-driven navigation paths.
+try {
+  var originalOpen = window.open;
+  window.open = function(url) {
+    if (isRelativeNavigation(url)) {
+      sendPreviewNavigation(url);
+      return null;
+    }
+    return originalOpen ? originalOpen.apply(window, arguments) : null;
+  };
+} catch (openError) {}
+
+try {
+  if (window.location && typeof window.location.assign === 'function') {
+    var originalAssign = window.location.assign.bind(window.location);
+    window.location.assign = function(url) {
+      if (isRelativeNavigation(url)) {
+        sendPreviewNavigation(url);
+        return;
+      }
+      return originalAssign(url);
+    };
+  }
+} catch (assignError) {}
+
+try {
+  if (window.location && typeof window.location.replace === 'function') {
+    var originalReplace = window.location.replace.bind(window.location);
+    window.location.replace = function(url) {
+      if (isRelativeNavigation(url)) {
+        sendPreviewNavigation(url);
+        return;
+      }
+      return originalReplace(url);
+    };
+  }
+} catch (replaceError) {}
 
 var sourceMaps = __FORGEX_SOURCE_MAPS__;
 
@@ -1144,6 +1200,9 @@ function bridgeFetch(input, init) {
     window.addEventListener('securitypolicyviolation',function(e){emit('warn',['Blocked by sandbox security policy:',e.blockedURI||e.violatedDirective],'Preview sandbox');});
     emit('info',['Preview initialized']);
   })();<\/script>`;
+  // Remove meta refreshes so they cannot navigate the iframe to FORGEX.
+  html = html.replace(/<meta\b[^>]*http-equiv\s*=\s*["']?refresh["']?[^>]*>/gi, "");
+
   const csp = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' ${PREVIEW_SCRIPT_HOSTS}; style-src 'unsafe-inline' ${PREVIEW_STYLE_HOSTS}; img-src data: blob: https:; font-src data: https:; connect-src https: wss:; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">`;
   const setup = csp + instrument;
   html = /<head\b[^>]*>/i.test(html)
