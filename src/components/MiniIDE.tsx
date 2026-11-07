@@ -11,7 +11,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-type MonacoApi = any;
+import type { Monaco as MonacoApi } from "@monaco-editor/react";
 import { loader as monacoLoader } from "@monaco-editor/react";
 import {
   Activity,
@@ -96,7 +96,7 @@ if (typeof window !== "undefined") {
   monacoLoader.config({ paths: { vs: "/monaco/vs" } });
 }
 
-const Monaco = dynamic(() => import("@monaco-editor/react"), { ssr: false }) as any;
+const Monaco = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 const DRAFT_KEY = "forgex-mini-ide-v1";
 
 const FOLDER_NAME_KEY = "forgex:folder-name:v1";

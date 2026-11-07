@@ -16,6 +16,7 @@ type Props = {
   message: string;
   tone?: NoticeTone;
   onDismiss: () => void;
+  duration?: number;
 };
 
 const themes = {
@@ -53,6 +54,7 @@ export default function AppNotice({
   message,
   tone = "info",
   onDismiss,
+  duration = 8000,
 }: Props) {
   const dismissRef = useRef(onDismiss);
   const [paused, setPaused] = useState(false);
@@ -60,10 +62,13 @@ export default function AppNotice({
     dismissRef.current = onDismiss;
   }, [onDismiss]);
   useEffect(() => {
-    if (!message || paused || tone === "error" || tone === "warning") return;
-    const timer = window.setTimeout(() => dismissRef.current(), 8000);
+    if (!message || paused || tone === "error") return;
+    // Preserve main's persistent warnings unless a custom duration is supplied.
+    if (tone === "warning" && duration === 8000) return;
+    if (duration <= 0) return;
+    const timer = window.setTimeout(() => dismissRef.current(), duration);
     return () => window.clearTimeout(timer);
-  }, [message, tone, paused]);
+  }, [message, tone, paused, duration]);
   if (!message) return null;
 
   const theme = themes[tone];
