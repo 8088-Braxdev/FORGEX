@@ -713,6 +713,7 @@ export default function MiniIDE({
   const folderInputRef = useRef<HTMLInputElement>(null);
   const previewChannel = useRef("");
   const previewPageRef = useRef("");
+  const pendingPreviewHashRef = useRef("");
 
   const previewTrailRef = useRef<{
     pages: string[];
@@ -1832,6 +1833,20 @@ export default function MiniIDE({
     [previewPages, refreshPreview],
   );
 
+  function handlePreviewFrameLoad() {
+    const hash = pendingPreviewHashRef.current;
+    if (!hash) return;
+    pendingPreviewHashRef.current = "";
+    iframeRef.current?.contentWindow?.postMessage(
+      {
+        kind: "forgex-preview-scroll",
+        channel: previewChannel.current,
+        hash,
+      },
+      "*",
+    );
+  }
+
   useEffect(() => {
     function handlePreviewNavigation(event: MessageEvent) {
       if (event.source !== iframeRef.current?.contentWindow) return;
@@ -1862,7 +1877,9 @@ export default function MiniIDE({
 
         if (target.origin !== base.origin) return;
 
-        const path = decodeURIComponent(target.pathname.slice(1));
+        const hash = target.hash ? decodeURIComponent(target.hash.slice(1)) : "";
+
+const path = decodeURIComponent(target.pathname.slice(1));
 
         const candidates =
           path === ""
@@ -1884,7 +1901,8 @@ export default function MiniIDE({
           );
 
           if (notFoundFile) {
-            navigatePreview(notFoundFile.path);
+            pendingPreviewHashRef.current = hash;
+navigatePreview(notFoundFile.path);
             return;
           }
 
@@ -1901,6 +1919,7 @@ export default function MiniIDE({
           );
 
           previewPageRef.current = "__forgex_404__.html";
+pendingPreviewHashRef.current = hash;
 
           setLogs([]);
           setNetworkRecords([]);
@@ -1910,7 +1929,8 @@ export default function MiniIDE({
           return;
         }
 
-        navigatePreview(page.path);
+        pendingPreviewHashRef.current = hash;
+navigatePreview(page.path);
       } catch {
         setNotice("Invalid local preview link.");
       }
@@ -3678,6 +3698,7 @@ export default function MiniIDE({
               srcDoc={previewHtml}
               sandbox="allow-scripts"
               referrerPolicy="no-referrer"
+              onLoad={handlePreviewFrameLoad}
               style={{
                 width:
                   previewViewport === "mobile"

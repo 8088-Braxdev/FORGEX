@@ -574,14 +574,78 @@ document.addEventListener('click', function(event) {
 
   var href = link.getAttribute('href') || '';
 
+  var hashIndex = href.indexOf('#');
+  var pathPart = hashIndex === -1 ? href : href.slice(0, hashIndex);
+  var hashPart = hashIndex === -1 ? '' : href.slice(hashIndex + 1);
+
+  var isHashOnly = href.charAt(0) === '#' || pathPart === '' || pathPart === './' || pathPart === '.';
+
+  // Hash-only (or current-page hash) links must never navigate the iframe.
+  if (isHashOnly && hashPart !== undefined) {
+    // Allow modifier keys to fall through only when harmless: here we always
+    // prevent navigation, so the iframe can never reach a FORGEX route.
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    if (hashPart === '' || hashPart === 'top') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      var decoded = hashPart;
+      try { decoded = decodeURIComponent(hashPart); } catch (decodeError) {}
+      var targetElement = null;
+      try {
+        targetElement = document.getElementById(decoded) ||
+          document.querySelector('a[name="' + decoded.replace(/"/g, '\\\\"') + '"]');
+      } catch (selectorError) {
+        targetElement = document.getElementById(decoded);
+      }
+      if (targetElement && typeof targetElement.scrollIntoView === 'function') {
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+    return;
+  }
+
   if (!isRelativeNavigation(href)) return;
 
   // Stop the iframe from navigating to a Next.js route, including target="_blank".
   event.preventDefault();
   event.stopPropagation();
 
+  if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+
   sendPreviewNavigation(href);
 }, true);
+
+function scrollToPreviewHash(raw) {
+  var decoded = raw || '';
+  try { decoded = decodeURIComponent(decoded); } catch (decodeError) {}
+  if (!decoded || decoded === 'top') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+  var targetElement = null;
+  try {
+    targetElement = document.getElementById(decoded) ||
+      document.querySelector('a[name="' + decoded.replace(/"/g, '\\\\"') + '"]');
+  } catch (selectorError) {
+    targetElement = document.getElementById(decoded);
+  }
+  if (targetElement && typeof targetElement.scrollIntoView === 'function') {
+    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+window.addEventListener('hashchange', function() {
+  scrollToPreviewHash(String(location.hash || '').replace(/^#/, ''));
+});
+
+window.addEventListener('message', function(event) {
+  if (event.source !== parent) return;
+  var data = event.data;
+  if (!data || data.kind !== 'forgex-preview-scroll' || data.channel !== channel) return;
+  scrollToPreviewHash(data.hash || '');
+});
 
 document.addEventListener('submit', function(event) {
   var form = event.target;
