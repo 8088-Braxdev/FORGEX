@@ -15,3 +15,9 @@ npm-debug.log*
 *.key
 .env.*.bak
 public/monaco/
+
+# Generated reports and QA artifacts
+/reports/
+/BASELINE_REPORT.md
+/RELEASE_REPORT.md
+*.log
