@@ -11,7 +11,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import type { Monaco as MonacoApi } from "@monaco-editor/react";
+type MonacoApi = any;
 import { loader as monacoLoader } from "@monaco-editor/react";
 import {
   Activity,
@@ -70,6 +70,7 @@ import {
 import ApiRequestTester from "./ApiRequestTester";
 import {
   buildPreview,
+  PREVIEW_NOT_FOUND_HTML,
   ideLanguage,
   languageTotals,
   explainRuntimeError,
@@ -95,7 +96,7 @@ if (typeof window !== "undefined") {
   monacoLoader.config({ paths: { vs: "/monaco/vs" } });
 }
 
-const Monaco = dynamic(() => import("@monaco-editor/react"), { ssr: false });
+const Monaco = dynamic(() => import("@monaco-editor/react"), { ssr: false }) as any;
 const DRAFT_KEY = "forgex-mini-ide-v1";
 
 const FOLDER_NAME_KEY = "forgex:folder-name:v1";
@@ -1878,10 +1879,34 @@ export default function MiniIDE({
         );
 
         if (!page) {
-          setNotice(
-            "Preview navigation unavailable: " +
-              "the linked HTML page is not loaded in this workspace.",
+          const notFoundFile = files.find(
+            (file) => file.path.toLowerCase() === "404.html",
           );
+
+          if (notFoundFile) {
+            navigatePreview(notFoundFile.path);
+            return;
+          }
+
+          // Render a built-in 404 page instead of navigating the iframe.
+          const channel = `fx-${crypto.randomUUID()}`;
+          previewChannel.current = channel;
+
+          const output = buildPreview(
+            [...files, { path: "__forgex_404__.html", content: PREVIEW_NOT_FOUND_HTML }],
+            channel,
+            "__forgex_404__.html",
+            previewBinaryAssets,
+            previewAiEnabled ? previewAiRoute.trim() : "",
+          );
+
+          previewPageRef.current = "__forgex_404__.html";
+
+          setLogs([]);
+          setNetworkRecords([]);
+          setPreviewHtml(output?.html ?? PREVIEW_NOT_FOUND_HTML);
+          setPreviewEntry(output?.entry ?? "__forgex_404__.html");
+          setPreviewDirty(false);
           return;
         }
 
@@ -3228,7 +3253,7 @@ export default function MiniIDE({
                   value={active.content}
                   theme="forgex-dark"
                   height="100%"
-                  beforeMount={(monaco) => {
+                  beforeMount={(monaco: any) => {
                     monaco.editor.defineTheme("forgex-dark", {
                       base: "vs-dark",
                       inherit: true,
@@ -3246,7 +3271,7 @@ export default function MiniIDE({
                       },
                     });
                   }}
-                  onMount={(editor, monaco) => {
+                  onMount={(editor: any, monaco: any) => {
                     editorRef.current = editor;
                     monacoRef.current = monaco;
 
@@ -3257,7 +3282,7 @@ export default function MiniIDE({
                       contextMenuGroupId: "9_cutcopypaste",
                       contextMenuOrder: 4,
 
-                      run: async (currentEditor) => {
+                      run: async (currentEditor: any) => {
                         try {
                           if (!navigator.clipboard?.readText) {
                             setNotice(
@@ -3318,7 +3343,7 @@ export default function MiniIDE({
                       setJumpLine(null);
                     }
                   }}
-                  onChange={(value) => changeCode(value ?? "")}
+                  onChange={(value: any) => changeCode(value ?? "")}
                   options={{
                     // Keep line 1 visible directly beneath the tab bar, without a second fake gutter.
                     fontSize: 13,
