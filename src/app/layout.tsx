@@ -38,6 +38,20 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${sora.variable} ${mono.variable}`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{if(window.self!==window.top){document.documentElement.dataset.framed='1';}}catch(e){document.documentElement.dataset.framed='1';}})();",
+          }}
+        />
+        <style
+          dangerouslySetInnerHTML={{
+            __html:
+              "html[data-framed] body{visibility:hidden;}html[data-framed]::after{content:'This page can\\'t be shown inside the preview';position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#101820;color:#e9f4f0;font-family:system-ui,sans-serif;z-index:2147483647;}",
+          }}
+        />
+      </head>
       <body>
         <AppConfirmProvider>
           <FrameGuard>{children}</FrameGuard>
