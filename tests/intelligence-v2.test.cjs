@@ -1,4 +1,3 @@
-
 const assert = require("node:assert/strict");
 const { test, after } = require("node:test");
 const fs = require("node:fs");
@@ -101,4 +100,28 @@ test('partial analyzer scan and omitted imported files flagged', () => {
   assert.equal(buildIntelligenceV2(files,scan(files)).status, 'partial');
   const single = [files[0]];
   assert.equal(buildIntelligenceV2(single,scan(single),[],true).status, 'partial');
+});
+test('PHP-only workspace is not scored even though the heuristic engine returns 100', () => {
+  const files = [
+    { path: 'index.php', content: '<?php echo "hello";' },
+    { path: 'lib/util.php', content: '<?php function add($a, $b) { return $a + $b; }' }
+  ];
+  const scanResult = scan(files);
+  assert.equal(scanResult.score, 100);
+  const report = buildIntelligenceV2(files, scanResult);
+  assert.equal(report.score, null);
+  assert.equal(report.coverage.targetedFiles, 0);
+  assert.equal(report.coverage.genericOnlyFiles, 2);
+});
+test('mixed workspace reports how many files lack targeted rules', () => {
+  const files = [
+    { path: 'app.js', content: 'const a = 1;' },
+    { path: 'index.php', content: '<?php echo 1;' },
+    { path: 'notes.txt', content: 'not code' }
+  ];
+  const report = buildIntelligenceV2(files, scan(files));
+  assert.equal(report.coverage.processedFiles, 3);
+  assert.equal(report.coverage.targetedFiles, 1);
+  assert.equal(report.coverage.genericOnlyFiles, 2);
+  assert.notEqual(report.score, null);
 });
