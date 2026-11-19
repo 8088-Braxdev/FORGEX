@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { analyzeProject, type SourceFile } from '@/lib/analyzer';
+import { clientKey, rateLimited } from '@/lib/rateLimit';
 export const runtime='nodejs';
 export async function POST(req:Request){
+ if (rateLimited(`analyze:${clientKey(req)}`, 60)) {
+  return NextResponse.json({error:'Too many analysis requests. Wait a moment and try again.'},{status:429});
+ }
  try{
   const body=await req.json();
   const rawFiles:unknown=Array.isArray(body.files)?body.files:

@@ -56,7 +56,7 @@ import {
 } from "@/lib/workspaceDraft";
 import { useAppConfirm } from "@/components/AppConfirmProvider";
 import GitHubRepositoryPicker from "@/components/GitHubRepositoryPicker";
-import { buildIntelligenceV2 } from "@/lib/intelligence";
+import { buildIntelligenceV2, activeCoverage } from "@/lib/intelligence";
 import IntelligencePanel from "@/components/IntelligencePanel";
 import { validateWorkspace } from "@/lib/ideCore";
 import AppNotice from "@/components/AppNotice";
@@ -1038,10 +1038,17 @@ return () => window.clearTimeout(timer);
           pendingSourceJump.current = false;
         });
       }
-      if (scanned)
+      if (scanned) {
+        const uncheckedImported = data.files.filter(
+          (file) => activeCoverage(file.path, new Set(disabled)) === "none",
+        ).length;
         setNotice(
-          `${data.repository} (${data.branch}): ${data.files.length} real files scanned${data.partial ? `, ${data.skipped} eligible files skipped · PARTIAL SCAN` : ""}.`,
+          `${data.repository} (${data.branch}): ${data.files.length} real files scanned${data.partial ? `, ${data.skipped} eligible files skipped · PARTIAL SCAN` : ""}.` +
+            (uncheckedImported
+              ? ` FORGEX analyzes JavaScript, TypeScript, JSX/TSX, Python, PHP, HTML, CSS, SCSS and JSON; ${uncheckedImported} other file(s) are imported and editable but are not analyzed.`
+              : ""),
         );
+      }
     } catch (e) {
       setError(
         typeof navigator !== "undefined" && !navigator.onLine
@@ -1209,13 +1216,13 @@ return () => window.clearTimeout(timer);
       </article>
     );
   }
-  const menu: [Section, typeof ScanSearch, string][] = [
-    ["workbench", ScanSearch, "01"],
-    ["security", ShieldCheck, "02"],
-    ["health", Activity, "03"],
-    ["release", GitMerge, "04"],
-    ["rules", BookOpen, "05"],
-    ["history", History, "06"],
+  const menu: [Section, typeof ScanSearch][] = [
+    ["workbench", ScanSearch],
+    ["security", ShieldCheck],
+    ["health", Activity],
+    ["release", GitMerge],
+    ["rules", BookOpen],
+    ["history", History],
   ];
   return (
     <main className={workspaceStyles.shell}>
@@ -1782,20 +1789,37 @@ onMouseDown={(event) => {
                       <div
                         className="score-orbit"
                         style={{
-                          background: `conic-gradient(#bbfa77 ${result.score}%,#27343b 0)`,
+                          background:
+                            intelligenceV2.score === null
+                              ? "conic-gradient(#27343b 0)"
+                              : `conic-gradient(#bbfa77 ${result.score}%,#27343b 0)`,
                         }}
                       >
                         <div>
-                          <strong>{result.score}</strong>
-                          <small>/ 100</small>
+                          {intelligenceV2.score === null ? (
+                            <>
+                              <strong>Not scored</strong>
+                              <small>coverage</small>
+                            </>
+                          ) : (
+                            <>
+                              <strong>{result.score}</strong>
+                              <small>/ 100</small>
+                            </>
+                          )}
                         </div>
                       </div>
                       <div>
                         <small className="eyebrow">CURRENT HEALTH</small>
-                        <h2>{scoreLabel(result.score)}</h2>
+                        <h2>
+                          {intelligenceV2.score === null
+                            ? "Not scored"
+                            : scoreLabel(result.score)}
+                        </h2>
                         <p>
-                          Formula: 100 minus a weighted penalty for each flagged
-                          pattern. A score is not a security rating.
+                          {intelligenceV2.score === null
+                            ? `${intelligenceV2.coverage.genericOnlyFiles + intelligenceV2.coverage.withoutActiveRules} of ${intelligenceV2.coverage.importedFiles} files use languages FORGEX does not check yet.`
+                            : "Formula: 100 minus a weighted penalty for each flagged pattern. A score is not a security rating."}
                         </p>
                       </div>
                     </div>

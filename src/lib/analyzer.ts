@@ -1,3 +1,5 @@
+import { SEVERITY_PENALTY } from "./severity";
+
 export type Severity = 'critical' | 'high' | 'medium' | 'low';
 export type Category = 'security' | 'quality' | 'maintainability' | 'dependencies';
 export type SourceFile = { path: string; content: string };
@@ -23,7 +25,7 @@ type Rule = RuleDescription & {
 
 const JS = ['javascript','typescript','jsx','tsx'];
 const PY = ['python'];
-const ANY = ['javascript','typescript','jsx','tsx','python','html','css','json','other'];
+const ANY = ['javascript','typescript','jsx','tsx','python','html','css','json','php','other'];
 const create = (id:string,title:string,severity:Severity,category:Category,languages:string[],pattern:RegExp,description:string,impact:string,fix:string,confidence:'high'|'medium'|'low'='medium',replacement?:Rule['replacement']):Rule=>({id,title,severity,category,languages,pattern,description,impact,fix,confidence,replacement});
 export const RULES: Rule[] = [
   create('JS001','Dynamic eval execution','high','security',JS,/\beval\s*\(/g,'eval can interpret an uncontrolled string as code.','Untrusted data could execute with application privileges.','Use JSON.parse for data or a finite operation lookup; never evaluate user input.','high'),
@@ -50,6 +52,12 @@ export const RULES: Rule[] = [
   create('PY006','Broad bare except','medium','quality',PY,/\bexcept\s*:/g,'The except clause catches every exception, including interrupts.','Errors and shutdown signals might be swallowed.','Catch specific exception types.','high'),
   create('PY007','Python print debugging','low','quality',PY,/\bprint\s*\(/g,'A print call might be temporary debug output.','Production logs may become noisy or expose data.','Use structured logging with controlled log levels.','low'),
   create('PY008','Hardcoded secret candidate','high','security',PY,/\b(?:api_key|password|secret|token)\s*=\s*['"]([^'"]{6,})['"]/gi,'A credential-like string appears in source.','A real secret can leak if the file is shared.','Rotate exposed values and load secrets from a secret manager or environment.','medium'),
+  create('PHP001','PHP eval execution','high','security',['php'],/\beval\s*\(/g,'eval may interpret a string as PHP code.','Untrusted input could lead to arbitrary code execution.','Avoid eval; use explicit parsing or allow-listed operations.','high'),
+  create('PHP002','PHP command execution','high','security',['php'],/\b(?:exec|shell_exec|system|passthru|popen|proc_open)\s*\(/gi,'A command-execution function appears in this file.','Passing untrusted input could trigger command injection.','Use escapeshellarg and fixed command allow-lists; avoid shell interpolation.','medium'),
+  create('PHP003','PHP unsafe deserialization of request data','high','security',['php'],/\bunserialize\s*\(\s*\$_(?:GET|POST|REQUEST|COOKIE)\b/gi,'unserialize may instantiate arbitrary objects.','Untrusted serialized data can lead to object injection or code execution.','Do not unserialize untrusted input; prefer JSON with explicit validation.','high'),
+  create('PHP004','PHP SQL string concatenation with request data','high','security',['php'],/\b(?:SELECT|INSERT|UPDATE|DELETE)\b[^'"\n]*['"]\s*\.\s*\$_(?:GET|POST|REQUEST)\b/gi,'SQL text is concatenated with request data.','This pattern can enable SQL injection.','Use prepared statements with bound parameters.','high'),
+  create('PHP005','PHP include or require of request data','high','security',['php'],/\b(?:include|require)(?:_once)?\s*\(?\s*\$_(?:GET|POST|REQUEST)\b/gi,'A request variable controls an included file.','This can enable local or remote file inclusion.','Use a fixed allow-list of templates; never include request-controlled paths.','high'),
+  create('PHP006','PHP hardcoded secret candidate','high','security',['php'],/\b(?:password|api[_-]?key|secret|token)\b\s*(?:=|=>)\s*['"][^'"]{6,}['"]/gi,'A credential-like literal appears in source.','A real secret can leak if the file is shared.','Rotate exposed values and load secrets from environment variables.','medium'),
   create('HTML001','Target blank without explicit rel','medium','security',['html'],/<a\b(?=[^>]*target\s*=\s*['"]_blank['"])(?![^>]*rel\s*=)[^>]*>/gi,'A link opens a new window without an explicit rel attribute.','Older browsers may expose opener control; explicit rel also documents intent.','Add rel="noopener noreferrer".','medium'),
   create('HTML002','Inline event handler','medium','security',['html'],/\bon(?:click|load|error|mouseover)\s*=/gi,'An inline handler embeds JavaScript in HTML.','Makes strict Content Security Policy harder to enforce.','Bind listeners in JavaScript and apply a restrictive CSP.','medium'),
   create('CSS001','Heavy cascade override','low','maintainability',['css'],/!important\b/g,'An !important rule forces cascade priority.','Repeated overrides can make styles hard to evolve.','Prefer scoped selectors or component-level styles.','medium'),
@@ -58,7 +66,7 @@ export const RULES: Rule[] = [
   create('GEN001','Unresolved TODO marker','low','maintainability',ANY,/\b(?:TODO|FIXME|HACK)\b/g,'An unresolved work marker appears in source.','Important unfinished work may reach release.','Track it in an issue and resolve when appropriate.','high'),
 ];
 export const RULE_CATALOG:RuleDescription[] = RULES.map(({id,title,severity,category,languages,description})=>({id,title,severity,category,languages,description}));
-const EXT:Record<string,string>={js:'javascript',mjs:'javascript',cjs:'javascript',ts:'typescript',jsx:'jsx',tsx:'tsx',py:'python',html:'html',htm:'html',css:'css',json:'json'};
+const EXT:Record<string,string>={js:'javascript',mjs:'javascript',cjs:'javascript',ts:'typescript',jsx:'jsx',tsx:'tsx',py:'python',php:'php',phtml:'php',html:'html',htm:'html',css:'css',scss:'css',json:'json'};
 export function inferLanguage(path:string):string { const ext=path.split('.').pop()?.toLowerCase()||''; return EXT[ext]||'other'; }
 export function analyze(code:string,language:string='javascript',file='snippet.js',disabled:string[]=[]):Finding[]{
  const findings:Finding[]=[];
@@ -84,7 +92,7 @@ export function analyzeProject(files:SourceFile[],disabled:string[]=[]):ProjectR
  const findings:Finding[]=[];let totalLines=0;const summaries:FileSummary[]=[];
  for(const f of valid){const language=inferLanguage(f.path);const items=analyze(f.content,language,f.path,disabled);findings.push(...items);const lines=f.content.split(/\r?\n/).length;totalLines+=lines;summaries.push({path:f.path,lines,findings:items.length,critical:items.filter(v=>v.severity==='critical').length,high:items.filter(v=>v.severity==='high').length,medium:items.filter(v=>v.severity==='medium').length,low:items.filter(v=>v.severity==='low').length});}
  const critical=findings.filter(x=>x.severity==='critical').length,high=findings.filter(x=>x.severity==='high').length,medium=findings.filter(x=>x.severity==='medium').length,low=findings.filter(x=>x.severity==='low').length;
- const score=Math.max(0,Math.round(100-Math.min(100,critical*22+high*12+medium*4+low*1.5)));
+ const score=Math.max(0,Math.round(100-Math.min(100,critical*SEVERITY_PENALTY.critical+high*SEVERITY_PENALTY.high+medium*SEVERITY_PENALTY.medium+low*SEVERITY_PENALTY.low)));
  const risk=critical>0?'Critical':high>0?'High':medium>0?'Moderate':'Low';
  return {findings,files:summaries,score,risk,totalLines,scannedFiles:valid.length,skippedFiles:files.length-valid.length,generatedAt:new Date().toISOString(),engine:'FORGEX heuristic rules v0.2',checks:RULES.length-disabled.length};
 }

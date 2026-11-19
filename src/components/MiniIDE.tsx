@@ -50,6 +50,8 @@ import {
   Ellipsis,
 } from "lucide-react";
 import { analyzeProject, type Finding, type SourceFile } from "@/lib/analyzer";
+import { activeCoverage } from "@/lib/intelligence";
+import { IGNORED_PATHS } from "@/lib/ignoredPaths";
 import {
   detectPreviewLimits,
   type PreviewLimitSignals,
@@ -1577,19 +1579,7 @@ export default function MiniIDE({
     if (!selected.length) return;
 
     const supported =
-      /\.(js|mjs|cjs|ts|tsx|jsx|py|json|html|htm|css|md|txt|yml|yaml|xml|svg|go|rs|java|c|h|cpp|hpp|cs|php|sql|sh)$/i;
-
-    const ignoredFolders = new Set([
-      "node_modules",
-      ".git",
-      ".next",
-      ".turbo",
-      ".venv",
-      "venv",
-      "dist",
-      "build",
-      "coverage",
-    ]);
+      /\.(js|mjs|cjs|ts|tsx|jsx|py|json|html|htm|css|md|txt|yml|yaml|xml|svg|go|rs|java|c|h|cpp|hpp|cs|php|sql|sh|scss)$/i;
 
     const imported: SourceFile[] = [];
     const nextBinaryAssets: PreviewBinaryAsset[] = [];
@@ -1607,9 +1597,7 @@ export default function MiniIDE({
       const relativePath = parts.slice(1).join("/");
       const path = safeIdePath(relativePath);
 
-      const ignored = parts
-        .slice(1, -1)
-        .some((part) => ignoredFolders.has(part.toLowerCase()));
+      const ignored = path !== null && IGNORED_PATHS.test(path);
 
       const isBinaryImage =
         path !== null && /\.(png|jpe?g|webp|gif|ico)$/i.test(path);
@@ -1729,10 +1717,16 @@ export default function MiniIDE({
       setExplorerVisible(true);
       setMobileView("editor");
 
+      const uncheckedImported = imported.filter(
+        (file) => activeCoverage(file.path, new Set(disabledRules)) === "none",
+      ).length;
       setNotice(
         `Opened ${valid.length} source files and ` +
           `${nextBinaryAssets.length} images. ` +
-          `${skipped} skipped. Images are preview-only for this session.`,
+          `${skipped} skipped. Images are preview-only for this session.` +
+          (uncheckedImported
+            ? ` FORGEX analyzes JavaScript, TypeScript, JSX/TSX, Python, PHP, HTML, CSS, SCSS and JSON; ${uncheckedImported} other file(s) are imported and editable but are not analyzed.`
+            : ""),
       );
     } catch (error) {
       setNotice(
@@ -2400,6 +2394,9 @@ navigatePreview(page.path);
               <FileCode2 size={14} style={{ color: languageColor(path) }} />
             )}
             <span>{path.split("/").pop()}</span>
+            {activeCoverage(path, new Set(disabledRules)) === "none" && (
+              <small title="FORGEX does not check this file type">not checked</small>
+            )}
             {touched.includes(path) && <i title="Modified in this session" />}
           </button>
         ))}

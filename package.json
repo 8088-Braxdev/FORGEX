@@ -14,7 +14,7 @@
     "prebuild": "node scripts/copy-monaco.cjs"
   },
   "dependencies": {
-    "@monaco-editor/react": "^4.8.0-rc.3",
+    "@monaco-editor/react": "4.7.0",
     "lucide-react": "^0.468.0",
     "monaco-editor": "^0.57.0",
     "next": "15.5.28",
@@ -28,8 +28,6 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "@types/vscode": "^1.140.0",
-    "@vscode/vsce": "^4.0.0",
     "typescript": "^5.8.0"
   }
 }

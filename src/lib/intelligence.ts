@@ -64,6 +64,8 @@ export type IntelligenceV2 = {
   methodology: string;
 };
 
+// Intentionally different from src/lib/severity.ts (22/12/4/1.5): this
+// Intelligence density formula uses 18/9/3/1. See "Needs owner decision".
 const SEVERITY_WEIGHT: Record<Severity, number> = {
   critical: 18,
   high: 9,
@@ -102,7 +104,7 @@ function deduplicate(findings: Finding[]): Finding[] {
   return output;
 }
 
-function activeCoverage(path: string, disabled: Set<string>): CoverageLevel {
+export function activeCoverage(path: string, disabled: Set<string>): CoverageLevel {
   const language = inferLanguage(path);
   const applicable = RULE_CATALOG.filter(
     (rule) => !disabled.has(rule.id) && rule.languages.includes(language),

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { clientKey, rateLimited } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -22,36 +23,7 @@ const ALLOWED_REQUEST_HEADERS = new Set([
 const MAX_REQUEST_BYTES = 100 * 1024;
 const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
 const REQUEST_TIMEOUT_MS = 20_000;
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX_REQUESTS = 120;
-
-type ClientRate = { count: number; startedAt: number };
-const rateBuckets = new Map<string, ClientRate>();
-
-function clientKey(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-  return request.headers.get("x-real-ip") ?? "local";
-}
-
-function rateLimited(key: string): boolean {
-  const now = Date.now();
-  const bucket = rateBuckets.get(key);
-  if (!bucket || now - bucket.startedAt >= RATE_LIMIT_WINDOW_MS) {
-    rateBuckets.set(key, { count: 1, startedAt: now });
-    if (rateBuckets.size > 5000) {
-      // Opportunistic cleanup for long-lived instances.
-      for (const [bucketKey, value] of rateBuckets) {
-        if (now - value.startedAt >= RATE_LIMIT_WINDOW_MS) {
-          rateBuckets.delete(bucketKey);
-        }
-      }
-    }
-    return false;
-  }
-  bucket.count += 1;
-  return bucket.count > RATE_LIMIT_MAX_REQUESTS;
-}
+// Rate limiting is shared with other routes via src/lib/rateLimit.ts.
 
 function isPrivateIpv4(host: string): boolean {
   const match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
@@ -136,7 +108,7 @@ export async function POST(request: Request) {
   }
 
   const key = clientKey(request);
-  if (rateLimited(key)) {
+  if (rateLimited(key, 120)) {
     return NextResponse.json(
       { error: "Too many preview API requests. Wait a moment and try again." },
       { status: 429, headers: corsHeaders() },
