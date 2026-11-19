@@ -1,9 +1,10 @@
 import type { SourceFile } from "./analyzer";
 import { safeIdePath } from "./paths";
+import { IGNORED_PATHS } from "./ignoredPaths";
 import { imageMime, validatePreviewAssets, MAX_PREVIEW_IMAGES, MAX_PREVIEW_IMAGE_BYTES, MAX_PREVIEW_IMAGE_TOTAL_BYTES, type PreviewBinaryAsset } from "./previewAssets";
 
 export const GITHUB_TEXT_PATH = /\.(js|jsx|mjs|cjs|ts|tsx|py|json|css|scss|html|htm|md|txt|svg|yml|yaml|xml|go|rs|java|c|h|cpp|hpp|cs|php|sql|sh)$/i;
-const IGNORE = /(^|\/)(node_modules|\.git|\.next|dist|build|coverage|vendor)(\/|$)|(^|\/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock)$|\.min\.(js|css)$|\.snap$/i;
+const IGNORE = IGNORED_PATHS;
 export function parseRepository(input: string) {
   let url: URL;
   try { url = new URL(input); } catch { throw new Error("Enter a valid GitHub repository URL."); }

@@ -51,6 +51,7 @@ import {
 } from "lucide-react";
 import { analyzeProject, type Finding, type SourceFile } from "@/lib/analyzer";
 import { activeCoverage } from "@/lib/intelligence";
+import { IGNORED_PATHS } from "@/lib/ignoredPaths";
 import {
   detectPreviewLimits,
   type PreviewLimitSignals,
@@ -1578,19 +1579,7 @@ export default function MiniIDE({
     if (!selected.length) return;
 
     const supported =
-      /\.(js|mjs|cjs|ts|tsx|jsx|py|json|html|htm|css|md|txt|yml|yaml|xml|svg|go|rs|java|c|h|cpp|hpp|cs|php|sql|sh)$/i;
-
-    const ignoredFolders = new Set([
-      "node_modules",
-      ".git",
-      ".next",
-      ".turbo",
-      ".venv",
-      "venv",
-      "dist",
-      "build",
-      "coverage",
-    ]);
+      /\.(js|mjs|cjs|ts|tsx|jsx|py|json|html|htm|css|md|txt|yml|yaml|xml|svg|go|rs|java|c|h|cpp|hpp|cs|php|sql|sh|scss)$/i;
 
     const imported: SourceFile[] = [];
     const nextBinaryAssets: PreviewBinaryAsset[] = [];
@@ -1608,9 +1597,7 @@ export default function MiniIDE({
       const relativePath = parts.slice(1).join("/");
       const path = safeIdePath(relativePath);
 
-      const ignored = parts
-        .slice(1, -1)
-        .some((part) => ignoredFolders.has(part.toLowerCase()));
+      const ignored = path !== null && IGNORED_PATHS.test(path);
 
       const isBinaryImage =
         path !== null && /\.(png|jpe?g|webp|gif|ico)$/i.test(path);
