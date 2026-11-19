@@ -52,6 +52,7 @@ import {
 import { analyzeProject, type Finding, type SourceFile } from "@/lib/analyzer";
 import { activeCoverage } from "@/lib/intelligence";
 import { IGNORED_PATHS } from "@/lib/ignoredPaths";
+import { FileCode, FileJson, FileText } from "lucide-react";
 import {
   detectPreviewLimits,
   type PreviewLimitSignals,
@@ -2390,9 +2391,18 @@ navigatePreview(page.path);
                 height={18}
                 style={{ objectFit: "contain" }}
               />
-            ) : (
-              <FileCode2 size={14} style={{ color: languageColor(path) }} />
-            )}
+            ) : (() => {
+              const ext = path.split(".").pop()?.toLowerCase();
+              const Icon =
+                ext === "json"
+                  ? FileJson
+                  : ext === "html" || ext === "htm"
+                    ? FileCode
+                    : ext === "md" || ext === "txt" || ext === "yml" || ext === "yaml" || ext === "xml" || ext === "svg"
+                      ? FileText
+                      : FileCode2;
+              return <Icon size={14} style={{ color: languageColor(path) }} />;
+            })()}
             <span>{path.split("/").pop()}</span>
             {activeCoverage(path, new Set(disabledRules)) === "none" && (
               <small title="FORGEX does not check this file type">not checked</small>

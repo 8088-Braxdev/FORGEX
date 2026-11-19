@@ -1062,6 +1062,9 @@ window.fetch = function(input, init) {
 (function(){
   var originalOpen = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function(method, url) {
+    this.__forgexMethod = method;
+    this.__forgexUrl = typeof url === 'string' ? url : null;
+    if (!this.__forgexHeaders) this.__forgexHeaders = {};
     if (typeof url === 'string') {
       if (isExternalHttpsUrl(url)) {
         var xhr = this;
@@ -1108,6 +1111,61 @@ window.fetch = function(input, init) {
       }
     }
     return originalOpen.apply(this, arguments);
+  };
+})();
+
+// XHR retries through the preview proxy when the direct call fails,
+// so axios-style projects receive real API responses.
+(function(){
+  var originalSend = XMLHttpRequest.prototype.send;
+  var originalSetRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
+
+  XMLHttpRequest.prototype.send = function(body) {
+    var xhr = this;
+    var url = xhr.__forgexUrl;
+    var method = xhr.__forgexMethod || 'GET';
+
+    if (!url || !isExternalHttpsUrl(url)) {
+      return originalSend.apply(this, arguments);
+    }
+
+    xhr.addEventListener('error', function() {
+      var bodyText = typeof body === 'string' ? body : null;
+      var headers = {};
+      try {
+        var setHeaders = xhr.__forgexHeaders || {};
+        for (var name in setHeaders) headers[name] = setHeaders[name];
+      } catch (error) { headers = {}; }
+
+      originalFetch.call(window, PREVIEW_PROXY_ROUTE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: url, method: method, headers: headers, body: bodyText })
+      }).then(function(proxyResponse) {
+        return proxyResponse.json().then(function(envelope) {
+          try { Object.defineProperty(xhr, 'status', { value: envelope.status || 502 }); } catch (e) {}
+          try { Object.defineProperty(xhr, 'responseText', { value: typeof envelope.body === 'string' ? envelope.body : '' }); } catch (e) {}
+          try { Object.defineProperty(xhr, 'response', { value: typeof envelope.body === 'string' ? envelope.body : '' }); } catch (e) {}
+          xhr.readyState = 4;
+          if (typeof xhr.onreadystatechange === 'function') xhr.onreadystatechange();
+          xhr.dispatchEvent(new Event('readystatechange'));
+          xhr.dispatchEvent(new Event('load'));
+          xhr.dispatchEvent(new Event('loadend'));
+        });
+      }).catch(function() {
+        emit('warn', ['Direct request failed and the FORGEX proxy could not complete it either: ' + url], 'Preview sandbox');
+        xhr.dispatchEvent(new Event('error'));
+        xhr.dispatchEvent(new Event('loadend'));
+      });
+    });
+
+    return originalSend.apply(this, arguments);
+  };
+
+  XMLHttpRequest.prototype.setRequestHeader = function(name, value) {
+    if (!this.__forgexHeaders) this.__forgexHeaders = {};
+    this.__forgexHeaders[name] = value;
+    return originalSetRequestHeader.apply(this, arguments);
   };
 })();
 

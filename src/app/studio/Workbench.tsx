@@ -1388,6 +1388,7 @@ return () => window.clearTimeout(timer);
                 setFiles((previous) => [...previous, { path, content: "" }]);
                 setSelectedPath(path);
                 setResult(null);
+                backgroundScanDone.current = false;
                 setUndoState(null);
                 setSelectedFinding(null);
               }}
@@ -1819,7 +1820,7 @@ onMouseDown={(event) => {
                         <p>
                           {intelligenceV2.score === null
                             ? `${intelligenceV2.coverage.genericOnlyFiles + intelligenceV2.coverage.withoutActiveRules} of ${intelligenceV2.coverage.importedFiles} files use languages FORGEX does not check yet.`
-                            : "Formula: 100 minus a weighted penalty for each flagged pattern. A score is not a security rating."}
+                            : "Formula: 100 minus a weighted penalty for each flagged pattern. A score is not a security rating. Supported languages: JavaScript, TypeScript, JSX/TSX, Python, PHP, HTML, CSS, SCSS and JSON."}
                         </p>
                       </div>
                     </div>
