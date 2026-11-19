@@ -1040,11 +1040,19 @@ return () => window.clearTimeout(timer);
       }
       if (scanned) {
         const uncheckedImported = data.files.filter(
-          (file) => activeCoverage(file.path, new Set(disabled)) === "none",
+          (file) => activeCoverage(file.path, new Set(disabled)) !== "targeted",
         ).length;
+        const coverageNoticeKey = "forgex:coverage-notice-shown";
+        const showCoverageNotice =
+          uncheckedImported > 0 &&
+          typeof window !== "undefined" &&
+          !window.localStorage.getItem(coverageNoticeKey);
+        if (showCoverageNotice) {
+          window.localStorage.setItem(coverageNoticeKey, "1");
+        }
         setNotice(
           `${data.repository} (${data.branch}): ${data.files.length} real files scanned${data.partial ? `, ${data.skipped} eligible files skipped · PARTIAL SCAN` : ""}.` +
-            (uncheckedImported
+            (showCoverageNotice
               ? ` FORGEX analyzes JavaScript, TypeScript, JSX/TSX, Python, PHP, HTML, CSS, SCSS and JSON; ${uncheckedImported} other file(s) are imported and editable but are not analyzed.`
               : ""),
         );
