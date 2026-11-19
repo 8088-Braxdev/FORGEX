@@ -7,11 +7,20 @@ const { NextRequest } = require('next/server');
 const originalEnv = { ...process.env };
 const originalFetch = global.fetch;
 after(() => { global.fetch = originalFetch; for (const key of Object.keys(process.env)) if (!(key in originalEnv)) delete process.env[key]; Object.assign(process.env, originalEnv); });
+const rateLimitCode = ts.transpileModule(fs.readFileSync('src/lib/rateLimit.ts', 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
+}).outputText;
+const rateLimitMod = { exports: {} };
+new Function('require', 'module', 'exports', rateLimitCode)(name => require(name), rateLimitMod, rateLimitMod.exports);
 const code = ts.transpileModule(fs.readFileSync('src/app/api/github/[action]/route.ts', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
 }).outputText;
 const mod = { exports: {} };
-new Function('require', 'module', 'exports', code)(name => name.startsWith('@/lib/') ? {} : require(name), mod, mod.exports);
+new Function('require', 'module', 'exports', code)(name => {
+  if (name === '@/lib/rateLimit') return rateLimitMod.exports;
+  if (name.startsWith('@/lib/')) return {};
+  return require(name);
+}, mod, mod.exports);
 const { GET, POST } = mod.exports;
 const origin = 'https://forgex-gamma.vercel.app';
 function configure() {

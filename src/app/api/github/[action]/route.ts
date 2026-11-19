@@ -6,6 +6,7 @@ import {
   randomBytes,
 } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { clientKey, rateLimited } from "@/lib/rateLimit";
 import { importGitHubRepository, parseRepository, GitHubImportError, GITHUB_TEXT_PATH } from "@/lib/githubImport";
 import { safeIdePath } from "@/lib/ideCore";
 import {
@@ -1267,6 +1268,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ action: string }> },
 ) {
+  if (rateLimited(`github:${clientKey(request)}`, 60)) {
+    return NextResponse.json({ error: "Too many GitHub requests. Wait a moment and try again." }, { status: 429 });
+  }
   const { action } = await params;
 
   if (action === "connect") return connect();
@@ -1282,6 +1286,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ action: string }> },
 ) {
+  if (rateLimited(`github:${clientKey(request)}`, 60)) {
+    return NextResponse.json({ error: "Too many GitHub requests. Wait a moment and try again." }, { status: 429 });
+  }
   const { action } = await params;
   if (action === "publish") {
     return publishPullRequest(request);
