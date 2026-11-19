@@ -2,7 +2,6 @@
 node_modules/
 .next/
 out/
-extension/out/
 *.vsix
 .env
 .env.*
