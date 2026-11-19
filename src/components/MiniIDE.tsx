@@ -1719,13 +1719,21 @@ export default function MiniIDE({
       setMobileView("editor");
 
       const uncheckedImported = imported.filter(
-        (file) => activeCoverage(file.path, new Set(disabledRules)) === "none",
+        (file) => activeCoverage(file.path, new Set(disabledRules)) !== "targeted",
       ).length;
+      const coverageNoticeKey = "forgex:coverage-notice-shown";
+      const showCoverageNotice =
+        uncheckedImported > 0 &&
+        typeof window !== "undefined" &&
+        !window.localStorage.getItem(coverageNoticeKey);
+      if (showCoverageNotice) {
+        window.localStorage.setItem(coverageNoticeKey, "1");
+      }
       setNotice(
         `Opened ${valid.length} source files and ` +
           `${nextBinaryAssets.length} images. ` +
           `${skipped} skipped. Images are preview-only for this session.` +
-          (uncheckedImported
+          (showCoverageNotice
             ? ` FORGEX analyzes JavaScript, TypeScript, JSX/TSX, Python, PHP, HTML, CSS, SCSS and JSON; ${uncheckedImported} other file(s) are imported and editable but are not analyzed.`
             : ""),
       );
