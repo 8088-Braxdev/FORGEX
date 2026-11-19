@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import {
+  getToastStackIndex,
+  registerToast,
+  subscribeToastStack,
+} from "@/lib/toastStack";
 
 import {
   CheckCircle2,
@@ -58,9 +63,22 @@ export default function AppNotice({
 }: Props) {
   const dismissRef = useRef(onDismiss);
   const [paused, setPaused] = useState(false);
+  const toastId = useId();
+  const [stackIndex, setStackIndex] = useState(0);
   useEffect(() => {
     dismissRef.current = onDismiss;
   }, [onDismiss]);
+
+  useEffect(() => {
+    const unregister = registerToast(toastId);
+    const update = () => setStackIndex(getToastStackIndex(toastId));
+    update();
+    const unsubscribe = subscribeToastStack(update);
+    return () => {
+      unregister();
+      unsubscribe();
+    };
+  }, [toastId]);
   useEffect(() => {
     if (!message || paused || tone === "error") return;
     // Preserve main's persistent warnings unless a custom duration is supplied.
@@ -89,6 +107,7 @@ export default function AppNotice({
         display: "flex",
         alignItems: "flex-start",
         gap: 12,
+        bottom: `calc(var(--fx-notice-bottom, calc(16px + env(safe-area-inset-bottom))) + ${stackIndex * 72}px)`,
 
         padding: "10px 12px",
         border: `1px solid ${theme.border}`,

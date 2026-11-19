@@ -672,31 +672,10 @@ try {
   };
 } catch (openError) {}
 
-try {
-  if (window.location && typeof window.location.assign === 'function') {
-    var originalAssign = window.location.assign.bind(window.location);
-    window.location.assign = function(url) {
-      if (isRelativeNavigation(url)) {
-        sendPreviewNavigation(url);
-        return;
-      }
-      return originalAssign(url);
-    };
-  }
-} catch (assignError) {}
-
-try {
-  if (window.location && typeof window.location.replace === 'function') {
-    var originalReplace = window.location.replace.bind(window.location);
-    window.location.replace = function(url) {
-      if (isRelativeNavigation(url)) {
-        sendPreviewNavigation(url);
-        return;
-      }
-      return originalReplace(url);
-    };
-  }
-} catch (replaceError) {}
+// Note: Location.prototype.assign/replace members are unforgeable in modern
+// browsers, so overrides above are not relied upon. Only window.open is
+// handled here. location.href assignment and hash changes are reported via
+// the hashchange listener when possible.
 
 var sourceMaps = __FORGEX_SOURCE_MAPS__;
 
