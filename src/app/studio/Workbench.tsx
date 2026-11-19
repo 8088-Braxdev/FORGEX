@@ -1216,13 +1216,13 @@ return () => window.clearTimeout(timer);
       </article>
     );
   }
-  const menu: [Section, typeof ScanSearch, string][] = [
-    ["workbench", ScanSearch, "01"],
-    ["security", ShieldCheck, "02"],
-    ["health", Activity, "03"],
-    ["release", GitMerge, "04"],
-    ["rules", BookOpen, "05"],
-    ["history", History, "06"],
+  const menu: [Section, typeof ScanSearch][] = [
+    ["workbench", ScanSearch],
+    ["security", ShieldCheck],
+    ["health", Activity],
+    ["release", GitMerge],
+    ["rules", BookOpen],
+    ["history", History],
   ];
   return (
     <main className={workspaceStyles.shell}>
