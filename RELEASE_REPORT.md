@@ -80,7 +80,7 @@ PASS means only the boundary named in the evidence column passed. Unit/mocked ch
 | Product real new-branch PR creation/status/Release Gate evidence | NOT TESTED | No product publish operation or live Release Gate test was performed. |
 | New server input validation and import request bounds | PASS for tested boundaries | Streamed byte/content-type tests and capped failed-download test. Not a general rate-limit audit. |
 | Vercel Preview/Production secrets names and OAuth origin config | BLOCKED for real OAuth | Preview reports GitHub `configured:false`. Secret names/values and OAuth origin configuration were not inspected or changed; no inference is made about Production configuration. |
-| Genuine React/Vite/Next runtime and OS terminal | FAIL | Not implemented; see RUNTIME_PLAN.md for staged isolation proposal and infrastructure/budget blockers. |
+| Genuine React/Vite/Next runtime and OS terminal | FAIL | Not implemented; see repository history for the staged isolation proposal and infrastructure/budget blockers. |
 
 ## Migration, rollback and review notes
 
