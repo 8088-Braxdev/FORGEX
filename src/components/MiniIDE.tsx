@@ -1738,7 +1738,7 @@ export default function MiniIDE({
           `${nextBinaryAssets.length} images. ` +
           `${skipped} skipped. Images are preview-only for this session.` +
           (uncheckedImported
-            ? ` FORGEX analyzes JavaScript, TypeScript, JSX/TSX, Python, HTML, CSS and JSON; ${uncheckedImported} other file(s) are imported and editable but are not analyzed.`
+            ? ` FORGEX analyzes JavaScript, TypeScript, JSX/TSX, Python, PHP, HTML, CSS, SCSS and JSON; ${uncheckedImported} other file(s) are imported and editable but are not analyzed.`
             : ""),
       );
     } catch (error) {

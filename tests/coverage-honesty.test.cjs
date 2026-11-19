@@ -26,8 +26,8 @@ const analyzer = require(path.join(buildDir, "analyzer.js"));
 const { buildIntelligenceV2, activeCoverage } = require(path.join(buildDir, "intelligence.js"));
 const scan = (files, disabled = []) => analyzer.analyzeProject(files, disabled);
 
-test("PHP-only workspace is not scored", () => {
-  const files = [{ path: "index.php", content: "<?php echo 'hi';" }];
+test("unsupported-only workspace is not scored", () => {
+  const files = [{ path: "main.go", content: "package main" }];
   const report = buildIntelligenceV2(files, scan(files));
   assert.equal(report.score, null);
   assert.equal(report.coverage.genericOnlyFiles, 1);
@@ -37,8 +37,8 @@ test("PHP-only workspace is not scored", () => {
 test("mixed workspace reports exact uncovered count", () => {
   const files = [
     { path: "app.js", content: "const x = 1;" },
-    { path: "one.php", content: "<?php echo 1;" },
-    { path: "two.php", content: "<?php echo 2;" },
+    { path: "one.go", content: "package main" },
+    { path: "two.go", content: "package main" },
   ];
   const report = buildIntelligenceV2(files, scan(files));
   assert.equal(report.coverage.genericOnlyFiles, 2);
@@ -53,6 +53,6 @@ test("supported-only workspace behaves as before", () => {
   assert.equal(report.coverage.withoutActiveRules, 0);
 });
 
-test("activeCoverage marks PHP as generic before targeted rules are added", () => {
-  assert.equal(activeCoverage("index.php", new Set()), "generic");
+test("activeCoverage marks PHP as targeted after rules are added", () => {
+  assert.equal(activeCoverage("index.php", new Set()), "targeted");
 });

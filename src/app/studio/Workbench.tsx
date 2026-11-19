@@ -1045,7 +1045,7 @@ return () => window.clearTimeout(timer);
         setNotice(
           `${data.repository} (${data.branch}): ${data.files.length} real files scanned${data.partial ? `, ${data.skipped} eligible files skipped · PARTIAL SCAN` : ""}.` +
             (uncheckedImported
-              ? ` FORGEX analyzes JavaScript, TypeScript, JSX/TSX, Python, HTML, CSS and JSON; ${uncheckedImported} other file(s) are imported and editable but are not analyzed.`
+              ? ` FORGEX analyzes JavaScript, TypeScript, JSX/TSX, Python, PHP, HTML, CSS, SCSS and JSON; ${uncheckedImported} other file(s) are imported and editable but are not analyzed.`
               : ""),
         );
       }
