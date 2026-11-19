@@ -9,7 +9,7 @@ const sourceDir = path.join(__dirname, "../src/lib");
 const buildDir = fs.mkdtempSync(path.join(os.tmpdir(), "forgex-coverage-"));
 after(() => fs.rmSync(buildDir, { recursive: true, force: true }));
 
-for (const name of ["analyzer", "intelligence"]) {
+for (const name of ["severity", "analyzer", "intelligence"]) {
   const filename = path.join(sourceDir, `${name}.ts`);
   const source = fs.readFileSync(filename, "utf8");
   const output = ts.transpileModule(source, {

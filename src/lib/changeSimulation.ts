@@ -5,6 +5,7 @@ import {
   type ProjectResult,
   type SourceFile,
 } from "./analyzer";
+import { SEVERITY_PENALTY } from "./severity";
 
 export type ChangePreview = {
   originalLine: string;
@@ -19,12 +20,7 @@ export type ChangePreview = {
 
 export function rawPenalty(findings: Finding[]): number {
   return findings.reduce((total, finding) => {
-    const weights = {
-      critical: 22,
-      high: 12,
-      medium: 4,
-      low: 1.5,
-    };
+    const weights = SEVERITY_PENALTY;
     return total + weights[finding.severity];
   }, 0);
 }

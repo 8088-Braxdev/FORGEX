@@ -19,7 +19,7 @@ after(() => {
   });
 });
 
-for (const name of ["analyzer", "intelligence"]) {
+for (const name of ["severity", "analyzer", "intelligence"]) {
   const filename = path.join(sourceDir, `${name}.ts`);
   const source = fs.readFileSync(filename, "utf8");
 

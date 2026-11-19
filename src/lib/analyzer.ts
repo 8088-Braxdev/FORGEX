@@ -1,3 +1,5 @@
+import { SEVERITY_PENALTY } from "./severity";
+
 export type Severity = 'critical' | 'high' | 'medium' | 'low';
 export type Category = 'security' | 'quality' | 'maintainability' | 'dependencies';
 export type SourceFile = { path: string; content: string };
@@ -84,7 +86,7 @@ export function analyzeProject(files:SourceFile[],disabled:string[]=[]):ProjectR
  const findings:Finding[]=[];let totalLines=0;const summaries:FileSummary[]=[];
  for(const f of valid){const language=inferLanguage(f.path);const items=analyze(f.content,language,f.path,disabled);findings.push(...items);const lines=f.content.split(/\r?\n/).length;totalLines+=lines;summaries.push({path:f.path,lines,findings:items.length,critical:items.filter(v=>v.severity==='critical').length,high:items.filter(v=>v.severity==='high').length,medium:items.filter(v=>v.severity==='medium').length,low:items.filter(v=>v.severity==='low').length});}
  const critical=findings.filter(x=>x.severity==='critical').length,high=findings.filter(x=>x.severity==='high').length,medium=findings.filter(x=>x.severity==='medium').length,low=findings.filter(x=>x.severity==='low').length;
- const score=Math.max(0,Math.round(100-Math.min(100,critical*22+high*12+medium*4+low*1.5)));
+ const score=Math.max(0,Math.round(100-Math.min(100,critical*SEVERITY_PENALTY.critical+high*SEVERITY_PENALTY.high+medium*SEVERITY_PENALTY.medium+low*SEVERITY_PENALTY.low)));
  const risk=critical>0?'Critical':high>0?'High':medium>0?'Moderate':'Low';
  return {findings,files:summaries,score,risk,totalLines,scannedFiles:valid.length,skippedFiles:files.length-valid.length,generatedAt:new Date().toISOString(),engine:'FORGEX heuristic rules v0.2',checks:RULES.length-disabled.length};
 }
