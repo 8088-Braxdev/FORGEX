@@ -221,7 +221,7 @@ export type PreviewDocument = { html: string; entry: string };
 const PREVIEW_SCRIPT_HOSTS =
   "https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://esm.sh";
 const PREVIEW_STYLE_HOSTS =
-  "https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://fonts.googleapis.com";
+  "https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://fonts.googleapis.com https://api.fontshare.com";
 
 /** FORGEX's own hostname; requests to it are always blocked from previews. */
 const APP_HOST =
