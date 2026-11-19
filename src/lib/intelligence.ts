@@ -102,7 +102,7 @@ function deduplicate(findings: Finding[]): Finding[] {
   return output;
 }
 
-function activeCoverage(path: string, disabled: Set<string>): CoverageLevel {
+export function activeCoverage(path: string, disabled: Set<string>): CoverageLevel {
   const language = inferLanguage(path);
   const applicable = RULE_CATALOG.filter(
     (rule) => !disabled.has(rule.id) && rule.languages.includes(language),

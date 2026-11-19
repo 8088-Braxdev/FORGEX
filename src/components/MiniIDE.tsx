@@ -50,6 +50,7 @@ import {
   Ellipsis,
 } from "lucide-react";
 import { analyzeProject, type Finding, type SourceFile } from "@/lib/analyzer";
+import { activeCoverage } from "@/lib/intelligence";
 import {
   detectPreviewLimits,
   type PreviewLimitSignals,
@@ -1729,10 +1730,16 @@ export default function MiniIDE({
       setExplorerVisible(true);
       setMobileView("editor");
 
+      const uncheckedImported = imported.filter(
+        (file) => activeCoverage(file.path, new Set(disabledRules)) === "none",
+      ).length;
       setNotice(
         `Opened ${valid.length} source files and ` +
           `${nextBinaryAssets.length} images. ` +
-          `${skipped} skipped. Images are preview-only for this session.`,
+          `${skipped} skipped. Images are preview-only for this session.` +
+          (uncheckedImported
+            ? ` FORGEX analyzes JavaScript, TypeScript, JSX/TSX, Python, HTML, CSS and JSON; ${uncheckedImported} other file(s) are imported and editable but are not analyzed.`
+            : ""),
       );
     } catch (error) {
       setNotice(
@@ -2400,6 +2407,9 @@ navigatePreview(page.path);
               <FileCode2 size={14} style={{ color: languageColor(path) }} />
             )}
             <span>{path.split("/").pop()}</span>
+            {activeCoverage(path, new Set(disabledRules)) === "none" && (
+              <small title="FORGEX does not check this file type">not checked</small>
+            )}
             {touched.includes(path) && <i title="Modified in this session" />}
           </button>
         ))}
